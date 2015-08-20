@@ -48,7 +48,7 @@
 #include "Globals.h"
 
 #include "LCDRelated.h"
-LiquidCrystal lcd(A1, 9, A3, A2, 2, 13 );
+LiquidCrystal lcd(8, 9, 4, 5, 6, 7); // changed this on 20150807
 
 // Code
 

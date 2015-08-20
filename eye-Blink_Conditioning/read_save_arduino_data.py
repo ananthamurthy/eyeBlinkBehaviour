@@ -82,6 +82,7 @@ def writeToTrialFile(line):
                 stt.write("Trial %s is cs 0\n" % runningTrial)
         print("[TRIAL-INFO] Trial %s has started" % runningTrial)
     else:
+        blinkProfile.append(line)
         trialsDict[runningTrial].append(line)
 
 print("[INFO] Connecting to %s" % ttyName)
@@ -89,6 +90,6 @@ with open(os.path.join(save_direc, outfile), 'w') as f:
     print("[SESSION-INFO] Session data will be written to file %s" % outfile)
     while(True):
         line = tty.readline() #readline automatically confirms "\n"
-        print("%s" % line.strip(' '), end='')
+        #print("%s" % line.strip(' '), end='')
         f.write("%s" % line)
         writeToTrialFile(line)

@@ -406,7 +406,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		18258ACA1B70B0720032BF4C /* read_save_aduino_data.py */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.python; path = read_save_aduino_data.py; sourceTree = "<group>"; };
+		18258ACA1B70B0720032BF4C /* read_save_arduino_data.py */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.python; path = read_save_arduino_data.py; sourceTree = "<group>"; };
 		18C9F4C71B70A9D90055328B /* Index */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Index; sourceTree = BUILT_PRODUCTS_DIR; };
 		18C9F4CA1B70A9D90055328B /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		18C9F4CC1B70A9D90055328B /* Makefile */ = {isa = PBXFileReference; explicitFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
@@ -952,7 +952,7 @@
 				18C9F55C1B70AA810055328B /* Globals.h */,
 				18C9F55D1B70AAA30055328B /* LCDRelated.h */,
 				18C9F55E1B70AB3D0055328B /* DetectBlinks.h */,
-				18258ACA1B70B0720032BF4C /* read_save_aduino_data.py */,
+				18258ACA1B70B0720032BF4C /* read_save_arduino_data.py */,
 				18C9F55F1B70AB690055328B /* Solenoid.h */,
 				18C9F5601B70ABF80055328B /* LCDRelated.cpp */,
 				18C9F5621B70AC2B0055328B /* DetectBlinks.cpp */,

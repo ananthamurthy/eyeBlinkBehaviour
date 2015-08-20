@@ -95,12 +95,12 @@ int sessionType_ind = 1; //Please specify the Session Type (0: Control, 1: Trace
 int session = 1;
 int traceTime = 250; //in ms
 
-const int tonePin = 10;
+const int tonePin = 3; //changed this on 20150807
 
 //Protocol Information
 const int totalTrials = 10;
 const int preTime = 5000; //in ms
-const int CSTime = 350; //in ms
+const int CSTime = 2000; //in ms
 const int puffTime = 100; //in ms
 const int postTime = 9300; //in ms
 const int minITI = 15000; //in ms
@@ -365,56 +365,59 @@ void loop()
                     break;
                     
                 case 7:// Inter trial interval
-                    //Serial.println("Case7");
-                    printStatus(START_ITI, trialNum);
-                    //      Serial.print(currentPhaseTime);
-                    //      Serial.print('\t');
-                    //      Serial.println(interTrialTime);
-                    if (currentPhaseTime >= interTrialTime)
+                    if (pause == 1)
                     {
-                        trialNum++;
-                        Serial.print("Blink Count = ");
-                        Serial.println(blinkCount);
-                        blinkCount = 0;
-                        if (trialNum > totalTrials)
+                        printStatus(PAUSE, trialNum);
+                        condition = 9;
+                        break;
+                    }
+                    else
+                    {
+                        //Serial.println("Case7");
+                        printStatus(START_ITI, trialNum);
+                        //      Serial.print(currentPhaseTime);
+                        //      Serial.print('\t');
+                        //      Serial.println(interTrialTime);
+                        if (currentPhaseTime >= interTrialTime)
                         {
-                            condition = 8; //End of Session
-                            Serial.println("@");
-                            break;
-                        }
-                        else
-                        {
-                            condition = 0;
-                            Serial.println("@");
-                            
-                            if (random(10) >= 6)
+                            trialNum++;
+                            Serial.print("Blink Count = ");
+                            Serial.println(blinkCount);
+                            blinkCount = 0;
+                            if (trialNum > totalTrials)
                             {
-                                CS_plus = 1; //play CS+
-                                Serial.print("Trial No. ");
-                                Serial.print(trialNum);
-                                Serial.print(":");
-                                Serial.println(" CS+ ");
+                                condition = 8; //End of Session
+                                Serial.println("@");
+                                break;
                             }
                             else
                             {
-                                CS_plus = 0; //play CS-
-                                Serial.print("Trial No. ");
-                                Serial.print(trialNum);
-                                Serial.print(":");
-                                Serial.println(" CS- ");
+                                condition = 0;
+                                Serial.println("@");
+                                
+                                if (random(10) >= 6)
+                                {
+                                    CS_plus = 1; //play CS+
+                                    Serial.print("Trial No. ");
+                                    Serial.print(trialNum);
+                                    Serial.print(":");
+                                    Serial.println(" CS+ ");
+                                }
+                                else
+                                {
+                                    CS_plus = 0; //play CS-
+                                    Serial.print("Trial No. ");
+                                    Serial.print(trialNum);
+                                    Serial.print(":");
+                                    Serial.println(" CS- ");
+                                }
+                                
+                                startPhaseTime = millis();
+                                startTrialTime = millis();
                             }
-                            
-                            if (pause == 1)
-                            {
-                                printStatus(PAUSE, trialNum);
-                                condition = 9;
-                                break;
-                            }
-                            startPhaseTime = millis();
-                            startTrialTime = millis();
                         }
+                        break;
                     }
-                    break;
                     
                 case 8: // End of session
                     //Serial.println("Case8");
@@ -427,8 +430,9 @@ void loop()
                     if (unpause_key == btnLEFT)
                     {
                         pause = 0;
-                        condition = 0; // Goes to Pre-Tone
+                        condition = 7; // Goes to Pre-Tone
                         break; // Might be redundant
+                        startPhaseTime = millis();
                     }
                     break; // goes to the specified phase and trial number
             } // ends "switch (condition)"
