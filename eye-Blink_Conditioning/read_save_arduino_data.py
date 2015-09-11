@@ -1,15 +1,15 @@
 #!/usr/bin/env python
-//
-//  read_save_aduino_data
-//  Text
-//  ----------------------------------
-//  Developed with embedXcode
-//
-//  Project 	eye-Blink_Conditioning
-//  Created by 	Kambadur Ananthamurthy on 04/08/15
-//  Copyright 	© 2015 Kambadur Ananthamurthy
-//  License	<#license#>
-//
+#
+#  read_save_aduino_data
+#  Text
+#  ----------------------------------
+#  Developed with embedXcode
+#
+#  Project 	eye-Blink_Conditioning
+#  Created by 	Kambadur Ananthamurthy on 04/08/15
+#  Copyright 	© 2015 Kambadur Ananthamurthy
+#  License	<#license#>
+#
 
 from __future__ import print_function
 
@@ -36,7 +36,7 @@ trialsDict[runningTrial] = [] #give keys as strings
 if len(sys.argv) <= 1:
     outfile = os.path.join(stamp, "raw_data")
 else:
-    outfile = sys.argv[1]
+    outfile = "MouseK" + sys.argv[1] + "_SessionType" + sys.argv[2] + "_Session" + sys.argv[3]
 
 #print(sys.argv)
 save_direc = ("/Users/ananth/Desktop/Work/Data/%s" % outfile)
@@ -54,8 +54,10 @@ for t in ttyoptions:
         ttyName = ("/dev/tty.usbmodem1411")
         time.sleep(2)
         tty.write(sys.argv[1])
+        tty.write(sys.argv[2])
+        tty.write(sys.argv[3])
     except Exception as e:
-        print("[WARN] Failed to connect to %s with error %s" % (t, e))
+        print("[WARNING] Failed to connect to %s with error %s" % (t, e))
         continue
 
 def writeToTrialFile(line):
@@ -81,6 +83,13 @@ def writeToTrialFile(line):
             else:
                 stt.write("Trial %s is cs 0\n" % runningTrial)
         print("[TRIAL-INFO] Trial %s has started" % runningTrial)
+    elif "profiling" in line.lower():
+        print("[INFO] Profiling data being acquired")
+        with open (os.join(outfile, "profile.txt") as f:
+            line.lower().startswith("profiling done"):
+            f.write("%s" % line)
+            # if no data for x amount of time"
+            saveProfilingData = 0
     else:
         blinkProfile.append(line)
         trialsDict[runningTrial].append(line)
