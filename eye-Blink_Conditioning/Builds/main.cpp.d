@@ -12,7 +12,7 @@ Builds/main.cpp.o: main.cpp \
  /Applications/Arduino.app/Contents/Java/hardware/arduino/avr/variants/standard/pins_arduino.h \
  eye_Blink_Conditioning.ino \
  /Applications/Arduino.app/Contents/Java/hardware/arduino/avr/cores/arduino/HardwareSerial.h \
- Profiling.h Globals.h LCDRelated.h \
+ Profiling.h Globals.h Initialize.h LCDRelated.h \
  /Applications/Arduino.app/Contents/Java/libraries/LiquidCrystal/src/LiquidCrystal.h \
  /Applications/Arduino.app/Contents/Java/hardware/arduino/avr/cores/arduino/Print.h \
- DetectBlinks.h Solenoid.h
+ DetectBlinks.h Solenoid.h ChangePhase.h

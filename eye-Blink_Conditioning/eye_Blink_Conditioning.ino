@@ -157,9 +157,11 @@ void setupTimer (void) {
 
 // Include application, user and local libraries
 #include "Globals.h"
+#include "Initialize.h"
 #include "LCDRelated.h"
 #include "DetectBlinks.h"
 #include "Solenoid.h"
+#include "ChangePhase.h"
 
 //Globals:
 int blink = 0;
@@ -167,10 +169,6 @@ const int blink_ai = A5;    // pin that reads the blinks
 const int puff_do = 11;
 int blinkCount = 0;// Code
 unsigned long startT;
-
-//Locals:
-//Some Initialization: To get Session Details - These will all get edited if there is serial input
-int userInput[3];
 String mouseName = String(1); //Please enter the name of the mouse
 int sessionType_ind = 1; //Please specify the Session Type (0: Control, 1: Trace, 2: Delay)
 int session = 1;
@@ -183,7 +181,7 @@ boolean profilingDataDump = 0; // For dumping profiling data
 //Protocol Information
 const int totalTrials = 10;
 const int preTime = 1000; //in ms
-const int CSTime = 1000; //in ms
+const int CSTime = 1200; //in ms
 const int puffTime = 1000; //in ms
 const int postTime = 1000; //in ms
 const int minITI = 1000; //in ms
@@ -199,6 +197,8 @@ boolean pause = 0 ;
 unsigned long startPhaseTime;
 unsigned long startTrialTime;
 unsigned long currentPhaseTime = 0;
+unsigned long lastTime = 0;
+unsigned short sampleInterval = 10; // Ten milliseconds for 100 Hz
 int interTrialTime = 0;
 int trialNum = 0;
 boolean CS_plus = 1;
@@ -215,13 +215,13 @@ void setup()
     
     // Initialize the serial port
     Serial.begin(9600);
-//    Serial.println("#setup()");
+    //    Serial.println("#setup()");
     
     int_counter = 0;
     seconds = 0;
     minutes = 0;
     
-//    Serial.println("#setupTimer()");
+    //    Serial.println("#setupTimer()");
     setupTimer();
     
     // Set up the puff port:
@@ -255,64 +255,11 @@ void setup()
 void loop()
 {
     // Press "Select" to start Session
-    if (start == 1)
+    if (start != 1)
     {
+        initialize();
     }
-    else
-    {
-        Serial.print("#Mouse Name: ");
-        while(!Serial.available());
-        mouseName = "MouseK" + String(Serial.readString().toInt());
-        Serial.println(mouseName);
-        
-        Serial.print("#Session Type Index: ");
-        while(!Serial.available());
-        sessionType_ind = Serial.readString().toInt();
-        Serial.println(sessionType_ind);
-
-        Serial.print("#Session: ");
-        while(!Serial.available());
-        session = Serial.readString().toInt();
-        Serial.println(session);
-        
-        Serial.println("#Press the SELECT buttbon!");
-        
-        // From here, the Arduino will start running the behaviour
-        while(read_lcd_button() != btnSELECT);
-
-        startT = millis();
-        start = 1;
-        lcd.setCursor( 0, 1 );
-        lcd.print("S");
-        lcd.setCursor(1, 1);
-        lcd.print(session);
-        lcd.setCursor( 4, 1 );
-        lcd.print("T");
-        
-        lcd.setCursor( 0, 0 );
-        lcd.print(mouseName);
-        
-        lcd.setCursor(8, 0);
-        lcd.print(sessionType[sessionType_ind]);
-        lcd.setCursor(6, 1);
-        lcd.print("          ");
-        Serial.println("@");
-        //Serial.print(trialNum);
-        Serial.println("1 1"); // Just to not confuse data saving
-        Serial.println("[");
-        
-        // Get traceTime based on the Session Type
-        if (sessionType_ind == 2)
-        {
-            traceTime = 0; //in ms
-        }
-        else
-        {
-            traceTime = 250; //in ms
-        }
-        
-        
-    }
+    
     while (start == 1)
     {
         if (trialNum == 0)
@@ -320,10 +267,11 @@ void loop()
             startPhaseTime = millis();
             startTrialTime = millis();
             trialNum = 1;
+            printStatus(START_PRE, trialNum);
         }
         else
         {
-            unsigned long currentPhaseTime = millis() - startPhaseTime; // has to be calculated for every loop
+            currentPhaseTime = millis() - startPhaseTime; // has to be calculated for every loop
             unsigned long currentTime = millis() - startTrialTime; // has to be calculated for every loop
             
             // Pause //
@@ -338,201 +286,179 @@ void loop()
                     PF((condition+1));
                     //Serial.println("Case0");
                     detectBlinks();
-                    printStatus(START_PRE, trialNum);
                     if (currentPhaseTime >= preTime)
+                {
+                    //start the next phase
+                    if (CS_plus == 1)
                     {
-                        //start the next phase
-                        if (CS_plus == 1)
-                        {
-                            condition = 1; //CS+
-                            tone( tonePin, CS_PLUS_ToneFreq );
-                        }
-                        else
-                        {
-                            condition = 2; //CS-
-                            tone( tonePin, CS_MINUS_ToneFreq );
-                        }
-                        startPhaseTime = millis();
+                        tone( tonePin, CS_PLUS_ToneFreq );
+                        changePhase( 1, START_CS_PLUS ); // CS+
                     }
+                    else
+                    {
+                        tone( tonePin, CS_MINUS_ToneFreq );
+                        changePhase( 2, START_CS_MINUS ); // CS-
+                    }
+                }
                     break;
                     
                 case 1: // CS+
                     PF((condition+1));
                     //Serial.println("Case1");
                     detectBlinks();
-                    printStatus(START_CS_PLUS, trialNum);
                     if (currentPhaseTime >= CSTime)
-                    {
-                        //start the next phase
-                        condition = 3; //Trace
-                        noTone(tonePin);
-                        startPhaseTime = millis();
-                    }
+                {
+                    //start the next phase
+                    noTone(tonePin);
+                    changePhase( 3, START_TRACE ); // Trace
+                }
                     break;
                     
                 case 2: // CS-
                     PF((condition+1));
                     //Serial.println("Case2");
                     detectBlinks();
-                    printStatus(START_CS_MINUS, trialNum);
                     if (currentPhaseTime >= CSTime)
-                    {
-                        condition = 3; //Trace
-                        noTone(tonePin);
-                        startPhaseTime = millis();
-                    }
+                {
+                    noTone(tonePin);
+                    changePhase( 3, START_TRACE ); // Trace
+                }
                     break;
                     
                 case 3: // trace
                     PF((condition+1));
                     //Serial.println("Case3");
                     detectBlinks();
-                    printStatus(START_TRACE, trialNum);
-                    
                     if (currentPhaseTime >= traceTime)
+                {
+                    //start the next phase
+                    if (sessionType_ind != 0)
                     {
-                        //start the next phase
-                        if (sessionType_ind != 0)
+                        if (CS_plus == 1)
                         {
-                            if (CS_plus == 1)
-                            {
-                                playPuff(puff_do, HIGH);
-                                condition = 4; //US: Air-Puff
-                                startPhaseTime = millis();
-                            }
-                            else
-                            {
-                                playPuff(puff_do, LOW);
-                                condition = 5; //US: Air-Puff
-                                startPhaseTime = millis();
-                            }
+                            playPuff(puff_do, HIGH);
+                            condition = 4; //US: Air-Puff
+                            changePhase( 4, START_US ); // US: Air-puff
                         }
                         else
-                        { //control case (No-Puff)
+                        {
                             playPuff(puff_do, LOW);
-                            condition = 5; //US: Air-Puff
-                            startPhaseTime = millis();
+                            changePhase( 5, START_US_NO_PUFF ); // US: Air- no puff
                         }
                     }
+                    else
+                    { //control case (No-Puff)
+                        playPuff(puff_do, LOW);
+                        changePhase( 5, START_US_NO_PUFF ); // US: Air- no puff
+                    }
+                }
                     break;
                     
                 case 4: // Puff (US)
                     PF((condition+1));
                     //Serial.println("Case4");
                     detectBlinks();
-                    printStatus(START_US, trialNum);
                     if (currentPhaseTime >= puffTime)
-                    {
-                        //start the next phase
-                        playPuff(puff_do, LOW);
-                        condition = 6; //Post Pairing/Stimuli
-                        startPhaseTime = millis();
-                    }
+                {
+                    //start the next phase
+                    playPuff(puff_do, LOW);
+                    changePhase( 6, START_POST ); // Post pairing/stimuli
+                }
                     break;
                     
                 case 5: // No-Puff
                     PF((condition+1));
                     //Serial.println("Case5");
                     detectBlinks();
-                    printStatus(START_US_NO_PUFF, trialNum);
                     if (currentPhaseTime >= puffTime)
-                    {
-                        //start the next phase
-                        playPuff(puff_do, LOW);
-                        condition = 6; //Post Pairing/Stimuli
-                        startPhaseTime = millis();
-                    }
+                {
+                    //start the next phase
+                    playPuff(puff_do, LOW);
+                    changePhase( 6, START_POST ); // Post pairing/stimuli
+                }
                     break;
                     
                 case 6: // Post Pairing/Stimuli
                     PF((condition+1));
                     //Serial.println("Case6");
                     detectBlinks();
-                    printStatus(START_POST, trialNum);
                     if (currentPhaseTime >= postTime)
-                    {
-                        condition = 7; //ITI
-                        interTrialTime = minITI + random( randITI );
-                        startPhaseTime = millis();
-                    }
+                {
+                    interTrialTime = minITI + random( randITI );
+                    changePhase( 7, START_ITI ); // ITI
+                }
                     break;
                     
                 case 7:// Inter trial interval
                     PF((condition+1));
                     if (pause == 1)
-                    {
-                        printStatus(PAUSE, trialNum);
-                        condition = 9;
-                        break;
-                    }
+                {
+                    changePhase( 9, PAUSE ); // PAUSE
+                    break;
+                }
                     else
+                {
+                    //Serial.println("Case7");
+                    if (currentPhaseTime >= interTrialTime)
                     {
-                        //Serial.println("Case7");
-                        printStatus(START_ITI, trialNum);
-
-                        if (currentPhaseTime >= interTrialTime)
+                        trialNum++;
+                        //                            Serial.print("Blink Count = ");
+                        //                            Serial.println(blinkCount);
+                        blinkCount = 0;
+                        if (trialNum > totalTrials)
                         {
-                            trialNum++;
-//                            Serial.print("Blink Count = ");
-//                            Serial.println(blinkCount);
-                            blinkCount = 0;
-                            if (trialNum > totalTrials)
+                            Serial.println("@");
+                            changePhase( 8, END ); // END of session
+                            break;
+                        }
+                        else
+                        {
+                            Serial.println("]");
+                            Serial.println("@");
+                            
+                            if (random(10) >= 5) //change made on 20150826
                             {
-                                condition = 8; //End of Session
-                                Serial.println("@");
-                                break;
+                                CS_plus = 1; //play CS+
+                                Serial.print(trialNum);
+                                Serial.println(" 1");
                             }
                             else
                             {
-                                condition = 0;
-                                Serial.println("]")
-                                Serial.println("@");
-                                
-                                if (random(10) >= 5) //change made on 20150826
-                                {
-                                    CS_plus = 1; //play CS+
-                                    Serial.print(trialNum)
-                                    Serial.println(" 1")
-                                }
-                                else
-                                {
-                                    CS_plus = 0; //play CS-
-                                    Serial.print(trialNum)
-                                    Serial.println(" 0")
-                                }
-                                
-                                startPhaseTime = millis();
-                                startTrialTime = millis();
+                                CS_plus = 0; //play CS-
+                                Serial.print(trialNum);
+                                Serial.println(" 0");
                             }
+                            printStatus(START_PRE, trialNum);
+                            changePhase( 0, START_PRE ); // Next cycle
+                            startTrialTime = millis();
                         }
-                        break;
                     }
+                    break;
+                }
                     
                 case 8: // End of session
                     //Serial.println("Case8");
-                    printStatus(END, (trialNum-1)); // No need to change the trial number on LCD screen
                     if (profilingDataDump == 0)
-                    {
-                        Serial.println("$");
-                        Serial.println("[");
-                        dump_profiling_data();
-                        Serial.println("]");
-                        profilingDataDump = 1;
-                        
-                        Serial.println(";"); //tells data saving to close everything.
-                    }
+                {
+                    Serial.println("$");
+                    Serial.println("[");
+                    dump_profiling_data();
+                    Serial.println("]");
+                    profilingDataDump = 1;
+                    
+                    Serial.println(";"); //tells data saving to close everything.
+                }
                     break;
                     
                 case 9:  // Pause
                     //Serial.println("Case9");
                     int unpause_key = read_lcd_button();
                     if (unpause_key == btnLEFT)
-                    {
-                        pause = 0;
-                        condition = 7; // Goes to Pre-Tone
-                        break; // Might be redundant
-                        startPhaseTime = millis();
-                    }
+                {
+                    pause = 0;
+                    changePhase( 7, START_ITI ); // Go to ITI
+                    break; // Might be redundant
+                }
                     break; // goes to the specified phase and trial number
                     
             } // ends "switch (condition)"

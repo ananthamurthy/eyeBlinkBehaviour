@@ -14,6 +14,8 @@
 		18C9F5611B70ABF80055328B /* LCDRelated.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 18C9F5601B70ABF80055328B /* LCDRelated.cpp */; };
 		18C9F5631B70AC2B0055328B /* DetectBlinks.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 18C9F5621B70AC2B0055328B /* DetectBlinks.cpp */; };
 		18C9F5651B70AC850055328B /* Solenoid.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 18C9F5641B70AC850055328B /* Solenoid.cpp */; };
+		18F3EA731BA5431500F7C101 /* Initialize.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 18F3EA721BA5431500F7C101 /* Initialize.cpp */; };
+		18F3EA781BA544F000F7C101 /* ChangePhase.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 18F3EA771BA544F000F7C101 /* ChangePhase.cpp */; };
 		AA2A150804133639AA000006 /* abi.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAAA150804133639AA000006 /* abi.cpp */; };
 		AA2A150804133639AA000007 /* Arduino.h in Sources */ = {isa = PBXBuildFile; fileRef = AAAA150804133639AA000007 /* Arduino.h */; };
 		AA2A150804133639AA000008 /* binary.h in Sources */ = {isa = PBXBuildFile; fileRef = AAAA150804133639AA000008 /* binary.h */; };
@@ -534,6 +536,10 @@
 		18C9F5601B70ABF80055328B /* LCDRelated.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LCDRelated.cpp; sourceTree = "<group>"; };
 		18C9F5621B70AC2B0055328B /* DetectBlinks.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DetectBlinks.cpp; sourceTree = "<group>"; };
 		18C9F5641B70AC850055328B /* Solenoid.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Solenoid.cpp; sourceTree = "<group>"; };
+		18F3EA711BA542F000F7C101 /* Initialize.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Initialize.h; sourceTree = "<group>"; };
+		18F3EA721BA5431500F7C101 /* Initialize.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Initialize.cpp; sourceTree = "<group>"; };
+		18F3EA761BA544AC00F7C101 /* ChangePhase.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ChangePhase.h; sourceTree = "<group>"; };
+		18F3EA771BA544F000F7C101 /* ChangePhase.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ChangePhase.cpp; sourceTree = "<group>"; };
 		AAAA150804133639AA000006 /* abi.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = abi.cpp; sourceTree = "<group>"; };
 		AAAA150804133639AA000007 /* Arduino.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Arduino.h; sourceTree = "<group>"; };
 		AAAA150804133639AA000008 /* binary.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = binary.h; sourceTree = "<group>"; };
@@ -955,9 +961,13 @@
 				18AD53C51B9D8AC700F7A271 /* Profiling.h */,
 				18C9F55D1B70AAA30055328B /* LCDRelated.h */,
 				18C9F55E1B70AB3D0055328B /* DetectBlinks.h */,
+				18F3EA761BA544AC00F7C101 /* ChangePhase.h */,
+				18F3EA711BA542F000F7C101 /* Initialize.h */,
+				18C9F55F1B70AB690055328B /* Solenoid.h */,
 				18258ACA1B70B0720032BF4C /* read_save_arduino_data.py */,
 				18AD53C61B9DA85C00F7A271 /* eyeBlinkDataSave.py */,
-				18C9F55F1B70AB690055328B /* Solenoid.h */,
+				18F3EA721BA5431500F7C101 /* Initialize.cpp */,
+				18F3EA771BA544F000F7C101 /* ChangePhase.cpp */,
 				18C9F5601B70ABF80055328B /* LCDRelated.cpp */,
 				18C9F5621B70AC2B0055328B /* DetectBlinks.cpp */,
 				18C9F5641B70AC850055328B /* Solenoid.cpp */,
@@ -2557,6 +2567,7 @@
 				AA2A150804133639AA000091 /* GSM3IO.h in Sources */,
 				AA2A150804133639AA000092 /* GSM3MobileAccessProvider.cpp in Sources */,
 				AA2A150804133639AA000093 /* GSM3MobileAccessProvider.h in Sources */,
+				18F3EA781BA544F000F7C101 /* ChangePhase.cpp in Sources */,
 				AA2A150804133639AA000094 /* GSM3MobileCellManagement.cpp in Sources */,
 				AA2A150804133639AA000095 /* GSM3MobileCellManagement.h in Sources */,
 				AA2A150804133639AA000096 /* GSM3MobileClientProvider.cpp in Sources */,
@@ -2655,6 +2666,7 @@
 				AA2A150804133639AA0000F6 /* Sensors.cpp in Sources */,
 				AA2A150804133639AA0000F7 /* Squawk.cpp in Sources */,
 				AA2A150804133639AA0000F8 /* Squawk.h in Sources */,
+				18F3EA731BA5431500F7C101 /* Initialize.cpp in Sources */,
 				AA2A150804133639AA0000F9 /* SquawkSD.cpp in Sources */,
 				AA2A150804133639AA0000FA /* SquawkSD.h in Sources */,
 				AA2A150804133639AA0000FC /* Adafruit_GFX.cpp in Sources */,

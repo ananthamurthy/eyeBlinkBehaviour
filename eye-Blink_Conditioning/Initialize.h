@@ -1,5 +1,5 @@
 //
-// File			Globals.h
+// File			Initialize.h
 // Header
 //
 // Details		<#details#>
@@ -10,7 +10,7 @@
 // Author		Kambadur Ananthamurthy
 // 				Kambadur Ananthamurthy
 //
-// Date			04/08/15 1:38 pm
+// Date			13/09/15 11:06 am
 // Version		<#version#>
 // 
 // Copyright	© Kambadur Ananthamurthy, 2015
@@ -47,16 +47,15 @@
 #   error Platform not defined
 #endif // end IDE
 
-#ifndef Globals_h
-#define Globals_h
+#ifndef Initialize_h
+#define Initialize_h
 
-extern int blink;
-extern const int blink_ai;    // pin that reads the blinks
-extern int blinkCount;
-extern const int puff_do; // pin that drives the eye-puff solenoid
-extern unsigned long startT;
-extern unsigned long currentPhaseTime;
-extern unsigned long lastTime;
-extern unsigned short sampleInterval;
+#include "Globals.h"
+
+/**
+ @description Read details passed as inputs over the serial communication and use this to set protocol parameters, LCD update, etc.
+ */
+
+void initialize();
 
 #endif

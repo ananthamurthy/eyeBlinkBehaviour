@@ -48,9 +48,19 @@
 #include "Globals.h"
 #include "DetectBlinks.h"
 
-void detectBlinks()
+void detectBlinks() //(unsigned long currentTime)
 {
-    blink = analogRead(blink_ai);
-    Serial.println(blink);
-//    blinkCount++;
+    
+    if ( currentPhaseTime - lastTime > sampleInterval ) {
+
+        int temp = analogRead(blink_ai);
+        blink = analogRead(blink_ai);
+        Serial.print(blink);
+        //Serial.print(millis());
+        //Serial.print(" ");
+        Serial.print(" ");
+        //    blinkCount++;
+        Serial.println( currentPhaseTime % 10000 );
+        lastTime += sampleInterval;
+    }
 }

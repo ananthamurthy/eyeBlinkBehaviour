@@ -1,22 +1,19 @@
 //
-// File			Globals.h
-// Header
+// ChangePhase.cpp 
+// C++ code
+// ----------------------------------
+// Developed with embedXcode 
+// http://embedXcode.weebly.com
 //
-// Details		<#details#>
-//	
-// Project		 eye-Blink_Conditioning
-// Developed with [embedXcode](http://embedXcode.weebly.com)
-// 
-// Author		Kambadur Ananthamurthy
+// Project 		eye-Blink_Conditioning
+//
+// Created by 	Kambadur Ananthamurthy, 13/09/15 11:15 am
 // 				Kambadur Ananthamurthy
 //
-// Date			04/08/15 1:38 pm
-// Version		<#version#>
-// 
 // Copyright	© Kambadur Ananthamurthy, 2015
-// Licence    <#license#>
+// Licence   	<#license#>
 //
-// See			ReadMe.txt for references
+// See 			ChangePhase.h and ReadMe.txt for references
 //
 
 
@@ -47,16 +44,19 @@
 #   error Platform not defined
 #endif // end IDE
 
-#ifndef Globals_h
-#define Globals_h
+// Code
+#include "Globals.h"
+#include "LCDRelated.h"
+#include "ChangePhase.h"
 
-extern int blink;
-extern const int blink_ai;    // pin that reads the blinks
-extern int blinkCount;
-extern const int puff_do; // pin that drives the eye-puff solenoid
-extern unsigned long startT;
-extern unsigned long currentPhaseTime;
-extern unsigned long lastTime;
-extern unsigned short sampleInterval;
+extern int condition;
+extern int trialNum;
+extern unsigned long startPhaseTime;
 
-#endif
+void changePhase( int cond, int status )
+{
+    condition = cond;
+    printStatus(status, trialNum);
+    lastTime = 0;
+    startPhaseTime = millis();
+}

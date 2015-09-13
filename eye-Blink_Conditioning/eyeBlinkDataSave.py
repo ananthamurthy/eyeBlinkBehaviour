@@ -7,7 +7,7 @@
 #
 #  Project 	eye-Blink_Conditioning
 #  Created by 	Kambadur Ananthamurthy on 04/08/15
-#  Copyright 	© 2015 Kambadur Ananthamurthy
+#  Copyright 	2015 Kambadur Ananthamurthy
 #  License	<#license#>
 #
 
@@ -53,6 +53,7 @@ for t in ttyoptions:
         tty = serial.Serial(t, baudRate, timeout = 1)
         ttyName = ("/dev/tty.usbmodem1411")
         time.sleep(2)
+        print("[INFO] Connected to %s" % ttyName)
         tty.write(sys.argv[1])
         tty.write(sys.argv[2])
         tty.write(sys.argv[3])
@@ -71,9 +72,9 @@ def writeTrialData(save_direc):
             timeStamp, blinkValue = line.split()
             trialsDict[runningTrial].append((timeStamp, blinkValue))
 
-    with open(os.path.join(save_direc, "Trial" + str(runningTrial) + ".csv")) as f:
-        data = [timeStamp + "," + blinkValue for (timeStamp, blinkValue) in trialsDict[runningTrial]]
-        f.write("\n".join(trialsDict[runningTrial]))
+with open(os.path.join(save_direc, "Trial" + str(runningTrial) + ".csv"), 'w') as f:
+    data = [timeStamp + "," + blinkValue for (timeStamp, blinkValue) in trialsDict[runningTrial]]
+    f.write("\n".join(trialsDict[runningTrial]))
 
 def writeProfilingData(save_direc):
     dataBegin = tty.readline()
@@ -84,15 +85,27 @@ def writeProfilingData(save_direc):
         else:
             bin, counts = line.split()
             pofilingData[bin] = counts
-
-    with open(os.path.join(save_direc, "profiling_data.csv") as f:
-        data = profilingData.items()
-        data = [bin + "," + count for (bin, count) in data]
-        f.write("\n".join(data))
+            with open(os.path.join(save_direc, "profiling_data.csv"), 'w') as f:
+                data = profilingData.items()
+                data = [bin + "," + count for (bin, count) in data]
+                f.write("\n".join(data))
 
 def writeData(save_direc):
     line = tty.readline()
-    while line.startswith("@"):
-        writeTrialData(save_direc)
+        while line.startswith("@"):
+            writeTrialData(save_direc)
     while line.startswith("$"):
         writeProfilingData(save_direc)
+
+while 1:
+    while ()
+    arduinoData = tty.readline()
+    
+    if ";" == arduinoData:
+        quit()
+    elif arduinoData.startswith("#"):
+        pass
+    elif :
+        writeData(save_direc)
+    else:
+        pass
