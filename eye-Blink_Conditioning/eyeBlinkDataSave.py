@@ -17,95 +17,102 @@ import os
 import sys
 import time
 import serial
-
 from collections import defaultdict
-
 import datetime
-stamp = datetime.datetime.now().isoformat()
 
-# - Get all options for acmports
-#acmports = range(5)
-#ttyoptions = [ "/dev/tty.usbmodem%s" % x for x in acmports ]
-ttyoptions = ["/dev/tty.usbmodem1411"]
-ttyName = '/dev/cu.usbmodem'
+DATA_BEGIN_MARKER = "["
+DATA_END_MARKER = "]"
+COMMENT_MARKER = "#"
+TRIAL_DATA_MARKER = "@"
+PROFILING_DATA_MARKER = "$"
+START_OF_SESSION_MARKER = "<"
+END_OF_SESSION_MARKER = ">"
 
-runningTrial = "1"
-trialsDict = defaultdict(list)
-trialsDict[runningTrial] = [] #give keys as strings
+def getSerialPort(portPath = "/dev/tty.usbmodem1411", baudRate = 9600, timeout = 1):
+    serialPort = serial.Serial(portPath, baudRate, timeout = 1)
+    time.sleep(2)
+    print("[INFO] Connected to %s" % serialPort)
+    return serialPort
 
-if len(sys.argv) <= 1:
-    outfile = os.path.join(stamp, "raw_data")
-else:
-    outfile = "MouseK" + sys.argv[1] + "_SessionType" + sys.argv[2] + "_Session" + sys.argv[3]
-
-#print(sys.argv)
-save_direc = ("/Users/ananth/Desktop/Work/Data/%s" % outfile)
-if not os.path.isdir(save_direc):
-    os.mkdir(save_direc) #does not mkdir recursively
-
-if os.path.exists(os.path.join(save_direc, outfile)):
-    outfile = outfile + stamp
-
-tty = None
-baudRate = 9600
-for t in ttyoptions:
-    try:
-        tty = serial.Serial(t, baudRate, timeout = 1)
-        ttyName = ("/dev/tty.usbmodem1411")
-        time.sleep(2)
-        print("[INFO] Connected to %s" % ttyName)
-        tty.write(sys.argv[1])
-        tty.write(sys.argv[2])
-        tty.write(sys.argv[3])
-    except Exception as e:
-        print("[WARN] Failed to connect to %s with error %s" % (t, e))
+def writeTrialData(serialPort, saveDirec, trialsDict = {}):
+    runningTrial, csType = serialPort.readline().split()
+    while serialPort.readline() != DATA_BEGIN_MARKER:
         continue
-
-def writeTrialData(save_direc):
-    runningTrial = int(tty.readline())
-    dataBegin = tty.readline()
+    
     while True:
-        line = tty.readline()
-        if line is "]":
+        line = serialPort.readline()
+        if line is DATA_END_MARKER:
             break
         else:
             timeStamp, blinkValue = line.split()
             trialsDict[runningTrial].append((timeStamp, blinkValue))
 
-with open(os.path.join(save_direc, "Trial" + str(runningTrial) + ".csv"), 'w') as f:
-    data = [timeStamp + "," + blinkValue for (timeStamp, blinkValue) in trialsDict[runningTrial]]
-    f.write("\n".join(trialsDict[runningTrial]))
+with open(os.path.join(save_direc, "Trial" + runningTrial + ".csv"), 'w') as f:
+    f.writeline("# 3rd row values are trial index, cs type.")
+        f.writeline("# Actual trial data starts from row 4")
+        f.writeline(runningTrial + "," + csType)
+        data = [ timeStamp + "," + blinkValue
+                for (timeStamp, blinkValue) in trialsDict[runningTrial]]
+        f.write("\n".join(trialsDict[runningTrial]))
 
-def writeProfilingData(save_direc):
-    dataBegin = tty.readline()
+def writeProfilingData(serialPort, saveDirec, profilingDict = {}):
+    while serialPort.readline() != DATA_BEGIN_MARKER:
+        continue
     while True:
-        line = tty.readline()
-        if line is "]":
+        line = serialPort.readline()
+        if line is DATA_END_MARKER:
             break
         else:
             bin, counts = line.split()
-            pofilingData[bin] = counts
-            with open(os.path.join(save_direc, "profiling_data.csv"), 'w') as f:
-                data = profilingData.items()
-                data = [bin + "," + count for (bin, count) in data]
-                f.write("\n".join(data))
+            pofilingDict[bin] = counts
 
-def writeData(save_direc):
-    line = tty.readline()
-        while line.startswith("@"):
-            writeTrialData(save_direc)
-    while line.startswith("$"):
-        writeProfilingData(save_direc)
+with open(os.path.join(save_direc, "profilingData.csv"), 'w') as f:
+    data = profilingDict.items()
+        data = [bin + "," + count for (bin, count) in data]
+        f.write("\n".join(data))
 
-while 1:
-    while ()
-    arduinoData = tty.readline()
+def writeData(serialPort, saveDirec, trialsDict, profilingDict):
+    operationMap = { TRIAL_DATA_MARKER : lambda port, direc: writeTrialData(port, direc, trialsDict)
+        , PROFILING_DATA_MARKER : lambda port, direc: writeProfilingData(port, direc, profilingDict)
+        }
+    while serialPort.readline() != START_OF_SESSION_MARKER:
+        continue
     
-    if ";" == arduinoData:
-        quit()
-    elif arduinoData.startswith("#"):
-        pass
-    elif :
-        writeData(save_direc)
+    while True:
+        arduinoData = serialPort.readline()
+        if END_OF_SESSION_MARKER == arduinoData:
+            return
+        elif arduinoData.startswith(COMMENT_MARKER):
+            print (arduinoData)
+            operationMap[arduinoData](serialPort, saveDirec)
+        else:
+            print(arduinoData)
+
+def main():
+    serialPort = getSerialPort()
+    serialPort.write(sys.argv[1])
+    serialPort.write(sys.argv[2])
+    serialPort.write(sys.argv[3])
+    timeStamp = datetime.datetime.now().isoformat()
+    if len(sys.argv) <= 1:
+        outfile = os.path.join( timeStamp
+                               , "raw_data")
     else:
-        pass
+        outfile = "MouseK" + sys.argv[1] + "_SessionType" + sys.argv[2] + "_Session" + sys.argv[3]
+
+    saveDirec = os.path.join("/Users/ananth/Desktop/Work/Data/", outfile)
+
+if os.path.exists(saveDirec):
+    saveDirec = os.path.join(saveDirec, timeStamp)
+    
+    os.mkdir(saveDirec) #does not mkdir recursively
+    
+    trialsDict = defaultdict(list)
+    profilingDict = {}
+    print ("[INFO] Saving data to " + saveDirec)
+    writeData(serialPort, saveDirec, trialsDict, profilingDict)
+    print("[INFO] The session is complete and will now terminate")
+    serialPort.close()
+
+if __name__ == "__main__":
+    main()

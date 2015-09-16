@@ -53,7 +53,7 @@ void detectBlinks() //(unsigned long currentTime)
     
     if ( currentPhaseTime - lastTime > sampleInterval ) {
 
-        int temp = analogRead(blink_ai);
+        //int temp = analogRead(blink_ai);
         blink = analogRead(blink_ai);
         Serial.print(blink);
         //Serial.print(millis());

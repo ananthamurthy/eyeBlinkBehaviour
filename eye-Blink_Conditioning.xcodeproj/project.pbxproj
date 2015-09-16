@@ -408,7 +408,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		18258ACA1B70B0720032BF4C /* read_save_arduino_data.py */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.python; path = read_save_arduino_data.py; sourceTree = "<group>"; };
 		18AD53C51B9D8AC700F7A271 /* Profiling.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Profiling.h; sourceTree = "<group>"; };
 		18AD53C61B9DA85C00F7A271 /* eyeBlinkDataSave.py */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.python; path = eyeBlinkDataSave.py; sourceTree = "<group>"; };
 		18C9F4C71B70A9D90055328B /* Index */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Index; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -964,7 +963,6 @@
 				18F3EA761BA544AC00F7C101 /* ChangePhase.h */,
 				18F3EA711BA542F000F7C101 /* Initialize.h */,
 				18C9F55F1B70AB690055328B /* Solenoid.h */,
-				18258ACA1B70B0720032BF4C /* read_save_arduino_data.py */,
 				18AD53C61B9DA85C00F7A271 /* eyeBlinkDataSave.py */,
 				18F3EA721BA5431500F7C101 /* Initialize.cpp */,
 				18F3EA771BA544F000F7C101 /* ChangePhase.cpp */,

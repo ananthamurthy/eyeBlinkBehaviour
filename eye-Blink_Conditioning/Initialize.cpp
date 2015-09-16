@@ -60,17 +60,17 @@ void initialize()
     Serial.print("#Mouse Name: ");
     while(!Serial.available());
     mouseName = "MouseK" + String(Serial.readString().toInt());
-    Serial.println(mouseName);
+    Serial.println("#" + mouseName);
     
     Serial.print("#Session Type Index: ");
     while(!Serial.available());
     sessionType_ind = Serial.readString().toInt();
-    Serial.println(sessionType_ind);
+    Serial.println("#" + sessionType_ind);
     
     Serial.print("#Session: ");
     while(!Serial.available());
     session = Serial.readString().toInt();
-    Serial.println(session);
+    Serial.println("#" + session);
     
     Serial.println("#Press the SELECT buttbon!");
     
@@ -93,10 +93,11 @@ void initialize()
     lcd.print(sessionType[sessionType_ind]);
     lcd.setCursor(6, 1);
     lcd.print("          ");
-    Serial.println("@");
+    Serial.println(SESSION_BEGIN_MARKER);
+    Serial.println(TRIAL_DATA_MARKER);
     //Serial.print(trialNum);
     Serial.println("1 1"); // Just to not confuse data saving
-    Serial.println("[");
+    Serial.println(DATA_BEGIN_MARKER);
     
     // Get traceTime based on the Session Type
     if (sessionType_ind == 2)

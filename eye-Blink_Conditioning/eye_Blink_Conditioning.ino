@@ -179,7 +179,7 @@ const int tonePin = 3; //changed this on 20150807
 boolean profilingDataDump = 0; // For dumping profiling data
 
 //Protocol Information
-const int totalTrials = 10;
+const int totalTrials = 2;
 const int preTime = 1000; //in ms
 const int CSTime = 1200; //in ms
 const int puffTime = 1000; //in ms
@@ -407,15 +407,13 @@ void loop()
                         blinkCount = 0;
                         if (trialNum > totalTrials)
                         {
-                            Serial.println("@");
+                            Serial.println(DATA_END_MARKER);
                             changePhase( 8, END ); // END of session
                             break;
                         }
                         else
                         {
-                            Serial.println("]");
-                            Serial.println("@");
-                            
+                            Serial.println(DATA_END_MARKER);
                             if (random(10) >= 5) //change made on 20150826
                             {
                                 CS_plus = 1; //play CS+
@@ -438,16 +436,16 @@ void loop()
                     
                 case 8: // End of session
                     //Serial.println("Case8");
-                    if (profilingDataDump == 0)
+                if (profilingDataDump == 1)
                 {
-                    Serial.println("$");
-                    Serial.println("[");
+                    Serial.println(PROFILING_DATA_MARKER);
+                    Serial.println(DATA_BEGIN_MARKER);
                     dump_profiling_data();
-                    Serial.println("]");
-                    profilingDataDump = 1;
-                    
-                    Serial.println(";"); //tells data saving to close everything.
+                    Serial.println(DATA_END_MARKER);
+                    profilingDataDump = 0;
                 }
+                Serial.println(SESSION_END_MARKER); //tells data saving to close everything
+                    while(1); //has the microcontroller on indefinite hold
                     break;
                     
                 case 9:  // Pause
@@ -460,7 +458,6 @@ void loop()
                     break; // Might be redundant
                 }
                     break; // goes to the specified phase and trial number
-                    
             } // ends "switch (condition)"
             
         } // Ends actual Trial 1 to Total Trials
