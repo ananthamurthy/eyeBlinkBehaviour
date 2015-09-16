@@ -44,6 +44,7 @@ AVR_TOOLS_DIR     = /usr
 AVRDDUDE          = /usr/local/bin/avrdude
 ### or on Linux: (remove the one you don't want)
 AVRDDUDE          = /usr/bin/avrdude
+AVRDUDE_CONF     = /etc/avrdude.conf
 
 ### CFLAGS_STD
 ### Set the C standard to be used during compilation. Documentation (https://github.com/WeAreLeka/Arduino-Makefile/blob/std-flags/arduino-mk-vars.md#cflags_std)
@@ -60,6 +61,7 @@ CXXFLAGS         += -pedantic -Wall -Wextra
 ### MONITOR_PORT
 ### The port your board is connected to. Using an '*' tries all the ports and finds the right one.
 MONITOR_PORT      = /dev/tty.usbmodem*
+MONITOR_PORT = /dev/tty*
 
 ### CURRENT_DIR
 ### Do not touch - used for binaries path
