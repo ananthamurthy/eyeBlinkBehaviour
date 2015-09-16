@@ -47,8 +47,8 @@ def writeTrialData(serialPort, saveDirec, trialsDict = {}):
             timeStamp, blinkValue = line.split()
             trialsDict[runningTrial].append((timeStamp, blinkValue))
 
-with open(os.path.join(save_direc, "Trial" + runningTrial + ".csv"), 'w') as f:
-    f.writeline("# 3rd row values are trial index, cs type.")
+    with open(os.path.join(save_direc, "Trial" + runningTrial + ".csv"), 'w') as f:
+        f.writeline("# 3rd row values are trial index, cs type.")
         f.writeline("# Actual trial data starts from row 4")
         f.writeline(runningTrial + "," + csType)
         data = [ timeStamp + "," + blinkValue
@@ -66,8 +66,8 @@ def writeProfilingData(serialPort, saveDirec, profilingDict = {}):
             bin, counts = line.split()
             pofilingDict[bin] = counts
 
-with open(os.path.join(save_direc, "profilingData.csv"), 'w') as f:
-    data = profilingDict.items()
+    with open(os.path.join(save_direc, "profilingData.csv"), 'w') as f:
+        data = profilingDict.items()
         data = [bin + "," + count for (bin, count) in data]
         f.write("\n".join(data))
 
