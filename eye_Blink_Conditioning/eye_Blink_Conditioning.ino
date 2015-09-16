@@ -79,6 +79,7 @@
 #include "LCDRelated.h"
 #include "DetectBlinks.h"
 #include "Solenoid.h"
+#include <LiquidCrystal.h>
 
 //Globals:
 int blink = 0;
