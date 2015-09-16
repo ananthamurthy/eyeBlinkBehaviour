@@ -89,7 +89,7 @@ def writeData(serialPort, saveDirec, trialsDict, profilingDict):
             print(arduinoData)
 
 def main():
-    serialPort = getSerialPort()
+    serialPort = getSerialPort( '/dev/ttyACM0' )
     serialPort.write(sys.argv[1])
     serialPort.write(sys.argv[2])
     serialPort.write(sys.argv[3])
@@ -102,17 +102,17 @@ def main():
 
     saveDirec = os.path.join("/Users/ananth/Desktop/Work/Data/", outfile)
 
-if os.path.exists(saveDirec):
-    saveDirec = os.path.join(saveDirec, timeStamp)
-    
-    os.mkdir(saveDirec) #does not mkdir recursively
-    
-    trialsDict = defaultdict(list)
-    profilingDict = {}
-    print ("[INFO] Saving data to " + saveDirec)
-    writeData(serialPort, saveDirec, trialsDict, profilingDict)
-    print("[INFO] The session is complete and will now terminate")
-    serialPort.close()
+    if os.path.exists(saveDirec):
+        saveDirec = os.path.join(saveDirec, timeStamp)
+        
+        os.mkdir(saveDirec) #does not mkdir recursively
+        
+        trialsDict = defaultdict(list)
+        profilingDict = {}
+        print ("[INFO] Saving data to " + saveDirec)
+        writeData(serialPort, saveDirec, trialsDict, profilingDict)
+        print("[INFO] The session is complete and will now terminate")
+        serialPort.close()
 
 if __name__ == "__main__":
     main()
