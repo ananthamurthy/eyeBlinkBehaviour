@@ -414,6 +414,7 @@ void loop()
                         else
                         {
                             Serial.println(DATA_END_MARKER);
+                            Serial.println(TRIAL_DATA_MARKER);
                             if (random(10) >= 5) //change made on 20150826
                             {
                                 CS_plus = 1; //play CS+
@@ -426,6 +427,7 @@ void loop()
                                 Serial.print(trialNum);
                                 Serial.println(" 0");
                             }
+                            Serial.println(DATA_BEGIN_MARKER);
                             printStatus(START_PRE, trialNum);
                             changePhase( 0, START_PRE ); // Next cycle
                             startTrialTime = millis();
