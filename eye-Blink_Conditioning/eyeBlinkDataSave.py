@@ -111,9 +111,9 @@ def getLine(serialPort):
     return line.strip()
 
 def writeData(serialPort, saveDirec, trialsDict, profilingDict):
-    operationMap = { TRIAL_DATA_MARKER : lambda port, direc: writeTrialData(port, direc, trialsDict)
-        , PROFILING_DATA_MARKER : lambda port, direc: writeProfilingData(port, direc, profilingDict)
-        }
+#    operationMap = { TRIAL_DATA_MARKER : lambda port, direc: writeTrialData(port, direc, trialsDict)
+#        , PROFILING_DATA_MARKER : lambda port, direc: writeProfilingData(port, direc, profilingDict)
+#        }
     #Wait indefinitely for the SESSION_BEGIN_MARKER
     while SESSION_BEGIN_MARKER not in getLine(serialPort):
         continue
