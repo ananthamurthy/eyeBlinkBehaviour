@@ -5,10 +5,10 @@
 #  ----------------------------------
 #  Developed with embedXcode
 #
-#  Project 	eye-Blink_Conditioning
-#  Created by 	Kambadur Ananthamurthy on 04/08/15
-#  Copyright 	2015 Kambadur Ananthamurthy
-#  License	<#license#>
+#  Project  eye-Blink_Conditioning
+#  Created by   Kambadur Ananthamurthy on 04/08/15
+#  Copyright    2015 Kambadur Ananthamurthy
+#  License  <#license#>
 #
 
 from __future__ import print_function
@@ -38,7 +38,7 @@ def writeTrialData(serialPort, saveDirec, trialsDict = {}):
     runningTrial, csType = serialPort.readline().split()
     while serialPort.readline() != DATA_BEGIN_MARKER:
         continue
-    
+
     while True:
         line = serialPort.readline()
         if line is DATA_END_MARKER:
@@ -60,6 +60,7 @@ def writeProfilingData(serialPort, saveDirec, profilingDict = {}):
         continue
     while True:
         line = serialPort.readline()
+        print("Line is: %s" % line)
         if line is DATA_END_MARKER:
             break
         else:
@@ -77,7 +78,7 @@ def writeData(serialPort, saveDirec, trialsDict, profilingDict):
         }
     while serialPort.readline() != START_OF_SESSION_MARKER:
         continue
-    
+
     while True:
         arduinoData = serialPort.readline()
         if END_OF_SESSION_MARKER == arduinoData:
@@ -100,19 +101,19 @@ def main():
     else:
         outfile = "MouseK" + sys.argv[1] + "_SessionType" + sys.argv[2] + "_Session" + sys.argv[3]
 
-    saveDirec = os.path.join("/Users/ananth/Desktop/Work/Data/", outfile)
+    saveDirec = os.path.join("/tmp", outfile)
+    if not os.path.exists(saveDirec):
+        os.makedirs(saveDirec)
+    saveDirec = os.path.join(saveDirec, timeStamp)
 
-    if os.path.exists(saveDirec):
-        saveDirec = os.path.join(saveDirec, timeStamp)
-        
-        os.mkdir(saveDirec) #does not mkdir recursively
-        
-        trialsDict = defaultdict(list)
-        profilingDict = {}
-        print ("[INFO] Saving data to " + saveDirec)
-        writeData(serialPort, saveDirec, trialsDict, profilingDict)
-        print("[INFO] The session is complete and will now terminate")
-        serialPort.close()
+    os.mkdir(saveDirec) #does not mkdir recursively
+
+    trialsDict = defaultdict(list)
+    profilingDict = {}
+    print ("[INFO] Saving data to " + saveDirec)
+    writeData(serialPort, saveDirec, trialsDict, profilingDict)
+    print("[INFO] The session is complete and will now terminate")
+    serialPort.close()
 
 if __name__ == "__main__":
     main()
