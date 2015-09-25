@@ -102,8 +102,9 @@ def writeData(serialPort, saveDirec, trialsDict, profilingDict):
         time.sleep(0.1)
         arduinoData = serialPort.readline()
 
-    while serialPort.readline() != START_OF_SESSION_MARKER:
-        continue
+    # FIXME: Don't know what it does.
+    #while serialPort.readline() != START_OF_SESSION_MARKER:
+    #    continue
 
     while True:
         arduinoData = serialPort.readline()
