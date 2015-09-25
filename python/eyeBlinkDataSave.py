@@ -36,12 +36,13 @@ def getSerialPort(portPath = None, baudRate = 9600, timeout = 1):
     else:
         ports = [ portPath ]
 
-    serialPort = serial.Serial(ports[-1], baudRate, timeout = 1)
-    ports.pop()
-
+    serialPort = None
     while not serialPort:
         print("[INFO] Trying to connect to %s" % ports[-1])
-        serialPort = serial.Serial(ports.pop(), baudRate, timeout =0.5)
+        try:
+            serialPort = serial.Serial(ports.pop(), baudRate, timeout =0.5)
+        except:
+            continue
     
     print("[INFO] Connected to %s" % serialPort)
     return serialPort
@@ -116,7 +117,7 @@ def writeData(serialPort, saveDirec, trialsDict, profilingDict):
             print("B %s" % arduinoData)
 
 def main():
-    serialPort = getSerialPort( '/dev/ttyACM0' )
+    serialPort = getSerialPort( )
     serialPort.write(sys.argv[1])
     serialPort.write(sys.argv[2])
     serialPort.write(sys.argv[3])
