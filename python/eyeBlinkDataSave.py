@@ -19,6 +19,7 @@ import time
 import serial
 from collections import defaultdict
 import datetime
+import warnings
 
 DATA_BEGIN_MARKER = "["
 DATA_END_MARKER = "]"
@@ -28,9 +29,20 @@ PROFILING_DATA_MARKER = "$"
 START_OF_SESSION_MARKER = "<"
 END_OF_SESSION_MARKER = ">"
 
-def getSerialPort(portPath = "/dev/tty.usbmodem1411", baudRate = 9600, timeout = 1):
-    serialPort = serial.Serial(portPath, baudRate, timeout = 1)
-    time.sleep(2)
+def getSerialPort(portPath = None, baudRate = 9600, timeout = 1):
+    ports = [ ]
+    if not portPath:
+        ports = [ "/dev/ttyACM%s" % x for x in range(5) ]
+    else:
+        ports = [ portPath ]
+
+    serialPort = serial.Serial(ports[-1], baudRate, timeout = 1)
+    ports.pop()
+
+    while not serialPort:
+        print("[INFO] Trying to connect to %s" % ports[-1])
+        serialPort = serial.Serial(ports.pop(), baudRate, timeout =0.5)
+    
     print("[INFO] Connected to %s" % serialPort)
     return serialPort
 
@@ -47,13 +59,18 @@ def writeTrialData(serialPort, saveDirec, trialsDict = {}):
             timeStamp, blinkValue = line.split()
             trialsDict[runningTrial].append((timeStamp, blinkValue))
 
-    with open(os.path.join(save_direc, "Trial" + runningTrial + ".csv"), 'w') as f:
+    outfile = os.path.join(saveDirec, "Trial" + runningTrial + ".csv")
+    print("[INFO] Writing to %s" % outfile)
+    with open(outfile, 'w') as f:
         f.writeline("# 3rd row values are trial index, cs type.")
         f.writeline("# Actual trial data starts from row 4")
-        f.writeline(runningTrial + "," + csType)
+        line = runningTrial + "," + csType
+        f.writeline(line)
         data = [ timeStamp + "," + blinkValue
                 for (timeStamp, blinkValue) in trialsDict[runningTrial]]
         f.write("\n".join(trialsDict[runningTrial]))
+        print("++ Wrote %s, %s" % (line, data))
+
 
 def writeProfilingData(serialPort, saveDirec, profilingDict = {}):
     while serialPort.readline() != DATA_BEGIN_MARKER:
@@ -65,9 +82,9 @@ def writeProfilingData(serialPort, saveDirec, profilingDict = {}):
             break
         else:
             bin, counts = line.split()
-            pofilingDict[bin] = counts
+            profilingDict[bin] = counts
 
-    with open(os.path.join(save_direc, "profilingData.csv"), 'w') as f:
+    with open(os.path.join(saveDirec, "profilingData.csv"), 'w') as f:
         data = profilingDict.items()
         data = [bin + "," + count for (bin, count) in data]
         f.write("\n".join(data))
@@ -76,18 +93,27 @@ def writeData(serialPort, saveDirec, trialsDict, profilingDict):
     operationMap = { TRIAL_DATA_MARKER : lambda port, direc: writeTrialData(port, direc, trialsDict)
         , PROFILING_DATA_MARKER : lambda port, direc: writeProfilingData(port, direc, profilingDict)
         }
+    print("A")
+    print("AA: %s" % serialPort.readline())
+    arduinoData = serialPort.readline()
+    while not arduinoData.strip():
+        print("[WARN] Nothing is read from serial port. Waiting for data ... ")
+        time.sleep(0.1)
+        arduinoData = serialPort.readline()
+
     while serialPort.readline() != START_OF_SESSION_MARKER:
         continue
 
     while True:
         arduinoData = serialPort.readline()
+        print("C: %s" % arduinoData)
         if END_OF_SESSION_MARKER == arduinoData:
             return
         elif arduinoData.startswith(COMMENT_MARKER):
-            print (arduinoData)
+            print("[DEBUG] Inside writeData: %s" % arduinoData)
             operationMap[arduinoData](serialPort, saveDirec)
         else:
-            print(arduinoData)
+            print("B %s" % arduinoData)
 
 def main():
     serialPort = getSerialPort( '/dev/ttyACM0' )
