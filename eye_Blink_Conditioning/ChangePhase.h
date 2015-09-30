@@ -1,19 +1,22 @@
 //
-// DetectBlinks.cpp 
-// C++ code
-// ----------------------------------
-// Developed with embedXcode 
-// http://embedXcode.weebly.com
+// File			ChangePhase.h
+// Header
 //
-// Project 		eye-Blink_Conditioning
-//
-// Created by 	Kambadur Ananthamurthy, 04/08/15 1:45 pm
+// Details		<#details#>
+//	
+// Project		 eye-Blink_Conditioning
+// Developed with [embedXcode](http://embedXcode.weebly.com)
+// 
+// Author		Kambadur Ananthamurthy
 // 				Kambadur Ananthamurthy
 //
+// Date			13/09/15 11:14 am
+// Version		<#version#>
+// 
 // Copyright	© Kambadur Ananthamurthy, 2015
-// Licence   	<#license#>
+// Licence    <#license#>
 //
-// See 			DetectBlinks.h and ReadMe.txt for references
+// See			ReadMe.txt for references
 //
 
 
@@ -44,23 +47,17 @@
 #   error Platform not defined
 #endif // end IDE
 
-// Code
+#ifndef ChangePhase_h
+#define ChangePhase_h
+
 #include "Globals.h"
-#include "DetectBlinks.h"
 
-void detectBlinks() //(unsigned long currentTime)
-{
-    
-    if ( currentPhaseTime - lastTime > sampleInterval ) {
+/**
+ @description Set the new value of "condition" to switch to the next trial phase, update the details on the LCD, and reset the counter for the phase time
+ @params cond The new value that is to be assigned to "condition"
+ @params status The trial phase information (used to update the LCD)
+ */
 
-        //int temp = analogRead(blink_ai);
-        blink = analogRead(blink_ai);
-        Serial.print(blink);
-        //Serial.print(millis());
-        //Serial.print(" ");
-        Serial.print(" ");
-        //    blinkCount++;
-        Serial.println( currentPhaseTime % 10000 );
-        lastTime += sampleInterval;
-    }
-}
+void changePhase(int cond, int status);
+
+#endif

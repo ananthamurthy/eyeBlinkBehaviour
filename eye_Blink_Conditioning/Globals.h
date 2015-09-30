@@ -50,10 +50,22 @@
 #ifndef Globals_h
 #define Globals_h
 
+
+#define DATA_BEGIN_MARKER "["
+#define DATA_END_MARKER "]"
+#define COMMENT_MARKER "#"
+#define TRIAL_DATA_MARKER "@"
+#define PROFILING_DATA_MARKER "$"
+#define SESSION_BEGIN_MARKER "<"
+#define SESSION_END_MARKER ">"
+
 extern int blink;
 extern const int blink_ai;    // pin that reads the blinks
 extern int blinkCount;
 extern const int puff_do; // pin that drives the eye-puff solenoid
 extern unsigned long startT;
+extern unsigned long currentPhaseTime;
+extern unsigned long lastTime;
+extern unsigned short sampleInterval;
 
 #endif

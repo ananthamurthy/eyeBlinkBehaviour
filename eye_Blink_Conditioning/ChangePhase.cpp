@@ -1,5 +1,5 @@
 //
-// DetectBlinks.cpp 
+// ChangePhase.cpp 
 // C++ code
 // ----------------------------------
 // Developed with embedXcode 
@@ -7,13 +7,13 @@
 //
 // Project 		eye-Blink_Conditioning
 //
-// Created by 	Kambadur Ananthamurthy, 04/08/15 1:45 pm
+// Created by 	Kambadur Ananthamurthy, 13/09/15 11:15 am
 // 				Kambadur Ananthamurthy
 //
 // Copyright	© Kambadur Ananthamurthy, 2015
 // Licence   	<#license#>
 //
-// See 			DetectBlinks.h and ReadMe.txt for references
+// See 			ChangePhase.h and ReadMe.txt for references
 //
 
 
@@ -46,21 +46,17 @@
 
 // Code
 #include "Globals.h"
-#include "DetectBlinks.h"
+#include "LCDRelated.h"
+#include "ChangePhase.h"
 
-void detectBlinks() //(unsigned long currentTime)
+extern int condition;
+extern int trialNum;
+extern unsigned long startPhaseTime;
+
+void changePhase( int cond, int status )
 {
-    
-    if ( currentPhaseTime - lastTime > sampleInterval ) {
-
-        //int temp = analogRead(blink_ai);
-        blink = analogRead(blink_ai);
-        Serial.print(blink);
-        //Serial.print(millis());
-        //Serial.print(" ");
-        Serial.print(" ");
-        //    blinkCount++;
-        Serial.println( currentPhaseTime % 10000 );
-        lastTime += sampleInterval;
-    }
+    condition = cond;
+    printStatus(status, trialNum);
+    lastTime = 0;
+    startPhaseTime = millis();
 }
