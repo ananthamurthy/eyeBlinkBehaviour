@@ -74,9 +74,9 @@ void initialize()
     
     Serial.println("#Press the SELECT buttbon!");
     
-    // From here, the Arduino will start running the behaviour
     while(read_lcd_button() != btnSELECT);
     
+    // From here, the Arduino will start running the behaviour
     startT = millis();
     start = 1;
     lcd.setCursor( 0, 1 );

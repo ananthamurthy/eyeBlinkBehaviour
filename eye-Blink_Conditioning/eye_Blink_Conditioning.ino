@@ -179,17 +179,17 @@ const int tonePin = 3; //changed this on 20150807
 boolean profilingDataDump = 0; // For dumping profiling data
 
 //Protocol Information
-const int totalTrials = 2;
-const int preTime = 1000; //in ms
-const int CSTime = 1200; //in ms
-const int puffTime = 1000; //in ms
-const int postTime = 1000; //in ms
-const int minITI = 1000; //in ms
-const int randITI = 1000; //in ms
+const int totalTrials = 100;
+const int preTime = 5000; //in ms
+const int CSTime = 350; //in ms
+const int puffTime = 100; //in ms
+const int postTime = 5000; //in ms
+const int minITI = 10000; //in ms
+const int randITI = 5000; //in ms
 
 // CS+/- frequencies
-const int CS_PLUS_ToneFreq = 9500;
-const int CS_MINUS_ToneFreq = 4000; //change made on 20150826
+const int CS_PLUS_ToneFreq = 5000;
+const int CS_MINUS_ToneFreq = 1000; //change made on 20150826
 
 // Miscellaneous Initializations
 int condition = 0;
@@ -250,6 +250,9 @@ void setup()
     
     lcd.setCursor(4, 1);
     lcd.print("PRESS SELECT");
+    
+    //For randomizations
+    randomSeed(startT); // uses the exact time of key press (expected to be different every time)
 }
 
 void loop()
@@ -272,7 +275,7 @@ void loop()
         else
         {
             currentPhaseTime = millis() - startPhaseTime; // has to be calculated for every loop
-            unsigned long currentTime = millis() - startTrialTime; // has to be calculated for every loop
+            unsigned long currentTime = millis() - startTrialTime; // has to be calculated for every loop; not being used anywhere
             
             // Pause //
             int lcd_key = read_lcd_button();
