@@ -1,3 +1,5 @@
+%Please work with the data from all sessions of an animal, before proceeding to the next animal
+
 clear all
 close all
 
@@ -22,6 +24,8 @@ offset = 0.6; % in the range of 0.0 - 1.0
 gain = 4;
 
 phaseOffsetFactor = 2; %in samples
+csPlus = [];
+csMinus = [];
 
 %Operations (0 = Don't Perform, 1 = Perform)
 getGeneralInformation = 1;
@@ -322,6 +326,11 @@ while 1
         csvwrite([saveDirec dataset '_csPlus.csv'], blinkData_csPlus);
         csvwrite([saveDirec dataset '_csMinus.csv'], blinkData_csMinus);
         
+        csPlus = [csPlus all_csPlusTrials_score];
+        csvwrite([saveDirec mouse '_csPlus.csv'], csPlus);
+        csMinus = [csMinus all_csPlusTrials_score];
+        csvwrite([saveDirec mouse '_csPlus.csv'], csMinus);
+					   
         %as matlab files
         %filtered data
 %         save([saveDirec dataset '_butterFiltered'], blinkData_butterFiltered);
@@ -333,5 +342,3 @@ while 1
 %         save([saveDirec dataset '_csMinus'], blinkData_csMinus);
     end
 end
-K1_csPlus = [K1_csPlus all_csPlusTrials_score];
-csvwrite([saveDirec 'K1_csPlus.csv'], K1_csPlus);
