@@ -14,6 +14,7 @@
 		18C9F5611B70ABF80055328B /* LCDRelated.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 18C9F5601B70ABF80055328B /* LCDRelated.cpp */; };
 		18C9F5631B70AC2B0055328B /* DetectBlinks.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 18C9F5621B70AC2B0055328B /* DetectBlinks.cpp */; };
 		18C9F5651B70AC850055328B /* Solenoid.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 18C9F5641B70AC850055328B /* Solenoid.cpp */; };
+		18F0A1A21BD1169D00A912F5 /* ananth_TraceEBAnalysis_20151016.m in Sources */ = {isa = PBXBuildFile; fileRef = 18F0A1A11BD1169D00A912F5 /* ananth_TraceEBAnalysis_20151016.m */; settings = {ASSET_TAGS = (); }; };
 		18F3EA731BA5431500F7C101 /* Initialize.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 18F3EA721BA5431500F7C101 /* Initialize.cpp */; };
 		18F3EA781BA544F000F7C101 /* ChangePhase.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 18F3EA771BA544F000F7C101 /* ChangePhase.cpp */; };
 		AA2A150804133639AA000006 /* abi.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAAA150804133639AA000006 /* abi.cpp */; };
@@ -535,6 +536,7 @@
 		18C9F5601B70ABF80055328B /* LCDRelated.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LCDRelated.cpp; sourceTree = "<group>"; };
 		18C9F5621B70AC2B0055328B /* DetectBlinks.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DetectBlinks.cpp; sourceTree = "<group>"; };
 		18C9F5641B70AC850055328B /* Solenoid.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Solenoid.cpp; sourceTree = "<group>"; };
+		18F0A1A11BD1169D00A912F5 /* ananth_TraceEBAnalysis_20151016.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ananth_TraceEBAnalysis_20151016.m; sourceTree = "<group>"; };
 		18F3EA711BA542F000F7C101 /* Initialize.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Initialize.h; sourceTree = "<group>"; };
 		18F3EA721BA5431500F7C101 /* Initialize.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Initialize.cpp; sourceTree = "<group>"; };
 		18F3EA761BA544AC00F7C101 /* ChangePhase.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ChangePhase.h; sourceTree = "<group>"; };
@@ -970,6 +972,7 @@
 				18C9F5621B70AC2B0055328B /* DetectBlinks.cpp */,
 				18C9F5641B70AC850055328B /* Solenoid.cpp */,
 				18C9F5471B70A9D90055328B /* eye_Blink_Conditioning.ino */,
+				18F0A1A11BD1169D00A912F5 /* ananth_TraceEBAnalysis_20151016.m */,
 				18C9F4D21B70A9D90055328B /* Sketchbook */,
 				AAAA150804133639AA000000 /* Resources */,
 				18C9F4D41B70A9D90055328B /* Configurations */,
@@ -2629,6 +2632,7 @@
 				AA2A150804133639AA0000CF /* GSM3SoftSerial.h in Sources */,
 				AA2A150804133639AA0000D0 /* GSM3VoiceCallService.cpp in Sources */,
 				AA2A150804133639AA0000D1 /* GSM3VoiceCallService.h in Sources */,
+				18F0A1A21BD1169D00A912F5 /* ananth_TraceEBAnalysis_20151016.m in Sources */,
 				AA2A150804133639AA0000D4 /* LiquidCrystal.cpp in Sources */,
 				AA2A150804133639AA0000D5 /* LiquidCrystal.h in Sources */,
 				AA2A150804133639AA0000D8 /* Arduino_LCD.cpp in Sources */,
