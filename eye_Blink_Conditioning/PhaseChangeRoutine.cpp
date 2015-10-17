@@ -1,5 +1,5 @@
 //
-// DetectBlinks.cpp 
+// PhaseChangeRoutine.cpp 
 // C++ code
 // ----------------------------------
 // Developed with embedXcode 
@@ -7,13 +7,13 @@
 //
 // Project 		eye-Blink_Conditioning
 //
-// Created by 	Kambadur Ananthamurthy, 04/08/15 1:45 pm
+// Created by 	Kambadur Ananthamurthy, 11/09/15 3:11 pm
 // 				Kambadur Ananthamurthy
 //
 // Copyright	© Kambadur Ananthamurthy, 2015
 // Licence   	<#license#>
 //
-// See 			DetectBlinks.h and ReadMe.txt for references
+// See 			PhaseChangeRoutine.h and ReadMe.txt for references
 //
 
 
@@ -45,22 +45,3 @@
 #endif // end IDE
 
 // Code
-#include "Globals.h"
-#include "DetectBlinks.h"
-
-void detectBlinks() //(unsigned long currentTime)
-{
-    
-    if ( currentPhaseTime - lastTime > sampleInterval ) {
-
-        //int temp = analogRead(blink_ai);
-        blink = analogRead(blink_ai);
-        Serial.print(blink);
-        //Serial.print(millis());
-        //Serial.print(" ");
-        Serial.print(" ");
-        //    blinkCount++;
-        Serial.println( currentPhaseTime % 10000 );
-        lastTime += sampleInterval;
-    }
-}

@@ -1,19 +1,22 @@
 //
-// DetectBlinks.cpp 
-// C++ code
-// ----------------------------------
-// Developed with embedXcode 
-// http://embedXcode.weebly.com
+// File			Initialize.h
+// Header
 //
-// Project 		eye-Blink_Conditioning
-//
-// Created by 	Kambadur Ananthamurthy, 04/08/15 1:45 pm
+// Details		<#details#>
+//	
+// Project		 eye-Blink_Conditioning
+// Developed with [embedXcode](http://embedXcode.weebly.com)
+// 
+// Author		Kambadur Ananthamurthy
 // 				Kambadur Ananthamurthy
 //
+// Date			13/09/15 11:06 am
+// Version		<#version#>
+// 
 // Copyright	© Kambadur Ananthamurthy, 2015
-// Licence   	<#license#>
+// Licence    <#license#>
 //
-// See 			DetectBlinks.h and ReadMe.txt for references
+// See			ReadMe.txt for references
 //
 
 
@@ -44,23 +47,15 @@
 #   error Platform not defined
 #endif // end IDE
 
-// Code
+#ifndef Initialize_h
+#define Initialize_h
+
 #include "Globals.h"
-#include "DetectBlinks.h"
 
-void detectBlinks() //(unsigned long currentTime)
-{
-    
-    if ( currentPhaseTime - lastTime > sampleInterval ) {
+/**
+ @description Read details passed as inputs over the serial communication and use this to set protocol parameters, LCD update, etc.
+ */
 
-        //int temp = analogRead(blink_ai);
-        blink = analogRead(blink_ai);
-        Serial.print(blink);
-        //Serial.print(millis());
-        //Serial.print(" ");
-        Serial.print(" ");
-        //    blinkCount++;
-        Serial.println( currentPhaseTime % 10000 );
-        lastTime += sampleInterval;
-    }
-}
+void initialize();
+
+#endif

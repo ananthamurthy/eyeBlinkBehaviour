@@ -70,7 +70,14 @@ void printStatus( int value , int trialNum)
     lcd.setCursor( 14, 0 );
     lcd.print( time_min );
     lcd.setCursor( 5, 1 );
-    lcd.print( trialNum );
+    if (value == 8) //Hack to have the LCD Update for the last time, with the right trialNum
+    {
+        lcd.print( trialNum-1 );
+    }
+    else
+    {
+        lcd.print( trialNum );
+    }
     lcd.setCursor( 9, 1 );
     lcd.print( printStr[value] );
     /*
