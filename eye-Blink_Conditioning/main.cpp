@@ -2406,7 +2406,7 @@ int main(void)
 #endif                                                                          // end IDE
 
 // Sketch
-#include "eye_Blink_Conditioning.ino"
+#include "eye-Blink_Conditioning.ino"
 
 
 #endif                                                                          // end embedXcode

@@ -2962,12 +2962,14 @@
 		18C9F54E1B70A9D90055328B /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				__XCODE__ = YES;
 			};
 			name = Debug;
 		};
 		18C9F54F1B70A9D90055328B /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				__XCODE__ = YES;
 			};
 			name = Release;
 		};
