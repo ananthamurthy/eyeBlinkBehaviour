@@ -15,4 +15,4 @@ Builds/main.cpp.o: main.cpp \
  Profiling.h Globals.h Initialize.h LCDRelated.h \
  /Applications/Arduino.app/Contents/Java/libraries/LiquidCrystal/src/LiquidCrystal.h \
  /Applications/Arduino.app/Contents/Java/hardware/arduino/avr/cores/arduino/Print.h \
- DetectBlinks.h Solenoid.h ChangePhase.h
+ DetectBlinks.h Solenoid.h ChangePhase.h TriggerImaging.h
