@@ -162,7 +162,11 @@ void setupTimer (void) {
 #include "DetectBlinks.h"
 #include "Solenoid.h"
 #include "ChangePhase.h"
+
+#ifdef __XCODE__
+#else
 #include <LiquidCrystal.h>
+#endif
 
 //Globals:
 int blink = 0;
