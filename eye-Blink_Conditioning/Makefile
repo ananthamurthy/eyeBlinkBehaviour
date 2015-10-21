@@ -1,86 +1,76 @@
-#
-# embedXcode
-# ----------------------------------
-# Embedded Computing on Xcode
-#
-# Copyright © Rei VILO, 2010-2015
-# All rights reserved
-# http://embedxcode.weebly.com
-#
-# Last update: May 11, 2015 release 288
+### DISCLAIMER
+### This is an example Makefile and it MUST be configured to suit your needs.
+### For detailed explanations about all of the available options, please refer
+### to https://github.com/sudar/Arduino-Makefile/blob/master/arduino-mk-vars.md
+### Original project where this Makefile comes from: https://github.com/WeAreLeka/Bare-Arduino-Project
 
+### PROJECT_DIR
+### This is the path to where you have created/cloned your project
+PROJECT_DIR       = ..
 
-# Libraries
-# ----------------------------------
-# Declare application Arduino/chipKIT/Digispark/Energia/Maple/Microduino/Teensy/Wiring
-# and user's libraries used 
-# Short-listing libraries speeds-up building
-# Typing = 0 takes none (default for application and user)
-# Otherwise, leaving empty considers all (default for local)
+### ARDMK_DIR
+### Path to the Arduino-Makefile directory.
+ARDMK_DIR         = $(PROJECT_DIR)/Arduino-Makefile
 
-# List application Arduino/chipKIT/Digispark/Energia/Maple/Microduino/Teensy/Wiring libraries here
-# default = 0 = none
-#
-# ARDUINO = EEPROM SoftwareSerial SPI Wire Bridge Esplora 
-#	Ethernet Firmata GSM LiquidCrystal Robot_Control Robot_Motor 
-#	RobotIRremote SD Servo SpacebrewYun Stepper Temboo TFT WiFi 
-#
-APP_LIBS_LIST = LiquidCrystal
+### ARDUINO_DIR
+### Path to the Arduino application and resources directory.
+### On OS X:
+###ARDUINO_DIR       = /Applications/Arduino.app/Contents/Resources/Java
+### or on Linux: (remove the one you don't want)
+ARDUINO_DIR       = /usr/share/arduino
 
-# List user's libraries here 
-# default = 0 = none
-#
-#
-USER_LIBS_LIST = 0
+### USER_LIB_PATH
+### Path to where the your project's libraries are stored.
+USER_LIB_PATH    :=  $(PROJECT_DIR)/lib
 
-# List core, application and user's libraries to be excluded
-# For example, WiFi may crash on Arduino 1.0.2, Esplora on Arduino 1.0.3, Firmata on Teensy 3.0,
-#   OneWire on MPIDE 0023, HardwareSerial may conflict with MarlinSerial
-#
-#EXCLUDE_LIBS = Firmata WiFi Esplora OneWire Robot_Control Robot_Control/utility Robot_Motor
+### BOARD_TAG
+### It must be set to the board you are currently using. (i.e uno, mega2560, etc.)
+BOARD_TAG         = uno
 
+### MONITOR_BAUDRATE
+### It must be set to Serial baudrate value you are using.
+MONITOR_BAUDRATE  = 115200
 
-# Parameters
-# ----------------------------------
-# Xcode takes BOARD_TAG and BOARD_PORT from the .xcconfig file
-# For other IDEs than Xcode,
+### AVR_TOOLS_DIR
+### Path to the AVR tools directory such as avr-gcc, avr-g++, etc.
+### On OS X with `homebrew`:
+AVR_TOOLS_DIR     = /usr/local
+### or on Linux: (remove the one you don't want)
+AVR_TOOLS_DIR     = /usr
 
-# BOARD_TAG is required
-# If not defined, error BOARD_TAG not defined
-#
-#BOARD_TAG  = mega2560
+### AVRDDUDE
+### Path to avrdude directory.
+### On OS X with `homebrew`:
+AVRDDUDE          = /usr/local/bin/avrdude
+### or on Linux: (remove the one you don't want)
+AVRDDUDE          = /usr/bin/avrdude
+AVRDUDE_CONF     = /etc/avrdude.conf
 
-# BOARD_PORT is optional
-# If not defined, BOARD_PORT = /dev/tty.usb* (default)
-#
-#BOARD_PORT = /dev/tty.usbmodem*
+### CFLAGS_STD
+### Set the C standard to be used during compilation. Documentation (https://github.com/WeAreLeka/Arduino-Makefile/blob/std-flags/arduino-mk-vars.md#cflags_std)
+CFLAGS_STD        = -std=gnu11
 
-# Xcode takes SKETCHBOOK_DIR from preferences.txt
-# If not defined, each IDE has its own SKETCHBOOK_DIR (default)
-# To share the same SKETCHBOOK_DIR along all IDEs, define
-#
-#SKETCHBOOK_DIR =
+### CXXFLAGS_STD
+### Set the C++ standard to be used during compilation. Documentation (https://github.com/WeAreLeka/Arduino-Makefile/blob/std-flags/arduino-mk-vars.md#cxxflags_std)
+CXXFLAGS_STD      = -std=gnu++11
 
-# SERIAL_BAUDRATE for the serial console, 9600 by default
-# Uncomment and specify another speed
-#
-#SERIAL_BAUDRATE = 115200
+### CXXFLAGS
+### Flags you might want to set for debugging purpose. Comment to stop.
+CXXFLAGS         += -pedantic -Wall -Wextra
 
+### MONITOR_PORT
+### The port your board is connected to. Using an '*' tries all the ports and finds the right one.
+MONITOR_PORT      = /dev/tty.usbmodem*
+MONITOR_PORT = /dev/tty*
 
-# Miscellaneous
-# ----------------------------------
-# Manage path with space in the name
-#
-CURRENT_DIR   := $(shell pwd)
-CURRENT_DIR   := $(shell echo '$(CURRENT_DIR)' | sed 's/ /\\\ /g')
+### CURRENT_DIR
+### Do not touch - used for binaries path
+CURRENT_DIR       = $(shell basename $(CURDIR))
 
-# C-compliant project name
-#
-PROJECT_NAME_AS_IDENTIFIER = eye_Blink_Conditioning
+### OBJDIR
+### This is where you put the binaries you just compile using 'make'
+OBJDIR            = $(PROJECT_DIR)/bin/$(BOARD_TAG)/$(CURRENT_DIR)
 
-MAKEFILE_PATH  = $(CURRENT_DIR)/Makefiles
-UTILITIES_PATH = $(CURRENT_DIR)/Utilities
-
-include $(MAKEFILE_PATH)/Step1.mk
-
+### Do not touch - the path to Arduino.mk, inside the ARDMK_DIR
+include $(ARDMK_DIR)/Arduino.mk
 
