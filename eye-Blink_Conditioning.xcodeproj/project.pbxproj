@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		1829F4D11B70A9D90055328B /* LocalLibrary.h in Sources */ = {isa = PBXBuildFile; fileRef = 18C9F4D11B70A9D90055328B /* LocalLibrary.h */; };
+		185E07881BD78D20008A61B1 /* TriggerImaging.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 185E07871BD78D20008A61B1 /* TriggerImaging.cpp */; settings = {ASSET_TAGS = (); }; };
 		18AD53C41B9D8AAB00F7A271 /* eye-Blink_Conditioning.ino in Sources */ = {isa = PBXBuildFile; fileRef = 18C9F5471B70A9D90055328B /* eye-Blink_Conditioning.ino */; };
 		18C9F4CB1B70A9D90055328B /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 18C9F4CA1B70A9D90055328B /* main.cpp */; };
 		18C9F4D01B70A9D90055328B /* LocalLibrary.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 18C9F4CF1B70A9D90055328B /* LocalLibrary.cpp */; };
@@ -409,6 +410,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		185E07871BD78D20008A61B1 /* TriggerImaging.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TriggerImaging.cpp; sourceTree = "<group>"; };
+		185E07891BD78D56008A61B1 /* TriggerImaging.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TriggerImaging.h; sourceTree = "<group>"; };
 		18AD53C51B9D8AC700F7A271 /* Profiling.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Profiling.h; sourceTree = "<group>"; };
 		18AD53C61B9DA85C00F7A271 /* eyeBlinkDataSave.py */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.python; path = eyeBlinkDataSave.py; sourceTree = "<group>"; };
 		18C9F4C71B70A9D90055328B /* Index */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Index; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -960,10 +963,12 @@
 				18C9F4E51B70A9D90055328B /* Particle Core (USB).xcconfig */,
 				18C9F55C1B70AA810055328B /* Globals.h */,
 				18AD53C51B9D8AC700F7A271 /* Profiling.h */,
+				18F3EA711BA542F000F7C101 /* Initialize.h */,
+				18F3EA761BA544AC00F7C101 /* ChangePhase.h */,
+				185E07871BD78D20008A61B1 /* TriggerImaging.cpp */,
+				185E07891BD78D56008A61B1 /* TriggerImaging.h */,
 				18C9F55D1B70AAA30055328B /* LCDRelated.h */,
 				18C9F55E1B70AB3D0055328B /* DetectBlinks.h */,
-				18F3EA761BA544AC00F7C101 /* ChangePhase.h */,
-				18F3EA711BA542F000F7C101 /* Initialize.h */,
 				18C9F55F1B70AB690055328B /* Solenoid.h */,
 				18AD53C61B9DA85C00F7A271 /* eyeBlinkDataSave.py */,
 				18F3EA721BA5431500F7C101 /* Initialize.cpp */,
@@ -2706,6 +2711,7 @@
 				AA2A150804133639AA000124 /* SdVolume.cpp in Sources */,
 				AA2A150804133639AA000128 /* Servo.cpp in Sources */,
 				AA2A150804133639AA000129 /* ServoTimers.h in Sources */,
+				185E07881BD78D20008A61B1 /* TriggerImaging.cpp in Sources */,
 				AA2A150804133639AA00012B /* Servo.cpp in Sources */,
 				AA2A150804133639AA00012C /* ServoTimers.h in Sources */,
 				AA2A150804133639AA00012D /* Servo.h in Sources */,
