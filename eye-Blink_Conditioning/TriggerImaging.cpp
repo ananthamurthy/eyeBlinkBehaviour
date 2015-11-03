@@ -1,8 +1,8 @@
 //
-// TriggerImaging.cpp 
+// TriggerImaging.cpp
 // C++ code
 // ----------------------------------
-// Developed with embedXcode 
+// Developed with embedXcode
 // http://embedXcode.weebly.com
 //
 // Project 		eye-Blink_Conditioning
@@ -49,5 +49,9 @@
 
 void triggerImaging(int pinID, bool value)
 {
-	digitalWrite(pinID, value);
+  digitalWrite(pinID, value);
+  if (value == HIGH)
+  {
+    delay(shutterDelay);
+  }
 }

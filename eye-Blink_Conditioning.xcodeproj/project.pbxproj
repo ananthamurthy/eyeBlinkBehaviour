@@ -8,14 +8,14 @@
 
 /* Begin PBXBuildFile section */
 		1829F4D11B70A9D90055328B /* LocalLibrary.h in Sources */ = {isa = PBXBuildFile; fileRef = 18C9F4D11B70A9D90055328B /* LocalLibrary.h */; };
-		185E07881BD78D20008A61B1 /* TriggerImaging.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 185E07871BD78D20008A61B1 /* TriggerImaging.cpp */; settings = {ASSET_TAGS = (); }; };
+		185E07881BD78D20008A61B1 /* TriggerImaging.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 185E07871BD78D20008A61B1 /* TriggerImaging.cpp */; };
 		18AD53C41B9D8AAB00F7A271 /* eye-Blink_Conditioning.ino in Sources */ = {isa = PBXBuildFile; fileRef = 18C9F5471B70A9D90055328B /* eye-Blink_Conditioning.ino */; };
 		18C9F4CB1B70A9D90055328B /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 18C9F4CA1B70A9D90055328B /* main.cpp */; };
 		18C9F4D01B70A9D90055328B /* LocalLibrary.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 18C9F4CF1B70A9D90055328B /* LocalLibrary.cpp */; };
 		18C9F5611B70ABF80055328B /* LCDRelated.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 18C9F5601B70ABF80055328B /* LCDRelated.cpp */; };
 		18C9F5631B70AC2B0055328B /* DetectBlinks.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 18C9F5621B70AC2B0055328B /* DetectBlinks.cpp */; };
 		18C9F5651B70AC850055328B /* Solenoid.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 18C9F5641B70AC850055328B /* Solenoid.cpp */; };
-		18F0A1A21BD1169D00A912F5 /* ananth_TraceEBAnalysis_20151016.m in Sources */ = {isa = PBXBuildFile; fileRef = 18F0A1A11BD1169D00A912F5 /* ananth_TraceEBAnalysis_20151016.m */; settings = {ASSET_TAGS = (); }; };
+		18F0A1A21BD1169D00A912F5 /* ananth_TraceEBAnalysis_20151016.m in Sources */ = {isa = PBXBuildFile; fileRef = 18F0A1A11BD1169D00A912F5 /* ananth_TraceEBAnalysis_20151016.m */; };
 		18F3EA731BA5431500F7C101 /* Initialize.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 18F3EA721BA5431500F7C101 /* Initialize.cpp */; };
 		18F3EA781BA544F000F7C101 /* ChangePhase.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 18F3EA771BA544F000F7C101 /* ChangePhase.cpp */; };
 		AA2A150804133639AA000006 /* abi.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAAA150804133639AA000006 /* abi.cpp */; };
@@ -965,18 +965,18 @@
 				18AD53C51B9D8AC700F7A271 /* Profiling.h */,
 				18F3EA711BA542F000F7C101 /* Initialize.h */,
 				18F3EA761BA544AC00F7C101 /* ChangePhase.h */,
-				185E07871BD78D20008A61B1 /* TriggerImaging.cpp */,
 				185E07891BD78D56008A61B1 /* TriggerImaging.h */,
 				18C9F55D1B70AAA30055328B /* LCDRelated.h */,
 				18C9F55E1B70AB3D0055328B /* DetectBlinks.h */,
 				18C9F55F1B70AB690055328B /* Solenoid.h */,
-				18AD53C61B9DA85C00F7A271 /* eyeBlinkDataSave.py */,
 				18F3EA721BA5431500F7C101 /* Initialize.cpp */,
 				18F3EA771BA544F000F7C101 /* ChangePhase.cpp */,
+				185E07871BD78D20008A61B1 /* TriggerImaging.cpp */,
 				18C9F5601B70ABF80055328B /* LCDRelated.cpp */,
 				18C9F5621B70AC2B0055328B /* DetectBlinks.cpp */,
 				18C9F5641B70AC850055328B /* Solenoid.cpp */,
 				18C9F5471B70A9D90055328B /* eye-Blink_Conditioning.ino */,
+				18AD53C61B9DA85C00F7A271 /* eyeBlinkDataSave.py */,
 				18F0A1A11BD1169D00A912F5 /* ananth_TraceEBAnalysis_20151016.m */,
 				18C9F4D21B70A9D90055328B /* Sketchbook */,
 				AAAA150804133639AA000000 /* Resources */,

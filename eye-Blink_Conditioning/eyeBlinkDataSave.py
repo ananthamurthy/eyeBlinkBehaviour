@@ -150,7 +150,7 @@ def main():
     else:
         outfile = 'MouseK' + sys.argv[1] + '_SessionType' + sys.argv[2] + '_Session' + sys.argv[3]
     
-    saveDirec = os.path.join('/Users/ananth/Desktop/Work/Data/', outfile)
+    saveDirec = os.path.join('/Users/ananth/Desktop/Work/Behaviour/', outfile)
 
 if os.path.exists(saveDirec):
     saveDirec = os.path.join(saveDirec, timeStamp)

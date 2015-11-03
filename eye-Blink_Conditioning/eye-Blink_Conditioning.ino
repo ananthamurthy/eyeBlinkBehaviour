@@ -80,7 +80,7 @@
 #include <HardwareSerial.h>
 
 // this can be used to turn profiling on and off
-#define PROFILING 1
+#define PROFILING 0
 // this needs to be true in at least ONE .c, .cpp, or .ino file in your sketch
 #define PROFILING_MAIN 1
 // override the number of bins
@@ -180,6 +180,7 @@ String mouseName = String(1); //Please enter the name of the mouse
 int sessionType_ind = 1; //Please specify the Session Type (0: Control, 1: Trace, 2: Delay)
 int session = 1;
 int traceTime = 250; //in ms
+int shutterDelay = 60; // in ms
 
 const int tonePin = 3; //changed this on 20150807
 
@@ -467,7 +468,7 @@ void loop()
 					{
 						Serial.println(PROFILING_DATA_MARKER);
 						Serial.println(DATA_BEGIN_MARKER);
-						dump_profiling_data();
+						//dump_profiling_data();
 						Serial.println(DATA_END_MARKER);
 						profilingDataDump = 0;
 					}

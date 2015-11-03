@@ -67,5 +67,6 @@ extern unsigned long startT;
 extern unsigned long currentPhaseTime;
 extern unsigned long lastTime;
 extern unsigned short sampleInterval;
+extern int shutterDelay;
 
 #endif

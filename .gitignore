@@ -60,5 +60,17 @@ docs/_build/
 
 # PyBuilder
 target/
+
+eye-Blink_Conditioning.xcodeproj/project.xcworkspace/contents.xcworkspacedata
+
+*.pbxproj
+
+*.plist
+
+*.pbxproj
+
+*.pbxproj
+
+eye-Blink_Conditioning.xcodeproj/project.pbxproj
 *.o
 
