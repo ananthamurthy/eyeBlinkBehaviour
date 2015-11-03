@@ -9,6 +9,8 @@ __pycache__/
 .Python
 env/
 build/
+*/Builds/*
+Builds/*
 develop-eggs/
 dist/
 downloads/
@@ -55,3 +57,5 @@ docs/_build/
 
 # PyBuilder
 target/
+*.o
+
