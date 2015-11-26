@@ -180,14 +180,14 @@ String mouseName = String(1); //Please enter the name of the mouse
 int sessionType_ind = 1; //Please specify the Session Type (0: Control, 1: Trace, 2: Delay)
 int session = 1;
 int traceTime = 250; //in ms
+int totalTrials = 100;
 int shutterDelay = 60; // in ms
 
-const int tonePin = 3; //changed this on 20150807
+const int tonePin = 2; //changed this on 20150807
 
 boolean profilingDataDump = 0; // For dumping profiling data
 
 //Protocol Information
-const int totalTrials = 100;
 const int preTime = 5000; //in ms
 const int CSTime = 350; //in ms
 const int puffTime = 100; //in ms
@@ -196,8 +196,8 @@ const int minITI = 10000; //in ms
 const int randITI = 5000; //in ms
 
 // CS+/- frequencies
-const int CS_PLUS_ToneFreq = 5000;
-const int CS_MINUS_ToneFreq = 1000; //change made on 20150826
+const int CS_PLUS_ToneFreq = 7000;
+const int CS_MINUS_ToneFreq = 4000; //change made on 20150826
 
 // Miscellaneous Initializations
 int condition = 0;
@@ -207,7 +207,7 @@ unsigned long startTrialTime;
 unsigned long currentPhaseTime = 0;
 unsigned long lastTime = 0;
 unsigned short sampleInterval = 10; // Ten milliseconds for 100 Hz
-int interTrialTime = 0;
+unsigned int interTrialTime = 0;
 int trialNum = 0;
 boolean CS_plus = 1;
 boolean start = 0;

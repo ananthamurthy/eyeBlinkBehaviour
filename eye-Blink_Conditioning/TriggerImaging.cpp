@@ -50,8 +50,12 @@
 void triggerImaging(int pinID, bool value)
 {
   digitalWrite(pinID, value);
+  //digitalWrite(pinID, LOW);
   if (value == HIGH)
   {
-    delay(shutterDelay);
+    if (trialNum <= 1)
+    {
+      delay(shutterDelay);
+    }
   }
 }

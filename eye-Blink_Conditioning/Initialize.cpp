@@ -1,8 +1,8 @@
 //
-// Initialize.cpp 
+// Initialize.cpp
 // C++ code
 // ----------------------------------
-// Developed with embedXcode 
+// Developed with embedXcode
 // http://embedXcode.weebly.com
 //
 // Project 		eye-Blink_Conditioning
@@ -54,58 +54,71 @@ extern int sessionType_ind;
 extern int session;
 extern boolean start;
 extern int traceTime;
+extern int totalTrials;
 
 void initialize()
 {
-    Serial.print("#Mouse Name: ");
-    while(!Serial.available());
-    mouseName = "MouseK" + String(Serial.readString().toInt());
-    Serial.println("#" + mouseName);
-    
-    Serial.print("#Session Type Index: ");
-    while(!Serial.available());
-    sessionType_ind = Serial.readString().toInt();
-    Serial.println("#" + sessionType_ind);
-    
-    Serial.print("#Session: ");
-    while(!Serial.available());
-    session = Serial.readString().toInt();
-    Serial.println("#" + session);
-    
-    Serial.println("#Press the SELECT buttbon!");
-    
-    while(read_lcd_button() != btnSELECT);
-    
-    // From here, the Arduino will start running the behaviour
-    startT = millis();
-    start = 1;
-    lcd.setCursor( 0, 1 );
-    lcd.print("S");
-    lcd.setCursor(1, 1);
-    lcd.print(session);
-    lcd.setCursor( 4, 1 );
-    lcd.print("T");
-    
-    lcd.setCursor( 0, 0 );
-    lcd.print(mouseName);
-    
-    lcd.setCursor(8, 0);
-    lcd.print(sessionType[sessionType_ind]);
-    lcd.setCursor(6, 1);
-    lcd.print("          ");
-    Serial.println(SESSION_BEGIN_MARKER);
-    Serial.println(TRIAL_DATA_MARKER);
-    //Serial.print(trialNum);
-    Serial.println("1 1"); // Just to not confuse data saving
-    Serial.println(DATA_BEGIN_MARKER);
-    
-    // Get traceTime based on the Session Type
-    if (sessionType_ind == 2)
+  Serial.print("#Please enter the mouse ID number: ");
+  while (!Serial.available());
+  mouseName = "MouseK" + String(Serial.readString().toInt());
+  Serial.println("#" + mouseName);
+
+  delay(1);
+  Serial.print("#Please enter the session type index: ");
+  while (!Serial.available());
+  sessionType_ind = Serial.readString().toInt();
+  Serial.println("#Session Type " + String(sessionType_ind));
+
+  delay(1);
+  Serial.print("#Please enter the session number: ");
+  while (!Serial.available());
+  session = Serial.readString().toInt();
+  Serial.println("#Session " + String(session));
+
+  delay(1);
+  Serial.println("#Please press the SELECT button to begin!");
+
+  while (read_lcd_button() != btnSELECT);
+
+  // From here, the Arduino will start running the behaviour
+  startT = millis();
+  start = 1;
+  lcd.setCursor( 0, 1 );
+  lcd.print("S");
+  lcd.setCursor(1, 1);
+  lcd.print(session);
+  lcd.setCursor( 4, 1 );
+  lcd.print("T");
+
+  lcd.setCursor( 0, 0 );
+  lcd.print(mouseName);
+
+  lcd.setCursor(8, 0);
+  lcd.print(sessionType[sessionType_ind]);
+  lcd.setCursor(6, 1);
+  lcd.print("          ");
+  Serial.println(SESSION_BEGIN_MARKER);
+  Serial.println(TRIAL_DATA_MARKER);
+  //Serial.print(trialNum);
+  Serial.println("1 1"); // Just to not confuse data saving
+  Serial.println(DATA_BEGIN_MARKER);
+
+  // Get totalTrials and traceTime based on the Session Type
+  if (sessionType_ind == 2)
+  {
+    traceTime = 0; //in ms
+    totalTrials = 100;
+  }
+  else
+  {
+    traceTime = 250; //in ms
+    if (sessionType_ind == 0)
     {
-        traceTime = 0; //in ms
+      totalTrials = 50;
     }
     else
     {
-        traceTime = 250; //in ms
+      totalTrials = 100;
     }
+  }
 }
