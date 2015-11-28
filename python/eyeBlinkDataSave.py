@@ -1,4 +1,12 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Nov  7 15:38:48 2015
+
+@author: labadmin
+"""
+
+#!/usr/bin/env python
 #
 #  read_save_aduino_data
 #  Text
@@ -21,6 +29,19 @@ from collections import defaultdict
 import datetime
 import csv
 
+import logging
+logging.basicConfig(level=logging.DEBUG,
+    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+    datefmt='%m-%d %H:%M',
+    filename='blink.log',
+    filemode='w')
+console = logging.StreamHandler()
+console.setLevel(logging.INFO)
+formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+console.setFormatter(formatter)
+_logger = logging.getLogger('')
+_logger.addHandler(console)
+
 DATA_BEGIN_MARKER = '['
 DATA_END_MARKER = ']'
 COMMENT_MARKER = '#'
@@ -36,7 +57,7 @@ def saveDict2csv(filename, fieldnames=[], dictionary={}):
         for key in dictionary:
             writer.writerow(dictionary[key])
 
-def getSerialPort(portPath = '/dev/ttyACM0', baudRate = 9600, timeout = 1):
+def getSerialPort(portPath = '/dev/ttyACM'+ str(sys.argv[4]), baudRate = 9600, timeout = 1):
     serialPort = serial.Serial(portPath, baudRate, timeout = 1)
     time.sleep(2)
     print('[INFO] Connected to %s' % serialPort)
@@ -49,11 +70,12 @@ def writeTrialData(serialPort, saveDirec, trialsDict = {}, arduinoData =[]):
     print ('[INFO] Trial: %s' %runningTrial)
     
     #Then, wait indefinitely for the DATA_BEGIN_MARKER from the next line
-    while DATA_BEGIN_MARKER not in getLine(serialPort):        
+    while DATA_BEGIN_MARKER not in getLine(serialPort):
         continue
     #Once the DATA_BEGIN_MARKER is caught,
     while True:
         line = getLine(serialPort)
+        _logger.debug("line %s" % line)
         if DATA_END_MARKER in line:
             break
         elif not line:
@@ -66,22 +88,22 @@ def writeTrialData(serialPort, saveDirec, trialsDict = {}, arduinoData =[]):
     with open(os.path.join(saveDirec, "Trial" + runningTrial + ".csv"), 'w') as f:
         f.write("# 3rd row values are trial index, cs type.\n")
         f.write("# Actual trial data starts from row 4\n")
-        f.write(runningTrial + "," + csType + "\n") 
-        data = [timeStamp + "," + blinkValue
-                for (timeStamp, blinkValue) in trialsDict[runningTrial]]
-        f.write("\n".join(data))
+        f.write(runningTrial + "," + csType + "\n")
+        for (timeStamp, blinkValue) in trialsDict[runningTrial]:
+            data = timeStamp + "," + blinkValue
+            f.write("%s\n" % data)
 
 
 #     filename = os.path.join(saveDirec,'Trial' + runningTrial + '.csv')
 #     fields = ['BlinkValue', 'TimeStamp']
 #     saveDict2csv(filename, fields, trialsDict)
-        
+
 def writeProfilingData(serialPort, saveDirec, profilingDict = {}, arduinoData = []):
     
     #Wait indefinitely for the DATA_BEGIN_MARKER
     while DATA_BEGIN_MARKER not in getLine(serialPort):
         continue
-
+    
     #Once the DATA_BEGIN_MARKER is caught,
     while True:
         line = getLine(serialPort)
@@ -96,15 +118,14 @@ def writeProfilingData(serialPort, saveDirec, profilingDict = {}, arduinoData = 
             except:
                 print('[INFO-WARNING] No instructions for %s defined in writeProfilingData()' %line)
     
-    with open(os.path.join(saveDirec, "profilingData.csv"), 'w') as f:
-        data = profilingDict.items()
-        data = [bin + "," + count for (bin, count) in data]
-        f.write("\n".join(data))
+        with open(os.path.join(saveDirec, "profilingData.csv"), 'w') as f:
+            data = profilingDict.items()
+            data = [bin + "," + count for (bin, count) in data]
+            f.write("\n".join(data))
 
 #     filename = os.path.join(saveDirec, 'profilingData.csv')
 #     fields = ['Bin', 'Counts']
 #     saveDict2csv(filename, fields, profilingDict)
-
 
 def getLine(serialPort):
     line = serialPort.readline()
@@ -112,9 +133,9 @@ def getLine(serialPort):
     return line.strip()
 
 def writeData(serialPort, saveDirec, trialsDict, profilingDict):
-    operationMap = { TRIAL_DATA_MARKER : lambda port, direc: writeTrialData(port, direc, trialsDict)
-                   , PROFILING_DATA_MARKER : lambda port, direc: writeProfilingData(port, direc, profilingDict)
-                   }
+#    operationMap = { TRIAL_DATA_MARKER : lambda port, direc: writeTrialData(port, direc, trialsDict)
+#        , PROFILING_DATA_MARKER : lambda port, direc: writeProfilingData(port, direc, profilingDict)
+#        }
     #Wait indefinitely for the SESSION_BEGIN_MARKER
     while SESSION_BEGIN_MARKER not in getLine(serialPort):
         continue
@@ -122,7 +143,7 @@ def writeData(serialPort, saveDirec, trialsDict, profilingDict):
     #Once the SESSION_BEGIN_MARKER is caught,
     print('[INFO] A new session has begun')
     while True:
-        arduinoData = getLine(serialPort)        
+        arduinoData = getLine(serialPort)
         if SESSION_END_MARKER in arduinoData:
             return
         elif not arduinoData:
@@ -147,16 +168,15 @@ def main():
     timeStamp = datetime.datetime.now().isoformat()
     if len(sys.argv) <= 1:
         outfile = os.path.join( timeStamp
-                              , 'raw_data')
+                               , 'raw_data')
     else:
-        outfile = 'MouseK' + sys.argv[1] + '_SessionType' + sys.argv[2] + '_Session' + sys.argv[3]
+        outfile = 'MouseK' + sys.argv[1] + '_SessionType' + sys.argv[2] + '_Session' + sys.argv[3]    
+    saveDirec = os.path.join(os.environ['HOME'], 'Desktop/Work/Behaviour', outfile)
 
-    saveDirec = os.path.join('/home/shriya/Desktop/Work/Data/', outfile)
-
-    if os.path.exists(saveDirec):
-        saveDirec = os.path.join(saveDirec, timeStamp)
-    os.mkdir(saveDirec) #does not mkdir recursively
-
+    saveDirec = os.path.join(saveDirec, timeStamp)
+    if not os.path.exists(saveDirec):
+        os.makedirs(saveDirec) 
+    
     trialsDict = defaultdict(list)
     profilingDict = {}
     print ('[INFO] Saving data to ' + saveDirec)
@@ -164,6 +184,6 @@ def main():
     writeData(serialPort, saveDirec, trialsDict, profilingDict)
     print('[INFO] The session is complete and will now terminate')
     serialPort.close()
-    
+
 if __name__ == '__main__':
     main()
