@@ -89,8 +89,8 @@ def writeTrialData(serialPort, saveDirec, trialsDict = {}, arduinoData =[]):
         f.write("# 3rd row values are trial index, cs type.\n")
         f.write("# Actual trial data starts from row 4\n")
         f.write(runningTrial + "," + csType + "\n")
-        for (timeStamp, blinkValue) in trialsDict[runningTrial]:
-            data = timeStamp + "," + blinkValue
+        for (blinkValue, timeStamp) in trialsDict[runningTrial]:
+            data = blinkValue + "," + timeStamp
             f.write("%s\n" % data)
 
 
@@ -172,9 +172,12 @@ def main():
     else:
         outfile = 'MouseK' + sys.argv[1] + '_SessionType' + sys.argv[2] + '_Session' + sys.argv[3]    
     saveDirec = os.path.join(os.environ['HOME'], 'Desktop/Work/Behaviour', outfile)
-
-    saveDirec = os.path.join(saveDirec, timeStamp)
-    if not os.path.exists(saveDirec):
+    if os.path.exists(saveDirec):
+        saveDirec = os.path.join(saveDirec, timeStamp)
+        _logger.debug("Dir saveDirec = %s" % saveDirec)
+        os.makedirs(saveDirec)
+    else:
+        _logger.debug("Dir saveDirec = %s" % saveDirec)
         os.makedirs(saveDirec) 
     
     trialsDict = defaultdict(list)
