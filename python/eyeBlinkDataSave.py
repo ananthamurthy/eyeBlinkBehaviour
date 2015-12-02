@@ -1,14 +1,22 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Nov  7 15:38:48 2015
+
+@author: labadmin
+"""
+
+#!/usr/bin/env python
 #
 #  read_save_aduino_data
 #  Text
 #  ----------------------------------
 #  Developed with embedXcode
 #
-#  Project 	eye-Blink_Conditioning
-#  Created by 	Kambadur Ananthamurthy on 04/08/15
-#  Copyright 	2015 Kambadur Ananthamurthy
-#  License	<#license#>
+#  Project     eye-Blink_Conditioning
+#  Created by     Kambadur Ananthamurthy on 04/08/15
+#  Copyright     2015 Kambadur Ananthamurthy
+#  License    <#license#>
 #
 
 from __future__ import print_function
