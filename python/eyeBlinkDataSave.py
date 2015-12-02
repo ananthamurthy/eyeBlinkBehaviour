@@ -159,7 +159,7 @@ def writeData(serialPort, saveDirec, trialsDict, profilingDict):
             print ("[INFO-WARNING] No instructions for %s defined in writeData()" %arduinoData)
 
 def main():
-    serialPort = getSerialPort()
+    serialPort = getSerialPort( portPath = '/dev/tty.usbmodem%s' % sys.argv[4] )
     serialPort.write(sys.argv[1])
     time.sleep(1)
     serialPort.write(sys.argv[2])
