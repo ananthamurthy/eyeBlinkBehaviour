@@ -78,7 +78,16 @@ void initialize()
   delay(1);
   Serial.println("#Please press the SELECT button to begin!");
 
-  while (read_lcd_button() != btnSELECT);
+  startT = millis();
+  while (read_lcd_button() != btnSELECT)
+  {
+    if (startT > sampleInterval)
+    {
+      blink = analogRead(blink_ai);
+      Serial.println(blink);
+      startT = millis();
+    }
+  }
 
   // From here, the Arduino will start running the behaviour
   startT = millis();

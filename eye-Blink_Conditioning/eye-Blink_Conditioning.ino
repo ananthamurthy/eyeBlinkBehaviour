@@ -273,7 +273,7 @@ void loop()
 {
   // Press "Select" to start Session
   if (start != 1)
-  {
+  { 
     initialize();
   }
 
