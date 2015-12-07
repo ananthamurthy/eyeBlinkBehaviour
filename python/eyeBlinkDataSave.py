@@ -17,7 +17,7 @@ import curses
 import signal
 import codecs
 
-enable_curses_ = False
+enable_curses_ = True
 if not enable_curses_:
     print("[INFO] not cursed")
 
@@ -230,30 +230,25 @@ def writeProfilingData(serialPort, saveDirec, profilingDict = {}, arduinoData = 
 #     fields = ['Bin', 'Counts']
 #     saveDict2csv(filename, fields, profilingDict)
 
-decoder_ = codecs.getincrementaldecoder('utf-8')('replace')
-
 def getLine(serialPort):
-    line = serialPort.readline()
-    return line.strip()
-    #line = []
-    #while True:
-    #    c = serialPort.read( 1 )
-    #    if c: 
-    #        # c = decoder_.decode(data)
-    #        print('char', c)
-    #        if c == '\n' or c == '\r' or c == '\r\n':
-    #            msg = (''.join(line)).decode('ascii')
-    #            return msg
-    #            # return ''.join(line)
-    #            line = []
-    #        else:
-    #            line.append(c)
+    line = []
+    txtLine = u""
+    while True:
+        c = serialPort.read( 1 )
+        if c: 
+            if c == '\r' or c == '\n' or c == '\r\n':
+                for x in line:
+                    txtLine += str(x)
+                break
+            else:
+                line.append(c)
+    return txtLine
 
 def dump_to_console(serialPort, saveDirec, trialsDict, profilingDict):
     line = getLine( serialPort )
     while SESSION_BEGIN_MARKER not in line:
+        line = getLine( serialPort )
         add_status('Waiting for you to press SELECT')
-        print("Got line: %s" % line)
         line = line.strip()
         if line.strip():
             add_log( line )
