@@ -15,8 +15,11 @@ import datetime
 import csv
 import curses
 import signal
-import logging
+import codecs
 
+enable_curses_ = False
+if not enable_curses_:
+    print("[INFO] not cursed")
 
 # Implement signal handler. If some interrupted arise from, cleanup and quit.
 def handler(signum, frame):
@@ -35,12 +38,16 @@ startTime_ = time.time()
 
 def refresh():
     global logWin_, plotWin_, statusWin_
+    if not enable_curses_:
+        return
     logWin_.refresh()
     plotWin_.refresh()
     statusWin_.refresh()
     curses.doupdate()
 
 def cleanup():
+    if not enable_curses_:
+        return
     curses.endwin()
 
 def initCurses():
@@ -64,6 +71,12 @@ def initCurses():
 
 def add_log(msg, end='\n', overwrite = False):
     global logWin_
+    # IT servers two purpose, a) it introduce a healthy delay before we write to
+    # the curses console, and b) we get the raw data into debug file.
+    with open('debug.txt', 'w') as f:
+        f.write(msg+end)
+    if not enable_curses_:
+        return
     if overwrite:
         y, x = logWin_.getyx()
         if x < len(msg): xloc = x
@@ -76,6 +89,9 @@ def add_log(msg, end='\n', overwrite = False):
 def add_time_status( ):
     global statusWin_
     global startTime_
+    if not enable_curses_:
+        return
+
     curses.init_pair(2, curses.COLOR_WHITE, curses.COLOR_BLUE)
     statusWin_.addstr(1, 1, 'Time %s\n' % (time.time() - startTime_)
             , curses.color_pair(2)
@@ -84,6 +100,8 @@ def add_time_status( ):
 
 def add_status( status ):
     global statusWin_ 
+    if not enable_curses_:
+        return
     statusWin_.erase()
     add_time_status()
     y,x = statusWin_.getyx()
@@ -93,6 +111,8 @@ def add_status( status ):
 
 def add_plot( line, end = '' ):
     global plotWin_, statusWin_  
+    if not enable_curses_:
+        return
     ymax, xmax = plotWin_.getmaxyx()
 
     scaleF = 500 / xmax
@@ -131,10 +151,11 @@ def saveDict2csv(filename, fieldnames=[], dictionary={}):
         for key in dictionary:
             writer.writerow(dictionary[key])
 
-def getSerialPort(portPath = '/dev/ttyACM'+ str(sys.argv[4]), baudRate = 9600, timeout = 1):
+# NOTE: Keep the timeout 0 or leave it to default value. Else small lines wont
+# be read completely from serial-port.
+def getSerialPort(portPath = '/dev/ttyACM'+ str(sys.argv[4]), baudRate = 9600):
     global logWin_
-    serialPort = serial.Serial(portPath, baudRate, timeout = 1)
-    time.sleep(2)
+    serialPort = serial.Serial(portPath, baudRate)
     add_log('[INFO] Connected to %s' % serialPort)
     return serialPort
 
@@ -145,11 +166,13 @@ def writeTrialData(serialPort, saveDirec, trialsDict = {}, arduinoData =[]):
     add_log('[INFO] Trial: %s' %runningTrial)
     
     #Then, wait indefinitely for the DATA_BEGIN_MARKER from the next line
-    line = getLine( serialPort )
-    while DATA_BEGIN_MARKER not in line:
+    while True:
+        line = getLine( serialPort )
+        if DATA_BEGIN_MARKER in line:
+            break
         add_status("Waiting for START", overwrite=True)
         add_plot( line )
-        continue
+        add_log( line )
 
     #Once the DATA_BEGIN_MARKER is caught,
     while True:
@@ -207,18 +230,35 @@ def writeProfilingData(serialPort, saveDirec, profilingDict = {}, arduinoData = 
 #     fields = ['Bin', 'Counts']
 #     saveDict2csv(filename, fields, profilingDict)
 
+decoder_ = codecs.getincrementaldecoder('utf-8')('replace')
+
 def getLine(serialPort):
     line = serialPort.readline()
     return line.strip()
+    #line = []
+    #while True:
+    #    c = serialPort.read( 1 )
+    #    if c: 
+    #        # c = decoder_.decode(data)
+    #        print('char', c)
+    #        if c == '\n' or c == '\r' or c == '\r\n':
+    #            msg = (''.join(line)).decode('ascii')
+    #            return msg
+    #            # return ''.join(line)
+    #            line = []
+    #        else:
+    #            line.append(c)
 
-def writeData(serialPort, saveDirec, trialsDict, profilingDict):
+def dump_to_console(serialPort, saveDirec, trialsDict, profilingDict):
     line = getLine( serialPort )
     while SESSION_BEGIN_MARKER not in line:
         add_status('Waiting for you to press SELECT')
-        if not line.strip():
-            add_plot( line )
-        continue
-    
+        print("Got line: %s" % line)
+        line = line.strip()
+        if line.strip():
+            add_log( line )
+            add_plot( line + ' 0' )
+
     #Once the SESSION_BEGIN_MARKER is caught,
     add_log('[INFO] A new session has begun')
     while True:
@@ -237,7 +277,7 @@ def writeData(serialPort, saveDirec, trialsDict, profilingDict):
         elif PROFILING_DATA_MARKER in arduinoData:
             writeProfilingData(serialPort, saveDirec)
         else:
-            add_log("[WARNING] No instructions for %s defined in writeData()" %arduinoData)
+            add_log("[WARNING] No instructions for %s defined in dump_to_console()" %arduinoData)
 
 def start():
     serialPort = getSerialPort()
@@ -262,12 +302,16 @@ def start():
     profilingDict = {}
     add_log('+ Saving data to ' + saveDirec)
     add_log('+ Press the SELECT button to begin')
-    writeData(serialPort, saveDirec, trialsDict, profilingDict)
+
+    # Here we dump the data onto console/cursed console.
+    dump_to_console(serialPort, saveDirec, trialsDict, profilingDict)
+
     add_log('+ The session is complete and will now terminate')
     serialPort.close()
     
-def main():
-    initCurses()
+def main( ):
+    if enable_curses_:
+        initCurses()
     start()
     cleanup()
     quit()
