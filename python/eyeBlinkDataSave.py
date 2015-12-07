@@ -13,128 +13,15 @@ import serial
 from collections import defaultdict
 import datetime
 import csv
-import curses
-import signal
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 import codecs
 
-enable_curses_ = True
-if not enable_curses_:
-    print("[INFO] not cursed")
-
-# Implement signal handler. If some interrupted arise from, cleanup and quit.
-def handler(signum, frame):
-    add_log("Intruppted")
-    cleanup()
-    quit()
-signal.signal( signal.SIGINT, handler )
-
 ## curses windows.
-logWin_ = None
-plotWin_ = None
-statusWin_ = None
 ymax_ = 0
 xmax_ = 0
 startTime_ = time.time()
-
-def refresh():
-    global logWin_, plotWin_, statusWin_
-    if not enable_curses_:
-        return
-    logWin_.refresh()
-    plotWin_.refresh()
-    statusWin_.refresh()
-    curses.doupdate()
-
-def cleanup():
-    if not enable_curses_:
-        return
-    curses.endwin()
-
-def initCurses():
-    global logWin_, plotWin_, statusWin_
-    global width_
-    scr = curses.initscr()
-    curses.echo()
-    curses.cbreak()
-    ymax_, xmax_ = scr.getmaxyx()
-
-    statusWin_ = curses.newwin(3, xmax_, 0, 0)
-
-    plotWin_ = curses.newwin(ymax_-20, xmax_, 4, 0)
-    plotWin_.scrollok(1)
-    plotWin_.box()
-
-    logWin_ = curses.newwin(15, xmax_, ymax_-15, 0)
-    logWin_.scrollok(1)
-    curses.start_color()
-    refresh()
-
-def add_log(msg, end='\n', overwrite = False):
-    global logWin_
-    # IT servers two purpose, a) it introduce a healthy delay before we write to
-    # the curses console, and b) we get the raw data into debug file.
-    with open('debug.txt', 'w') as f:
-        f.write(msg+end)
-    if not enable_curses_:
-        return
-    if overwrite:
-        y, x = logWin_.getyx()
-        if x < len(msg): xloc = x
-        else: xloc = x - len(msg) 
-        logWin_.addstr(int(y), xloc, '.'+msg  )
-    else:
-        logWin_.addstr( msg + end)
-    refresh()
-
-def add_time_status( ):
-    global statusWin_
-    global startTime_
-    if not enable_curses_:
-        return
-
-    curses.init_pair(2, curses.COLOR_WHITE, curses.COLOR_BLUE)
-    statusWin_.addstr(1, 1, 'Time %s\n' % (time.time() - startTime_)
-            , curses.color_pair(2)
-            )
-    refresh()
-
-def add_status( status ):
-    global statusWin_ 
-    if not enable_curses_:
-        return
-    statusWin_.erase()
-    add_time_status()
-    y,x = statusWin_.getyx()
-    statusWin_.addstr(y, 2+max(x-len(status), 1), status)
-    refresh()
-
-
-def add_plot( line, end = '' ):
-    global plotWin_, statusWin_  
-    if not enable_curses_:
-        return
-    ymax, xmax = plotWin_.getmaxyx()
-
-    scaleF = 500 / xmax
-    data = line.strip().split()
-    try:
-        v, t = data
-        v, t = int(v), int(t)
-    except Exception as e:
-        return
-
-    y, x = plotWin_.getyx()
-    plotWin_.attron(curses.A_BOLD)
-    plotWin_.addstr("\n%4s " % t)
-    plotWin_.attroff(curses.A_BOLD)
-    msg =  "".join(['-' for x  in range(min(v/scaleF, xmax-5))])
-    curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_YELLOW)
-
-    plotWin_.attron(curses.A_BLINK)
-    plotWin_.addstr(msg, curses.color_pair(1))
-    plotWin_.attroff(curses.A_BLINK)
-    plotWin_.addstr("%s"%v)
-    plotWin_.refresh()
 
 DATA_BEGIN_MARKER = '['
 DATA_END_MARKER = ']'
@@ -143,6 +30,8 @@ TRIAL_DATA_MARKER = '@'
 PROFILING_DATA_MARKER = '$'
 SESSION_BEGIN_MARKER = '<'
 SESSION_END_MARKER = '>'
+
+serialPort = None
 
 def saveDict2csv(filename, fieldnames=[], dictionary={}):
     with open (filename, 'a') as csvfile:
@@ -155,6 +44,7 @@ def saveDict2csv(filename, fieldnames=[], dictionary={}):
 # be read completely from serial-port.
 def getSerialPort(portPath = '/dev/ttyACM'+ str(sys.argv[4]), baudRate = 9600):
     global logWin_
+    global serialPort
     serialPort = serial.Serial(portPath, baudRate)
     add_log('[INFO] Connected to %s' % serialPort)
     return serialPort
@@ -226,10 +116,6 @@ def writeProfilingData(serialPort, saveDirec, profilingDict = {}, arduinoData = 
             data = [bin + "," + count for (bin, count) in data]
             f.write("\n".join(data))
 
-#     filename = os.path.join(saveDirec, 'profilingData.csv')
-#     fields = ['Bin', 'Counts']
-#     saveDict2csv(filename, fields, profilingDict)
-
 def getLine(serialPort):
     line = []
     txtLine = u""
@@ -275,6 +161,7 @@ def dump_to_console(serialPort, saveDirec, trialsDict, profilingDict):
             add_log("[WARNING] No instructions for %s defined in dump_to_console()" %arduinoData)
 
 def start():
+    global serialPort
     serialPort = getSerialPort()
     serialPort.write(sys.argv[1])
     time.sleep(1)
@@ -297,19 +184,61 @@ def start():
     profilingDict = {}
     add_log('+ Saving data to ' + saveDirec)
     add_log('+ Press the SELECT button to begin')
+    return serialPort
 
+def dump():
     # Here we dump the data onto console/cursed console.
     dump_to_console(serialPort, saveDirec, trialsDict, profilingDict)
-
     add_log('+ The session is complete and will now terminate')
     serialPort.close()
+
+def get_lines_for_half_second( serialPort ):
+    startT = time.time()
+    xdata, ydata = [], []
+    while time.time() - startT < 0.5:
+        l = getLine( serialPort )
+        if not l.strip():
+            continue
+        l = l.split(' ')
+        if not l:
+            continue
+        if len(l) == 1: 
+            l.append( len(xdata) + 2 )
+        y, x = l
+        xdata.append(float(x))
+        ydata.append(float(y))
+    return (xdata, ydata)
+
     
+# setup animation.
+fig = plt.figure()
+ax = plt.axes( xlim=(0, 1000), ylim=(0, 1000))
+line, = ax.plot([], [], lw=2)
+
+def add_log( msg ):
+    return 
+
+# Init only required for blitting to give a clean slate.
+def init():
+    global serialPort
+    serialPort = start()
+    line.set_data([], [])
+    return line,
+
+def animate(i):
+    global serialPort
+    data = get_lines_for_half_second( serialPort )
+    line.set_data(np.array(data[0]), data[1])
+    return line,
+
 def main( ):
-    if enable_curses_:
-        initCurses()
-    start()
-    cleanup()
-    quit()
+    ani = animation.FuncAnimation(
+            fig
+            , animate
+            , init_func=init
+            , blit = False
+            )
+    plt.show()
 
 def test():
     filename = None
@@ -325,7 +254,6 @@ def test():
     for d in data:
         d = d.replace(',',  ' ')
         add_plot(d)
-
 
 if __name__ == '__main__':
     main()
