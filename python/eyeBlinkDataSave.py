@@ -145,8 +145,12 @@ def writeTrialData(serialPort, saveDirec, trialsDict = {}, arduinoData =[]):
     add_log('[INFO] Trial: %s' %runningTrial)
     
     #Then, wait indefinitely for the DATA_BEGIN_MARKER from the next line
-    while DATA_BEGIN_MARKER not in getLine(serialPort):
+    line = getLine( serialPort )
+    while DATA_BEGIN_MARKER not in line:
+        add_status("Waiting for START", overwrite=True)
+        add_plot( line )
         continue
+
     #Once the DATA_BEGIN_MARKER is caught,
     while True:
         line = getLine(serialPort)
@@ -208,8 +212,11 @@ def getLine(serialPort):
     return line.strip()
 
 def writeData(serialPort, saveDirec, trialsDict, profilingDict):
-    while SESSION_BEGIN_MARKER not in getLine(serialPort):
+    line = getLine( serialPort )
+    while SESSION_BEGIN_MARKER not in line:
         add_status('Waiting for you to press SELECT')
+        if not line.strip():
+            add_plot( '0 0' )
         continue
     
     #Once the SESSION_BEGIN_MARKER is caught,
