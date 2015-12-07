@@ -216,7 +216,7 @@ def writeData(serialPort, saveDirec, trialsDict, profilingDict):
     while SESSION_BEGIN_MARKER not in line:
         add_status('Waiting for you to press SELECT')
         if not line.strip():
-            add_plot( '0 0' )
+            add_plot( line )
         continue
     
     #Once the SESSION_BEGIN_MARKER is caught,
