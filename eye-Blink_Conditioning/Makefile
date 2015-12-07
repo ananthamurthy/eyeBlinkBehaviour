@@ -17,7 +17,7 @@ ARDMK_DIR         = $(PROJECT_DIR)/Arduino-Makefile
 ### On OS X:
 ARDUINO_DIR       = /Applications/Arduino.app/Contents/Java
 ### or on Linux: (remove the one you don't want)
-### ARDUINO_DIR       = /usr/share/arduino
+##ARDUINO_DIR       = /usr/share/arduino
 
 ### USER_LIB_PATH
 ### Path to where the your project's libraries are stored.
@@ -36,15 +36,14 @@ MONITOR_BAUDRATE  = 9600
 ### On OS X with `homebrew`:
 AVR_TOOLS_DIR     = /opt/local
 ### or on Linux: (remove the one you don't want)
-### AVR_TOOLS_DIR     = /usr
+AVR_TOOLS_DIR     = /opt/local
 
 ### AVRDDUDE
 ### Path to avrdude directory.
 ### On OS X with `homebrew`:
 AVRDDUDE          = /opt/local/bin/avrdude
 ### or on Linux: (remove the one you don't want)
-### AVRDDUDE          = /usr/bin/avrdude
-### AVRDUDE_CONF     = /etc/avrdude.conf
+AVRDDUDE          = /opt/bin/avrdude
 
 ### CFLAGS_STD
 ### Set the C standard to be used during compilation. Documentation (https://github.com/WeAreLeka/Arduino-Makefile/blob/std-flags/arduino-mk-vars.md#cflags_std)
@@ -61,7 +60,6 @@ CXXFLAGS         += -pedantic -Wall -Wextra
 ### MONITOR_PORT
 ### The port your board is connected to. Using an '*' tries all the ports and finds the right one.
 MONITOR_PORT      = /dev/tty.usbmodem*
-MONITOR_PORT = /dev/tty*
 
 ### CURRENT_DIR
 ### Do not touch - used for binaries path

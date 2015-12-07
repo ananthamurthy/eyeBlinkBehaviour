@@ -100,7 +100,7 @@ void initialize()
   Serial.println(SESSION_BEGIN_MARKER);
   Serial.println(TRIAL_DATA_MARKER);
   //Serial.print(trialNum);
-  Serial.println("1 1"); // Just to not confuse data saving
+  Serial.println("1 1"); // Just to not confuse data saving; NOTE: we always start the session with a CS+ trial
   Serial.println(DATA_BEGIN_MARKER);
 
   // Get totalTrials and traceTime based on the Session Type
