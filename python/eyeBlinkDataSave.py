@@ -14,14 +14,27 @@ from collections import defaultdict
 import datetime
 import csv
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
 import codecs
+import matplotlib.pyplot as plt
+from matplotlib import animation
 
-## curses windows.
-ymax_ = 0
-xmax_ = 0
-startTime_ = time.time()
+# Two threaded queue. One thread writes to queue, other consume it to plot it.
+# globals.
+fig_ = plt.figure()
+ax = plt.axes(xlim=(0,1000), ylim=(0, 1000))
+# ax.set_autoscalex_on(True)
+line_, = ax.plot([], [], '*')
+
+save_dir_ = os.path.join( 
+        os.environ['HOME']
+        , 'Desktop'
+        , 'Work'
+        , 'Behaviour'
+        )
+
+# not blocking in pylab
+
+tstart = time.time()
 
 DATA_BEGIN_MARKER = '['
 DATA_END_MARKER = ']'
@@ -46,23 +59,20 @@ def getSerialPort(portPath = '/dev/ttyACM'+ str(sys.argv[4]), baudRate = 9600):
     global logWin_
     global serialPort
     serialPort = serial.Serial(portPath, baudRate)
-    add_log('[INFO] Connected to %s' % serialPort)
+    print('[INFO] Connected to %s' % serialPort)
     return serialPort
 
 def writeTrialData(serialPort, saveDirec, trialsDict = {}, arduinoData =[]):
     #The first line after '@' will give us
     runningTrial, csType = getLine(serialPort).split()
     trialsDict[runningTrial] = []
-    add_log('[INFO] Trial: %s' %runningTrial)
+    print('[INFO] Trial: %s' %runningTrial)
     
     #Then, wait indefinitely for the DATA_BEGIN_MARKER from the next line
     while True:
         line = getLine( serialPort )
         if DATA_BEGIN_MARKER in line:
             break
-        add_status("Waiting for START", overwrite=True)
-        add_plot( line )
-        add_log( line )
 
     #Once the DATA_BEGIN_MARKER is caught,
     while True:
@@ -73,9 +83,7 @@ def writeTrialData(serialPort, saveDirec, trialsDict = {}, arduinoData =[]):
             pass
         else:
             blinkValue, timeStamp = line.split()
-            add_status('Trial No: %s' % runningTrial)
-            add_plot( line )
-            # add_log( "Data: %s" % line)
+            # print( "Data: %s" % line)
             trialsDict[runningTrial].append((blinkValue, timeStamp))
 
     with open(os.path.join(saveDirec, "Trial" + runningTrial + ".csv"), 'w') as f:
@@ -109,22 +117,28 @@ def writeProfilingData(serialPort, saveDirec, profilingDict = {}, arduinoData = 
                 bin, counts = line.split()
                 profilingDict[bin] = counts
             except:
-                add_log('[INFO-WARNING] No instructions for %s defined in writeProfilingData()' %line)
+                print('[INFO-WARNING] No instructions for %s defined in writeProfilingData()' %line)
     
         with open(os.path.join(saveDirec, "profilingData.csv"), 'w') as f:
             data = profilingDict.items()
             data = [bin + "," + count for (bin, count) in data]
             f.write("\n".join(data))
 
-def getLine(serialPort):
+def getLine(port = None):
+    global serialPort
+    if not port:
+        port = serialPort
     line = []
-    txtLine = u""
+    txtLine = u''
     while True:
-        c = serialPort.read( 1 )
+        c = port.read( 1 )
         if c: 
             if c == '\r' or c == '\n' or c == '\r\n':
                 for x in line:
-                    txtLine += str(x)
+                    try:
+                        txtLine += x.decode('ascii')
+                    except:
+                        return ""
                 break
             else:
                 line.append(c)
@@ -134,34 +148,33 @@ def dump_to_console(serialPort, saveDirec, trialsDict, profilingDict):
     line = getLine( serialPort )
     while SESSION_BEGIN_MARKER not in line:
         line = getLine( serialPort )
-        add_status('Waiting for you to press SELECT')
         line = line.strip()
-        if line.strip():
-            add_log( line )
-            add_plot( line + ' 0' )
+        if line:
+            y, x = line_to_yx( line )
+            line_.set_data(y, x)
+            fig_.canvas.draw()
 
     #Once the SESSION_BEGIN_MARKER is caught,
-    add_log('[INFO] A new session has begun')
     while True:
         arduinoData = getLine(serialPort)
         if arduinoData:
-            add_log( "Data: %s" % arduinoData )
+            q_.put(arduinoData)
         if SESSION_END_MARKER in arduinoData:
             return
         elif not arduinoData:
             continue
         elif COMMENT_MARKER in arduinoData:
-            add_log(arduinoData)
             pass
         elif TRIAL_DATA_MARKER in arduinoData:
             writeTrialData(serialPort, saveDirec)
         elif PROFILING_DATA_MARKER in arduinoData:
             writeProfilingData(serialPort, saveDirec)
         else:
-            add_log("[WARNING] No instructions for %s defined in dump_to_console()" %arduinoData)
+            print("[WARNING] No instructions for %s defined in dump_to_console()" %arduinoData)
 
 def start():
     global serialPort
+    global save_dir_
     serialPort = getSerialPort()
     serialPort.write(sys.argv[1])
     time.sleep(1)
@@ -173,23 +186,21 @@ def start():
         outfile = os.path.join( timeStamp , 'raw_data')
     else:
         outfile = 'MouseK' + sys.argv[1] + '_SessionType' + sys.argv[2] + '_Session' + sys.argv[3]    
-    saveDirec = os.path.join(os.environ['HOME'], 'Desktop/Work/Behaviour', outfile)
+    saveDirec = os.path.join( save_dir_, outfile )
     if os.path.exists(saveDirec):
         saveDirec = os.path.join(saveDirec, timeStamp)
         os.makedirs(saveDirec)
     else:
         os.makedirs(saveDirec) 
-    
-    trialsDict = defaultdict(list)
-    profilingDict = {}
-    add_log('+ Saving data to ' + saveDirec)
-    add_log('+ Press the SELECT button to begin')
-    return serialPort
+    # update the global to reflect the changes.
+    save_dir_ = saveDirec
 
-def dump():
+def produce_data():
     # Here we dump the data onto console/cursed console.
-    dump_to_console(serialPort, saveDirec, trialsDict, profilingDict)
-    add_log('+ The session is complete and will now terminate')
+    global save_dir_
+    profilingDict = {}
+    trialsDict = defaultdict(list)
+    dump_to_console(serialPort, save_dir_, trialsDict, profilingDict)
     serialPort.close()
 
 def get_lines_for_half_second( serialPort ):
@@ -209,36 +220,49 @@ def get_lines_for_half_second( serialPort ):
         ydata.append(float(y))
     return (xdata, ydata)
 
-    
-# setup animation.
-fig = plt.figure()
-ax = plt.axes( xlim=(0, 1000), ylim=(0, 1000))
-line, = ax.plot([], [], lw=2)
+def line_to_yx( line ):
+    if not line.strip():
+        return (None, None)
+    l = line.split(' ')
+    if not l:
+        return (None, None)
+    if len(l) == 1: 
+        l.append( time.time() - tstart )
+    return l
 
-def add_log( msg ):
-    return 
+def get_data():
+    global q_, line_
+    while True:
+        item =  q_.get()
+        y, x = line_to_yx( item )
+        if x:
+            print(y, x)
+            line_.set_data(y, x)
+            fig_.canvas.draw()
 
-# Init only required for blitting to give a clean slate.
 def init():
-    global serialPort
-    serialPort = start()
-    line.set_data([], [])
-    return line,
+    line_.set_data([], [])
+    return line_,
 
 def animate(i):
-    global serialPort
-    data = get_lines_for_half_second( serialPort )
-    line.set_data(np.array(data[0]), data[1])
-    return line,
+    global line_
+    line = getLine()
+    y, x = line_to_yx(line)
+    if x and i % 100 == 0:
+        line_.set_data( float(x)+1, y )
+    return line_,
 
-def main( ):
-    ani = animation.FuncAnimation(
-            fig
+def main():
+    start()
+    anim = animation.FuncAnimation(fig_
             , animate
-            , init_func=init
-            , blit = False
+            , init_func = init
+            , frames=20
+            , interval = 1
+            , blit = True
             )
     plt.show()
+
 
 def test():
     filename = None
@@ -253,7 +277,6 @@ def test():
     initCurses()
     for d in data:
         d = d.replace(',',  ' ')
-        add_plot(d)
 
 if __name__ == '__main__':
     main()
