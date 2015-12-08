@@ -18,14 +18,15 @@ import codecs
 import matplotlib
 from multiprocessing  import Process, Queue
 
-q_ = Queue()
-
 try:
     matplotlib.use('GTKAgg') 
 except Exception as e:
     print("Cant load GTKAgg. Using default")
 
+import matplotlib.pyplot as plt
+from matplotlib import animation
 import logging
+
 logging.basicConfig(level=logging.DEBUG,
     format='%(asctime)s -- %(message)s',
     datefmt='%m-%d %H:%M',
@@ -34,9 +35,7 @@ logging.basicConfig(level=logging.DEBUG,
 _logger = logging.getLogger('')
 
 
-import matplotlib.pyplot as plt
-from matplotlib import animation
-
+q_ = Queue()
 mouse_ = None
 serial_ = None
 
@@ -85,6 +84,8 @@ SESSION_END_MARKER = '>'
 
 serial_port_ = None
 
+trial_data_ = []
+trial_dict_ = defaultdict(list)
 def saveDict2csv(filename, fieldnames=[], dictionary={}):
     with open (filename, 'a') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames)
@@ -103,45 +104,25 @@ def getSerialPort(portPath = '/dev/ttyACM'+ str(sys.argv[4]), baudRate = 9600):
     serial_ = '%s' % portPath.split('/')[-1]
     return serial_port_
 
-def writeTrialData(serial_port_, saveDirec, trialsDict = {}, arduinoData =[]):
+def writeTrialData( runningTrial, csType ):
     #The first line after '@' will give us
-    runningTrial, csType = getLine(serial_port_).split()
-    trialsDict[runningTrial] = []
-    print('[INFO] Trial: %s' %runningTrial)
+    global save_dir_
+    global trial_dict_
     
-    #Then, wait indefinitely for the DATA_BEGIN_MARKER from the next line
-    i = 0
-    while True:
-        line = getLine( serial_port_ )
-        if DATA_BEGIN_MARKER in line:
-            break
-
-    #Once the DATA_BEGIN_MARKER is caught,
-    while True:
-        line = getLine(serial_port_)
-        if DATA_END_MARKER in line:
-            break
-        elif not line:
-            pass
-        else:
-            blinkValue, timeStamp = line.split()
-            trialsDict[runningTrial].append((blinkValue, timeStamp))
-
-    with open(os.path.join(saveDirec, "Trial" + runningTrial + ".csv"), 'w') as f:
+    outfile = os.path.join( save_dir_, 'Trial%s.csv' % runningTrial )
+    print("[INFO] Writing trial data to : %s" % outfile)
+    with open(outfile, 'w') as f:
         f.write("# 3rd row values are trial index, cs type.\n")
         f.write("# Actual trial data starts from row 4\n")
-        f.write(runningTrial + "," + csType + "\n")
-        for (blinkValue, timeStamp) in trialsDict[runningTrial]:
-            data = blinkValue + "," + timeStamp
-            f.write("%s\n" % data)
+        f.write( "%s,%s\n" % (runningTrial, csType))
+        for (blinkValue, timeStamp) in trial_dict_[runningTrial]:
+            f.write("%s,%s\n" % (blinkValue, timeStamp))
 
 
-#     filename = os.path.join(saveDirec,'Trial' + runningTrial + '.csv')
-#     fields = ['BlinkValue', 'TimeStamp']
-#     saveDict2csv(filename, fields, trialsDict)
-
-def writeProfilingData(serial_port_, saveDirec, profilingDict = {}, arduinoData = []):
+def writeProfilingData(profilingDict = {}, arduinoData = []):
     
+    global serial_port_
+    global save_dir_
     #Wait indefinitely for the DATA_BEGIN_MARKER
     while DATA_BEGIN_MARKER not in getLine(serial_port_):
         continue
@@ -160,10 +141,12 @@ def writeProfilingData(serial_port_, saveDirec, profilingDict = {}, arduinoData 
             except:
                 print('[INFO-WARNING] No instructions for %s defined in writeProfilingData()' %line)
     
-        with open(os.path.join(saveDirec, "profilingData.csv"), 'w') as f:
-            data = profilingDict.items()
-            data = [bin + "," + count for (bin, count) in data]
-            f.write("\n".join(data))
+    outfile = os.path.join( save_dir_, 'profilingData.csv')
+    print("[INFO] Writing profiling data to : %s" % outfile)
+    with open(outfile, 'w') as f:
+        data = profilingDict.items()
+        data = [bin + "," + count for (bin, count) in data]
+        f.write("\n".join(data))
 
 def getLine(port = None):
     global serial_port_
@@ -185,32 +168,49 @@ def getLine(port = None):
                 line.append(c)
     return txtLine.decode('ascii', 'ignore')
 
-def dump_to_console(serial_port_, saveDirec, trialsDict, profilingDict):
+def collect_data( ):
+    global serial_port_
+    global trial_dict_
     line = getLine( serial_port_ )
-    while SESSION_BEGIN_MARKER not in line:
-        line = getLine( serial_port_ )
-        line = line.strip()
-        if line:
-            y, x = line_to_yx( line )
-            lline_.set_data(y, x)
-
+    print("Line: %s" % line)
     #Once the SESSION_BEGIN_MARKER is caught,
     while True:
+        line = getLine( serial_port_ ).strip()
+        if SESSION_BEGIN_MARKER  in line:
+            break
+        if line:
+            y, x = line_to_yx( line )
+            if x and y:
+                q_.put((y,x))
+
+    runningTrial = None
+    csType = None
+    while True:
         arduinoData = getLine(serial_port_)
-        if arduinoData:
-            q_.put(arduinoData)
-        if SESSION_END_MARKER in arduinoData:
-            return
-        elif not arduinoData:
+        if not arduinoData:
             continue
-        elif COMMENT_MARKER in arduinoData:
-            pass
-        elif TRIAL_DATA_MARKER in arduinoData:
-            writeTrialData(serial_port_, saveDirec)
-        elif PROFILING_DATA_MARKER in arduinoData:
-            writeProfilingData(serial_port_, saveDirec)
+
+        y, x = line_to_yx(arduinoData)
+
+        # Put all legal arduinoData into queue.
+        if x and y: q_.put((y,x))
+
+        # When TRIAL_DATA_MARKER is found, collect trial data and write the
+        # previous non-zero trial.
+        if TRIAL_DATA_MARKER in arduinoData:
+            print("[INFO] Trial starts")
+            if x and y:
+                trial_dict_[runningTrial].append((y,x))
+            if runningTrial > 1:
+                print("Writing previous trial %s" % ( runningTrial ))
+                writeTrialData( runningTrial, csType )
         else:
-            print("[WARNING] No instructions for %s defined in dump_to_console()" %arduinoData)
+            if not (csType and runningTrial):
+                runningTrial, csType = arduinoData.split()
+                print("[INFO] Trial, CSType: %s, %s" % (runningTrial, csType))
+            else:
+                if x and y:
+                    trial_dict_[runningTrial].append((y,x))
 
 def start():
     global serial_port_
@@ -228,27 +228,14 @@ def start():
         outfile = os.path.join( timeStamp , 'raw_data')
     else:
         outfile = 'MouseK' + sys.argv[1] + '_SessionType' + sys.argv[2] + '_Session' + sys.argv[3]    
-    saveDirec = os.path.join( save_dir_, outfile )
-    if os.path.exists(saveDirec):
-        saveDirec = os.path.join(saveDirec, timeStamp)
-        os.makedirs(saveDirec)
+    save_dir_ = os.path.join( save_dir_, outfile )
+    if os.path.exists(save_dir_):
+        save_dir_ = os.path.join(save_dir_, timeStamp)
+        os.makedirs(save_dir_)
     else:
-        os.makedirs(saveDirec) 
+        os.makedirs(save_dir_) 
     # update the global to reflect the changes.
-    save_dir_ = saveDirec
-
-def produce_data():
-    global save_dir_
-    global q_
-    while True:
-        line = getLine( serial_port_ )
-        y, x = line_to_yx( line )
-        if x and y:
-            try:
-                x, y = float(x), int(y)
-                q_.put((y,x))
-            except Exception as e:
-                _logger.info("Could not convert: %s, %s" % (y, x))
+    save_dir_ = save_dir_
 
 def line_to_yx( line ):
     if not line.strip():
@@ -264,18 +251,6 @@ def line_to_yx( line ):
         return (None, None)
     return l
 
-def get_data():
-    global q_, lline_
-    while True:
-        item =  q_.get()
-        y, x = line_to_yx( item )
-        if x:
-            lline_.set_data(y, x)
-            fig_.canvas.draw()
-
-def sanitize_data( xvec, yvec):
-    data = zip(xvec, yvec)
-    return zip(*data)
 
 def init():
     lline_.set_data([], [])
@@ -293,8 +268,8 @@ def animate(i):
         y, x = q_.get()
         ybuff_.append(y)
         xbuff_.append( len(ybuff_) + 1 )
-    _logger.info("Got from queue: %s, %s" % (xbuff_[-20:], ybuff_[-20:]))
 
+    _logger.info("Got from queue: %s, %s" % (xbuff_[-20:], ybuff_[-20:]))
     xmin, xmax = lax_.get_xlim()
     if len(xbuff_) >= xmax:
         print("+ Updating axes")
@@ -306,8 +281,6 @@ def animate(i):
         startx_.append(xbuff_[-1])
         stary_.append(50)
         gline1_.set_data(startx_, stary_)
-    # data = sanitize_data(xbuff_, ybuff_)
-    # lline_.set_data(data[0][-1000:], data[1][-1000:])
     lline_.set_data(xbuff_[-1000:], ybuff_[-1000:])
     text = 'TIME: %.3f' % (time.time() - tstart)
     text += ' MOUSE: %s' % mouse_
@@ -317,7 +290,7 @@ def animate(i):
 
 def main():
     start()
-    p = Process( target = produce_data )
+    p = Process( target = collect_data )
     p.start()
     anim = animation.FuncAnimation(fig_
             , animate
