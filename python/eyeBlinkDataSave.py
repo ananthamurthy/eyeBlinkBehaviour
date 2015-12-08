@@ -21,9 +21,9 @@ from matplotlib import animation
 # Two threaded queue. One thread writes to queue, other consume it to plot it.
 # globals.
 fig_ = plt.figure()
-ax = plt.axes(xlim=(0,1000), ylim=(0, 1000))
+ax_ = plt.axes(xlim=(0,1000), ylim=(0, 1000))
 # ax.set_autoscalex_on(True)
-line_, = ax.plot([], [], '*')
+line_, = ax_.plot([], [], '*')
 
 save_dir_ = os.path.join( 
         os.environ['HOME']
@@ -249,6 +249,9 @@ def animate(i):
     line = getLine()
     y, x = line_to_yx(line)
     if x and i % 100 == 0:
+        xmax = ax_.get_xlim()
+        if float(x) + 1 > xmax:
+            ax_.set_xlim((xmax-500, xmax+500))
         line_.set_data( float(x)+1, y )
     return line_,
 
