@@ -75,25 +75,6 @@ save_dir_ = os.path.join(
 
 tstart = time.time()
 
-    for i, x in enumerate(xdataToPlot):
-        y = ydataToPlot[i]
-        add_log("Plotting %s, %s" % (y, x))
-        logger_.info("Plotting: %s, %s" % (y, x))
-
-        # NOTE TO SELF: Doing it here make life simpler, DO NOT TRY to be too
-        # smart, you will end up wasting lot of time of a script which is not
-        # other use.
-        if x <= 0:
-            continue
-        try:
-            plotWin_.addstr(min(y, ymax-1), x, '*')
-        except Exception as e:
-            msg = "%s: Tried y=%s, x=%s" % (e, y, x)
-            add_log(msg)
-            logger_.warning(msg)
-
-    refresh()
-
 DATA_BEGIN_MARKER = '['
 DATA_END_MARKER = ']'
 COMMENT_MARKER = '#'
@@ -257,7 +238,6 @@ def start():
     save_dir_ = saveDirec
 
 def produce_data():
-    # Here we dump the data onto console/cursed console.
     global save_dir_
     global q_
     while True:
