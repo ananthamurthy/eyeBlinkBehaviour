@@ -119,6 +119,9 @@ def add_status( status ):
 
 
 def line2xy( line ):
+    # Comment found.
+    if '#' == line[0]:
+        return None
     if not line.strip():
         return [1, -1]
     l = filter(None, line.split())
