@@ -16,6 +16,16 @@ import csv
 import curses
 import signal
 import codecs
+import numpy as np
+
+# logger
+import logging
+logging.basicConfig(level=logging.DEBUG,
+    format='%(asctime)s -- %(message)s',
+    datefmt='%m-%d %H:%M',
+    filename='blink.log',
+    filemode='w')
+logger_ = logging.getLogger('')
 
 enable_curses_ = True
 if not enable_curses_:
@@ -43,7 +53,6 @@ def refresh():
     logWin_.refresh()
     plotWin_.refresh()
     statusWin_.refresh()
-    curses.doupdate()
 
 def cleanup():
     if not enable_curses_:
@@ -56,6 +65,7 @@ def initCurses():
     scr = curses.initscr()
     curses.echo()
     curses.cbreak()
+    curses.curs_set(False)
     ymax_, xmax_ = scr.getmaxyx()
 
     statusWin_ = curses.newwin(3, xmax_, 0, 0)
@@ -73,10 +83,9 @@ def add_log(msg, end='\n', overwrite = False):
     global logWin_
     # IT servers two purpose, a) it introduce a healthy delay before we write to
     # the curses console, and b) we get the raw data into debug file.
-    with open('debug.txt', 'w') as f:
-        f.write(msg+end)
     if not enable_curses_:
         return
+    logger_.info(msg)
     if overwrite:
         y, x = logWin_.getyx()
         if x < len(msg): xloc = x
@@ -109,32 +118,89 @@ def add_status( status ):
     refresh()
 
 
-def add_plot( line, end = '' ):
+def line2xy( line ):
+    if not line.strip():
+        return [1, -1]
+    l = filter(None, line.split())
+    if len(l) == 1:
+        l.append(-1)
+    assert len(l) == 2, l
+    return l
+
+xvec_ = [ 0 ]
+yvec_ = [ 0 ]
+
+def xyplot( line, index, stride=10, end = '' ):
     global plotWin_, statusWin_  
+    global xvec_, yvec_
+
+    scaleX = 10
+    scaleY = 20
     if not enable_curses_:
         return
     ymax, xmax = plotWin_.getmaxyx()
 
-    scaleF = 500 / xmax
-    data = line.strip().split()
+    y, x = line2xy( line )
     try:
-        v, t = data
-        v, t = int(v), int(t)
+        y, x = int(y), int(x)
     except Exception as e:
-        return
+        return None
 
-    y, x = plotWin_.getyx()
-    plotWin_.attron(curses.A_BOLD)
-    plotWin_.addstr("\n%4s " % t)
-    plotWin_.attroff(curses.A_BOLD)
-    msg =  "".join(['-' for x  in range(min(v/scaleF, xmax-5))])
-    curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_YELLOW)
+    if x < 0: 
+        x = scaleX * len(xvec_) 
+    xvec_.append( int(x) )
+    yvec_.append( int(y) )
 
-    plotWin_.attron(curses.A_BLINK)
-    plotWin_.addstr(msg, curses.color_pair(1))
-    plotWin_.attroff(curses.A_BLINK)
-    plotWin_.addstr("%s"%v)
+    # append the data at each call into buffer, but do not plot unless stride is
+    # satisfied.
+    if index % stride != 0:
+        return None
+
+    dmax = max(xvec_)
+    shiftx = xmax - (dmax / scaleX) - 5
+    add_log("raw: %s, %s" % (xvec_[-1], yvec_[-1]))
+
+    xdataToPlot = np.array(xvec_[max(-5*scaleX, -40):]) / (scaleX)
+    ydataToPlot = np.array(yvec_[max(-5*scaleX, -40):]) / scaleY
+
+    logger_.info("x buff: %s" % xdataToPlot)
+    logger_.info("y buff: %s" % ydataToPlot)
+
+    if xdataToPlot.max() > xmax:
+        xdataToPlot = xdataToPlot + shiftx
+
+    # There values can be negative after shifting. We are ignore them when
+    # plotting. DO NOT WORRY about negative values!
+    # assert (xdataToPlot <= xmax).all(), xdataToPlot
+
+    # assert (ydataToPlot >= 0).all(), ydataToPlot
+    # assert (ydataToPlot <= ymax).all(), ydataToPlot
+
+    logger_.info("To plot (xs) : %s" % str(xdataToPlot))
+    logger_.info("To plot (ys) : %s" % str(ydataToPlot))
+
+
+    plotWin_.erase()
     plotWin_.refresh()
+
+    for i, x in enumerate(xdataToPlot):
+        y = ydataToPlot[i]
+        add_log("Plotting %s, %s" % (y, x))
+        logger_.info("Plotting: %s, %s" % (y, x))
+
+        # NOTE TO SELF: Doing it here make life simpler, DO NOT TRY to be too
+        # smart, you will end up wasting lot of time of a script which is not
+        # other use.
+        if x <= 0:
+            continue
+        try:
+            plotWin_.addstr(min(y, ymax-1), x, '*')
+        except Exception as e:
+            msg = "%s: Tried y=%s, x=%s" % (e, y, x)
+            add_log(msg)
+            logger_.warning(msg)
+
+    refresh()
 
 DATA_BEGIN_MARKER = '['
 DATA_END_MARKER = ']'
@@ -155,24 +221,37 @@ def saveDict2csv(filename, fieldnames=[], dictionary={}):
 # be read completely from serial-port.
 def getSerialPort(portPath = '/dev/ttyACM'+ str(sys.argv[4]), baudRate = 9600):
     global logWin_
-    serialPort = serial.Serial(portPath, baudRate)
+    try:
+        serialPort = serial.Serial(portPath, baudRate)
+    except Exception as e:
+        add_log("failed to connect to serial port") 
+        add_log("%s" % e)
+        cleanup()
+
     add_log('[INFO] Connected to %s' % serialPort)
     return serialPort
 
 def writeTrialData(serialPort, saveDirec, trialsDict = {}, arduinoData =[]):
     #The first line after '@' will give us
-    runningTrial, csType = getLine(serialPort).split()
+    try:
+        runningTrial, csType = getLine(serialPort).split()
+    except Exception as e:
+        logger_.info("failed to split: %s" % e)
+        add_log("Fatal error, check log")
+        quit()
+
     trialsDict[runningTrial] = []
     add_log('[INFO] Trial: %s' %runningTrial)
     
     #Then, wait indefinitely for the DATA_BEGIN_MARKER from the next line
+    i = 0
     while True:
+        i += 1
         line = getLine( serialPort )
         if DATA_BEGIN_MARKER in line:
             break
         add_status("Waiting for START", overwrite=True)
-        add_plot( line )
-        add_log( line )
+        xyplot( line )
 
     #Once the DATA_BEGIN_MARKER is caught,
     while True:
@@ -184,7 +263,7 @@ def writeTrialData(serialPort, saveDirec, trialsDict = {}, arduinoData =[]):
         else:
             blinkValue, timeStamp = line.split()
             add_status('Trial No: %s' % runningTrial)
-            add_plot( line )
+            xyplot( line )
             # add_log( "Data: %s" % line)
             trialsDict[runningTrial].append((blinkValue, timeStamp))
 
@@ -196,10 +275,6 @@ def writeTrialData(serialPort, saveDirec, trialsDict = {}, arduinoData =[]):
             data = blinkValue + "," + timeStamp
             f.write("%s\n" % data)
 
-
-#     filename = os.path.join(saveDirec,'Trial' + runningTrial + '.csv')
-#     fields = ['BlinkValue', 'TimeStamp']
-#     saveDict2csv(filename, fields, trialsDict)
 
 def writeProfilingData(serialPort, saveDirec, profilingDict = {}, arduinoData = []):
     
@@ -226,13 +301,10 @@ def writeProfilingData(serialPort, saveDirec, profilingDict = {}, arduinoData = 
             data = [bin + "," + count for (bin, count) in data]
             f.write("\n".join(data))
 
-#     filename = os.path.join(saveDirec, 'profilingData.csv')
-#     fields = ['Bin', 'Counts']
-#     saveDict2csv(filename, fields, profilingDict)
-
 def getLine(serialPort):
-    line = []
-    txtLine = u""
+    #line  =  serialPort.readline()
+    #return line.strip()
+    line, txtLine = [], ""
     while True:
         c = serialPort.read( 1 )
         if c: 
@@ -242,17 +314,19 @@ def getLine(serialPort):
                 break
             else:
                 line.append(c)
-    return txtLine
+    return txtLine.decode('ascii', 'ignore')
 
 def dump_to_console(serialPort, saveDirec, trialsDict, profilingDict):
     line = getLine( serialPort )
+    i = 0
     while SESSION_BEGIN_MARKER not in line:
+        i += 1
         line = getLine( serialPort )
         add_status('Waiting for you to press SELECT')
         line = line.strip()
         if line.strip():
-            add_log( line )
-            add_plot( line + ' 0' )
+            logger_.info("Got arduino line: %s" % line)
+            xyplot( line, index = i, stride=20 )
 
     #Once the SESSION_BEGIN_MARKER is caught,
     add_log('[INFO] A new session has begun')
@@ -266,7 +340,6 @@ def dump_to_console(serialPort, saveDirec, trialsDict, profilingDict):
             continue
         elif COMMENT_MARKER in arduinoData:
             add_log(arduinoData)
-            pass
         elif TRIAL_DATA_MARKER in arduinoData:
             writeTrialData(serialPort, saveDirec)
         elif PROFILING_DATA_MARKER in arduinoData:
@@ -277,9 +350,7 @@ def dump_to_console(serialPort, saveDirec, trialsDict, profilingDict):
 def start():
     serialPort = getSerialPort()
     serialPort.write(sys.argv[1])
-    time.sleep(1)
     serialPort.write(sys.argv[2])
-    time.sleep(1)
     serialPort.write(sys.argv[3])
     timeStamp = datetime.datetime.now().isoformat()
     if len(sys.argv) <= 1:
@@ -324,7 +395,7 @@ def test():
     initCurses()
     for d in data:
         d = d.replace(',',  ' ')
-        add_plot(d)
+        xyplot(d)
 
 
 if __name__ == '__main__':
