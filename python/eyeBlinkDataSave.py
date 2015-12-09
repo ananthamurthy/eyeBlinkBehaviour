@@ -95,14 +95,13 @@ def saveDict2csv(filename, fieldnames=[], dictionary={}):
 
 # NOTE: Keep the timeout 0 or leave it to default value. Else small lines wont
 # be read completely from serial-port.
-def getSerialPort(portPath = '/dev/ttyACM'+ str(sys.argv[4]), baudRate = 9600):
+def initSerialPort(portPath = '/dev/ttyACM'+ str(sys.argv[4]), baudRate = 9600):
     global logWin_
     global serial_port_
     global serial_
-    serial_port_ = serial.Serial(portPath, baudRate)
+    serial_port_ = serial.serial_for_url(portPath, baudRate, timeout = 1)
     print('[INFO] Connected to %s' % serial_port_)
     serial_ = '%s' % portPath.split('/')[-1]
-    return serial_port_
 
 def writeTrialData( runningTrial, csType ):
     #The first line after '@' will give us
@@ -172,9 +171,9 @@ def collect_data( ):
     global serial_port_
     global trial_dict_
     line = getLine( serial_port_ )
-    print("Line: %s" % line)
     #Once the SESSION_BEGIN_MARKER is caught,
     while True:
+        _logger.info("A:  line: %s" % line)
         line = getLine( serial_port_ ).strip()
         if SESSION_BEGIN_MARKER  in line:
             break
@@ -187,6 +186,7 @@ def collect_data( ):
     csType = None
     while True:
         arduinoData = getLine(serial_port_)
+        _logger.info("B:  line: %s" % arduinoData)
         if not arduinoData:
             continue
 
@@ -216,12 +216,14 @@ def start():
     global serial_port_
     global save_dir_
     global serial_, mouse_
-    serial_port_ = getSerialPort()
-    serial_port_.write(sys.argv[1])
+    initSerialPort()
+
+    serial_port_.write(b"%s\r" %sys.argv[1])
     time.sleep(1)
-    serial_port_.write(sys.argv[2])
+    serial_port_.write(b"%s\r" % sys.argv[2])
     time.sleep(1)
-    serial_port_.write(sys.argv[3])
+    serial_port_.write(b"%s\r" % sys.argv[3])
+    time.sleep(1)
     timeStamp = datetime.datetime.now().isoformat()
     mouse_ = sys.argv[1]
     if len(sys.argv) <= 1:
