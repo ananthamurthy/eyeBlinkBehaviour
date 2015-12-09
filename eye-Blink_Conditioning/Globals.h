@@ -63,6 +63,7 @@ extern int blink;
 extern const int blink_ai;    // pin that reads the blinks
 extern int blinkCount;
 extern const int puff_do; // pin that drives the eye-puff solenoid
+extern const int tonePin;
 extern unsigned long startT;
 extern unsigned long currentPhaseTime;
 extern unsigned long lastTime;
@@ -70,5 +71,9 @@ extern unsigned short sampleInterval;
 extern int shutterDelay;
 extern int totalTrials;
 extern int trialNum;
+extern const int puffTime;
+extern const int CSTime;
+extern const int CS_PLUS_ToneFreq;
+extern const int CS_MINUS_ToneFreq;
 
 #endif
