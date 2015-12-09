@@ -223,21 +223,20 @@ def start():
     serial_port_.write(b"%s\r" % sys.argv[2])
     time.sleep(1)
     serial_port_.write(b"%s\r" % sys.argv[3])
-    time.sleep(1)
     timeStamp = datetime.datetime.now().isoformat()
     mouse_ = sys.argv[1]
     if len(sys.argv) <= 1:
         outfile = os.path.join( timeStamp , 'raw_data')
     else:
-        outfile = 'MouseK' + sys.argv[1] + '_SessionType' + sys.argv[2] + '_Session' + sys.argv[3]    
+        outfile = os.path.join('MouseK' + sys.argv[1]
+                , '_SessionType' + sys.argv[2] + '_Session' + sys.argv[3]    
+                )
     save_dir_ = os.path.join( save_dir_, outfile )
     if os.path.exists(save_dir_):
         save_dir_ = os.path.join(save_dir_, timeStamp)
         os.makedirs(save_dir_)
     else:
         os.makedirs(save_dir_) 
-    # update the global to reflect the changes.
-    save_dir_ = save_dir_
 
 def line_to_yx( line ):
     if not line.strip():
