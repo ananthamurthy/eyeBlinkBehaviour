@@ -63,13 +63,13 @@ void initialize()
   int puff_key = read_lcd_button();
   
           
-  Serial.print("#Please enter the mouse ID number: ");
+  Serial.println("#Please enter the mouse ID number: ");
   while (!Serial.available());
   mouseName = "MouseK" + String(Serial.readString().toInt());
   Serial.println("#" + mouseName);
 
   delay(1);
-  Serial.print("#Please enter the session type index: ");
+  Serial.println("#Please enter the session type index: ");
   while (!Serial.available());
   sessionType_ind = Serial.readString().toInt();
   Serial.println("#Session Type " + String(sessionType_ind));
@@ -82,7 +82,6 @@ void initialize()
 
   delay(1);
   Serial.println("#Please press the SELECT button to begin!");
-
   startT = millis();
   while (read_lcd_button() != btnSELECT)
   {

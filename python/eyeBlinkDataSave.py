@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
+
 from __future__ import print_function
 
 """
@@ -9,15 +10,20 @@ Created on Sat Nov  7 15:38:48 2015
 import os
 import sys
 import time
+
 import serial
+import io
+
+import serial.tools.list_ports
+
 from collections import defaultdict
 import datetime
 import csv
 import numpy as np
 import codecs
-import matplotlib
 from multiprocessing  import Process, Queue, Value
 
+import matplotlib
 try:
     matplotlib.use('GTKAgg') 
 except Exception as e:
@@ -34,13 +40,100 @@ logging.basicConfig(level=logging.DEBUG,
     filemode='w')
 _logger = logging.getLogger('')
 
+tstart = time.time()
 
+import sqlite3 as sql
+
+class BlinkDb():
+    """Keep raw data in sqlite3. Write every 3 seconds"""
+    def __init__(self, path):
+        self.table = datetime.date.today().strftime('data_%H%M%d')
+        self.conn = sql.connect( path )
+        self.cur = self.conn.cursor()
+
+    def query(self, q, commit = False):
+        self.cur.execute( q )
+        if commit:
+            self.conn.commit()
+        # Commit after every 3 seconds
+        if int(time.time() - tstart) % 3 == 0:
+            self.conn.commit()
+
+    def init(self):
+        self.query("""
+                CREATE TABLE IF NOT EXISTS {0} (timestamp, line) 
+                """.format( self.table ) , commit = True
+                )
+
+    def insert( self, line):
+        if not line:
+            return
+        self.query( """INSERT INTO {0} VALUES ( 'now()', '{1}' )""".format(
+            self.table, line))
+
+    def cleanup(self):
+        self.conn.close()
+
+db_ = BlinkDb( 'blink.sqlite' )
+db_.init()
+
+def cleanup():
+    db_.cleanup()
+
+# Create a class to handle serial port.
+class ArduinoPort( ):
+
+    def __init__(self, path, baud_rate = 9600, **kwargs):
+        self.path = path
+        self.baudRate = kwargs.get('baud_rate', 9600)
+        self.port = None
+
+    def open(self, wait = True):
+        # ATTN: timeout is essential else realine will block.
+        try:
+            self.port = serial.serial_for_url(args_.port, self.baudRate, timeout = 1)
+        except OSError as e:
+            # Most like to be a busy resourse. Wait till it opens.
+            print("[FATAL] Could not connect")
+            print(e)
+            if wait:
+                print("[INFO] Device seems to be busy. I'll try to reconnect"
+                        " after  some time..."
+                        )
+                time.sleep(1)
+                self.open( True )
+            else:
+                quit()
+        except Exception as e:
+            print("[FATAL] Failed to connect to port. Error %s" % e)
+            quit()
+        if wait:
+            print("[INFO] Waiting for port %s to open" % self.path, end='')
+            while not self.port.isOpen():
+                if (time.time() - tstart) % 2 == 0:
+                    print('.', end='')
+                    sys.stdout.flush()
+        print(" ... OPEN")
+
+    def read_line(self, **kwargs):
+        line = self.port.readline()
+        return line.strip()
+
+    def write_msg(self, msg):
+        print('[INFO] Writing %s to serial port' % msg)
+        sys.stdout.flush()
+        self.port.write(b'%s' % msg)
+        time.sleep(1)
+
+
+# Command line arguments/Other globals.
+args_ = None 
+
+# Our shared queue used in multiprocessing
 q_ = Queue()
-mouse_ = None
-serial_ = None
+running_trial_ = Value('d', 0)
 
 # This is a shared variable for both animation and dumping.
-running_trial_ = Value('d', 0)
 
 fig_ = plt.figure( )
 fig_.title = 'Overall profile'
@@ -76,7 +169,6 @@ save_dir_ = os.path.join(
 
 # not blocking in pylab
 
-tstart = time.time()
 
 DATA_BEGIN_MARKER = '['
 DATA_END_MARKER = ']'
@@ -90,22 +182,23 @@ serial_port_ = None
 
 trial_data_ = []
 trial_dict_ = defaultdict(list)
-def saveDict2csv(filename, fieldnames=[], dictionary={}):
-    with open (filename, 'a') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames)
-        writer.writeheader()
-        for key in dictionary:
-            writer.writerow(dictionary[key])
 
-# NOTE: Keep the timeout 0 or leave it to default value. Else small lines wont
-# be read completely from serial-port.
-def initSerialPort(portPath = '/dev/ttyACM'+ str(sys.argv[4]), baudRate = 9600):
-    global logWin_
+def get_default_serial_port( ):
+    # If port part is not given from command line, find a serial port by
+    # default.
+    print("[WARN] Searching for ARDUINO port since no --port/-p is given")
+    print("       Only listing ports with VENDOR ID ")
+    coms = list(serial.tools.list_ports.grep( 'PID' ))
+    return coms[-1][0]
+
+def init_serial( baudRate = 9600):
     global serial_port_
-    global serial_
-    serial_port_ = serial.serial_for_url(portPath, baudRate, timeout = 1)
-    print('[INFO] Connected to %s' % serial_port_)
-    serial_ = '%s' % portPath.split('/')[-1]
+    global args_
+    if args_.port is None:
+        args_.port = get_default_serial_port( )
+    print("[INFO] Using port: %s" % args_.port)
+    serial_port_ = ArduinoPort( args_.port, baudRate )
+    serial_port_.open( wait = True )
 
 def writeTrialData( runningTrial, csType ):
     #The first line after '@' will give us
@@ -121,84 +214,26 @@ def writeTrialData( runningTrial, csType ):
         for (blinkValue, timeStamp) in trial_dict_[runningTrial]:
             f.write("%s,%s\n" % (blinkValue, timeStamp))
 
-
-def writeProfilingData(profilingDict = {}, arduinoData = []):
-    
-    global serial_port_
-    global save_dir_
-    #Wait indefinitely for the DATA_BEGIN_MARKER
-    while DATA_BEGIN_MARKER not in getLine(serial_port_):
-        continue
-    
-    #Once the DATA_BEGIN_MARKER is caught,
-    while True:
-        line = getLine(serial_port_)
-        if DATA_END_MARKER in line:
-            break
-        elif not line:
-            pass
-        else:
-            try:
-                bin, counts = line.split()
-                profilingDict[bin] = counts
-            except:
-                print('[INFO-WARNING] No instructions for %s defined in writeProfilingData()' %line)
-    
-    outfile = os.path.join( save_dir_, 'profilingData.csv')
-    print("[INFO] Writing profiling data to : %s" % outfile)
-    with open(outfile, 'w') as f:
-        data = profilingDict.items()
-        data = [bin + "," + count for (bin, count) in data]
-        f.write("\n".join(data))
-
-def getLine(port = None):
-    global serial_port_
-    if not port:
-        port = serial_port_
-    line = []
-    txtLine = u''
-    while True:
-        c = port.read( 1 )
-        if c: 
-            if c == '\r' or c == '\n' or c == '\r\n':
-                for x in line:
-                    try:
-                        txtLine += x
-                    except:
-                        return ""
-                break
-            else:
-                line.append(c)
-    return txtLine.decode('ascii', 'ignore')
-
 def collect_data( ):
     global serial_port_
     global trial_dict_
     global running_trial_
+    global cur_
 
-    line = getLine( serial_port_ )
-    #Once the SESSION_BEGIN_MARKER is caught,
-    while True:
-        _logger.info("A:  line: %s" % line)
-        line = getLine( serial_port_ ).strip()
-        if SESSION_BEGIN_MARKER  in line:
-            break
-        if line:
-            y, x = line_to_yx( line )
-            if x and y:
-                q_.put((y,x))
-
+    # Used to ignore garbage data in the begining.
+    anyTrialHasStarted = False
     runningTrial = 0
     csType = None
     while True:
-        arduinoData = getLine(serial_port_)
-        _logger.info("B:  line: %s" % arduinoData)
+        arduinoData = serial_port_.read_line()
+        _logger.info('RX< %s' % arduinoData)
+        db_.insert( arduinoData )
         if not arduinoData:
             continue
-
         # When TRIAL_DATA_MARKER is found, collect trial data and write the
         # previous non-zero trial.
         if TRIAL_DATA_MARKER in arduinoData:
+            anyTrialHasStarted = True
             print("[INFO] New trial starts")
             runningTrial += 1
 
@@ -210,7 +245,7 @@ def collect_data( ):
                 writeTrialData( runningTrial - 1, csType )
                 # Reset csType to None
                 csType = None
-        else:
+        elif anyTrialHasStarted:
             if not csType:
                 runningTrial, csType = arduinoData.split()
                 runningTrial = int(runningTrial)
@@ -220,26 +255,30 @@ def collect_data( ):
                 if x and y:
                     q_.put((y,x))
                     trial_dict_[runningTrial].append((y,x))
+        else:
+            # This is not trial data.
+            pass
 
-def start():
+def init_arduino():
     global serial_port_
     global save_dir_
-    global serial_, mouse_
-    initSerialPort()
+    global args_
 
-    serial_port_.write(b"%s\r" %sys.argv[1])
-    time.sleep(1)
-    serial_port_.write(b"%s\r" % sys.argv[2])
-    time.sleep(1)
-    serial_port_.write(b"%s\r" % sys.argv[3])
-    timeStamp = datetime.datetime.now().isoformat()
-    mouse_ = sys.argv[1]
+    _logger.info('RX< %s' % serial_port_.read_line())
+    serial_port_.write_msg('%s\r' % args_.name )
+    _logger.info('RX< %s' % serial_port_.read_line())
+    serial_port_.write_msg('%s\r' % args_.session_num )
+    _logger.info('RX< %s' % serial_port_.read_line())
+    serial_port_.write_msg( '%s\r' % args_.session_type )
+
+    timeStamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M')
     if len(sys.argv) <= 1:
         outfile = os.path.join( timeStamp , 'raw_data')
     else:
         mouseName = 'MouseK' + sys.argv[1]
         outfile = os.path.join( mouseName
-                , '%s_SessionType%s_Session%s' % (mouseName, sys.argv[2], sys.argv[3])
+                , '%s_SessionType%s_Session%s' % ( 
+                    args_.name, args_.session_type, args_.session_num)
                 )
     save_dir_ = os.path.join( save_dir_, outfile )
     if os.path.exists(save_dir_):
@@ -270,10 +309,10 @@ def init():
 
 def animate(i):
     global lline_
-    global serial_, mouse_
     global xbuff_, ybuff_
     global q_
     global running_trial_
+    global args_
 
     # Get 20 elements from queue and plot them.
     for i in range(20):
@@ -284,7 +323,7 @@ def animate(i):
     _logger.info("Got from queue: %s, %s" % (xbuff_[-20:], ybuff_[-20:]))
     xmin, xmax = lax_.get_xlim()
     if len(xbuff_) >= xmax:
-        print("[INFO] Updating axes")
+        _logger.info("Updating axes")
         lax_.set_xlim((xmax-1000, xmax+1000))
         gax_.set_xlim((xmax-3000, xmax))
         xbuff_ = xbuff_[-3000:]
@@ -295,14 +334,16 @@ def animate(i):
         gline1_.set_data(startx_, stary_)
     lline_.set_data(xbuff_[-1000:], ybuff_[-1000:])
     text = 'TIME: %.3f' % (time.time() - tstart)
-    text += ' MOUSE: %s' % mouse_
-    text += ' SERIAL: %s' % serial_
+    text += ' MOUSE: %s' % args_.name
+    text += ' SERIAL: %s' % args_.port
     text_.set_text(text)
     text_l_.set_text('Running trial: %d' % running_trial_.value)
     return lline_, gline_, gline1_, text_, text_l_
 
 def main():
-    start()
+    global args_
+    init_serial( )
+    init_arduino( )
     p = Process( target = collect_data )
     p.start()
     anim = animation.FuncAnimation(fig_
@@ -316,5 +357,36 @@ def main():
     p.join()
 
 if __name__ == '__main__':
-    main()
-    # test()
+    import argparse
+    # Argument parser.
+    description = '''Arduino reader.'''
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument('--name', '-n'
+        , required = True
+        , type = int
+        , help = 'Mouse index (positive integers)'
+        )
+    parser.add_argument('--session-type', '-st'
+        , required = True
+        , type = int
+        , help = 'Seession Type [0,1,2]'
+        )
+    parser.add_argument('--session-num', '-sn'
+        , required = True
+        , type = int
+        , help = 'Session number (positive integer)'
+        )
+    parser.add_argument('--port', '-p'
+        , required = False
+        , default = None
+        , help = 'Serial port [full path]'
+        )
+    class Args: pass 
+    args_ = Args()
+    parser.parse_args( namespace=args_ )
+    try:
+        main( )
+    except KeyboardInterrupt as e:
+        print("[WARN] Interrupt from keyboard.... Quitting after cleanup.")
+        cleanup()
+        quit()
