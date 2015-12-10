@@ -227,8 +227,9 @@ def start():
     if len(sys.argv) <= 1:
         outfile = os.path.join( timeStamp , 'raw_data')
     else:
-        outfile = os.path.join('MouseK' + sys.argv[1]
-                , '_SessionType' + sys.argv[2] + '_Session' + sys.argv[3]    
+        mouseName = 'MouseK' + sys.argv[1]
+        outfile = os.path.join( mouseName
+                , '%s_SessionType%s_Session%s' % (mouseName, sys.argv[2], sys.argv[3])
                 )
     save_dir_ = os.path.join( save_dir_, outfile )
     if os.path.exists(save_dir_):
