@@ -16,7 +16,7 @@ import csv
 import numpy as np
 import codecs
 import matplotlib
-from multiprocessing  import Process, Queue
+from multiprocessing  import Process, Queue, Value
 
 try:
     matplotlib.use('GTKAgg') 
@@ -39,6 +39,9 @@ q_ = Queue()
 mouse_ = None
 serial_ = None
 
+# This is a shared variable for both animation and dumping.
+running_trial_ = Value('d', 0)
+
 fig_ = plt.figure( )
 fig_.title = 'Overall profile'
 
@@ -49,11 +52,12 @@ gax_ = plt.subplot(2, 1, 1)
 gax_.set_xlim([0, 1000])
 gax_.set_ylim([0, 1000])
 gax_.axes.get_xaxis().set_visible(False)
+text_ = gax_.text(0.02, 0.95, '', transform=gax_.transAxes)
 
 lax_ = plt.subplot(2, 1, 2)
 lax_.set_xlim([0, 1000])
 lax_.set_ylim([0, 1000])
-text_ = gax_.text(0.02, 0.95, '', transform=gax_.transAxes)
+text_l_ = lax_.text(0.02, 0.95, '', transform=lax_.transAxes)
 
 # ax.set_autoscalex_on(True)
 lline_, = lax_.plot([], [], lw=0.5)
@@ -170,6 +174,8 @@ def getLine(port = None):
 def collect_data( ):
     global serial_port_
     global trial_dict_
+    global running_trial_
+
     line = getLine( serial_port_ )
     #Once the SESSION_BEGIN_MARKER is caught,
     while True:
@@ -195,8 +201,12 @@ def collect_data( ):
         if TRIAL_DATA_MARKER in arduinoData:
             print("[INFO] New trial starts")
             runningTrial += 1
+
+            # global copy for display on matplotlib
+            running_trial_.value = runningTrial  
+
             if int(runningTrial) >= 2:
-                print("Writing previous trial %s" % ( int(runningTrial) - 1 ))
+                print("[INFO] Writing previous trial %s" % ( int(runningTrial) - 1 ))
                 writeTrialData( runningTrial - 1, csType )
                 # Reset csType to None
                 csType = None
@@ -204,7 +214,7 @@ def collect_data( ):
             if not csType:
                 runningTrial, csType = arduinoData.split()
                 runningTrial = int(runningTrial)
-                print("[INFO] Trial, CSType: %s, %s" % (runningTrial, csType))
+                print("[INFO] Trial: %s, CSType: %s" % (runningTrial, csType))
             else:
                 y, x = line_to_yx(arduinoData)
                 if x and y:
@@ -256,13 +266,14 @@ def line_to_yx( line ):
 def init():
     lline_.set_data([], [])
     text_.set_text('')
-    return lline_, gline_, gline1_, text_
+    return lline_, gline_, gline1_, text_, text_l_
 
 def animate(i):
     global lline_
     global serial_, mouse_
     global xbuff_, ybuff_
     global q_
+    global running_trial_
 
     # Get 20 elements from queue and plot them.
     for i in range(20):
@@ -273,7 +284,7 @@ def animate(i):
     _logger.info("Got from queue: %s, %s" % (xbuff_[-20:], ybuff_[-20:]))
     xmin, xmax = lax_.get_xlim()
     if len(xbuff_) >= xmax:
-        print("+ Updating axes")
+        print("[INFO] Updating axes")
         lax_.set_xlim((xmax-1000, xmax+1000))
         gax_.set_xlim((xmax-3000, xmax))
         xbuff_ = xbuff_[-3000:]
@@ -287,7 +298,8 @@ def animate(i):
     text += ' MOUSE: %s' % mouse_
     text += ' SERIAL: %s' % serial_
     text_.set_text(text)
-    return lline_, gline_, gline1_, text_
+    text_l_.set_text('Running trial: %d' % running_trial_.value)
+    return lline_, gline_, gline1_, text_, text_l_
 
 def main():
     start()
