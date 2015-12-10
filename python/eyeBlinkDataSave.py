@@ -275,7 +275,7 @@ def init_arduino():
     _logger.info('RX< %s' % serial_port_.read_line())
     serial_port_.write_msg( '%s\r' % args_.session_type )
 
-    timeStamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M')
+    timeStamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     mouseName = 'MouseK%s' % args_.name
     outfile = os.path.join( mouseName
             , '%s_SessionType%s_Session%s' % ( 
