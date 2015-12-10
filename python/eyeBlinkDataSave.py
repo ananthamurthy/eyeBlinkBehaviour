@@ -182,7 +182,7 @@ def collect_data( ):
             if x and y:
                 q_.put((y,x))
 
-    runningTrial = None
+    runningTrial = 0
     csType = None
     while True:
         arduinoData = getLine(serial_port_)
@@ -190,26 +190,25 @@ def collect_data( ):
         if not arduinoData:
             continue
 
-        y, x = line_to_yx(arduinoData)
-
-        # Put all legal arduinoData into queue.
-        if x and y: q_.put((y,x))
-
         # When TRIAL_DATA_MARKER is found, collect trial data and write the
         # previous non-zero trial.
         if TRIAL_DATA_MARKER in arduinoData:
-            print("[INFO] Trial starts")
-            if x and y:
-                trial_dict_[runningTrial].append((y,x))
-            if runningTrial > 1:
-                print("Writing previous trial %s" % ( runningTrial ))
-                writeTrialData( runningTrial, csType )
+            print("[INFO] New trial starts")
+            runningTrial += 1
+            if int(runningTrial) >= 2:
+                print("Writing previous trial %s" % ( int(runningTrial) - 1 ))
+                writeTrialData( runningTrial - 1, csType )
+                # Reset csType to None
+                csType = None
         else:
-            if not (csType and runningTrial):
+            if not csType:
                 runningTrial, csType = arduinoData.split()
+                runningTrial = int(runningTrial)
                 print("[INFO] Trial, CSType: %s, %s" % (runningTrial, csType))
             else:
+                y, x = line_to_yx(arduinoData)
                 if x and y:
+                    q_.put((y,x))
                     trial_dict_[runningTrial].append((y,x))
 
 def start():
