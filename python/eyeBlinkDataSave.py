@@ -228,8 +228,14 @@ def collect_data( ):
         arduinoData = serial_port_.read_line()
         _logger.info('RX< %s' % arduinoData)
         db_.insert( arduinoData )
+
+        y, x = line_to_yx(arduinoData)
+        if x and y:
+            q_.put((y,x))
+
         if not arduinoData:
             continue
+
         # When TRIAL_DATA_MARKER is found, collect trial data and write the
         # previous non-zero trial.
         if TRIAL_DATA_MARKER in arduinoData:
@@ -251,12 +257,10 @@ def collect_data( ):
                 runningTrial = int(runningTrial)
                 print("[INFO] Trial: %s, CSType: %s" % (runningTrial, csType))
             else:
-                y, x = line_to_yx(arduinoData)
                 if x and y:
-                    q_.put((y,x))
                     trial_dict_[runningTrial].append((y,x))
+                
         else:
-            # This is not trial data.
             pass
 
 def init_arduino():
@@ -272,14 +276,11 @@ def init_arduino():
     serial_port_.write_msg( '%s\r' % args_.session_type )
 
     timeStamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M')
-    if len(sys.argv) <= 1:
-        outfile = os.path.join( timeStamp , 'raw_data')
-    else:
-        mouseName = 'MouseK' + sys.argv[1]
-        outfile = os.path.join( mouseName
-                , '%s_SessionType%s_Session%s' % ( 
-                    args_.name, args_.session_type, args_.session_num)
-                )
+    mouseName = 'MouseK%s' % args_.name
+    outfile = os.path.join( mouseName
+            , '%s_SessionType%s_Session%s' % ( 
+                args_.name, args_.session_type, args_.session_num)
+            )
     save_dir_ = os.path.join( save_dir_, outfile )
     if os.path.exists(save_dir_):
         save_dir_ = os.path.join(save_dir_, timeStamp)
