@@ -121,10 +121,10 @@ class ArduinoPort( ):
 
     def write_msg(self, msg):
         print('[INFO] Writing %s to serial port' % msg)
+        _logger.info('Writing %s to serial port' % msg)
         sys.stdout.flush()
         self.port.write(b'%s' % msg)
-        time.sleep(1)
-
+        time.sleep(1.1)
 
 # Command line arguments/Other globals.
 args_ = None 
