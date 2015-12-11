@@ -14,8 +14,7 @@ import time
 import serial
 import io
 
-import serial.tools.list_ports
-
+import serial.tools.list_ports 
 from collections import defaultdict
 import datetime
 import csv
@@ -96,26 +95,18 @@ running_trial_ = Value('d', 0)
 fig_ = plt.figure( )
 fig_.title = 'Overall profile'
 
-global_ = plt.subplot(2,1,1)
-local_ = plt.subplot(2,1,2)
-
-gax_ = plt.subplot(2, 1, 1)
-gax_.set_xlim([0, 1000])
+gax_ = plt.subplot(1, 1, 1)
+gax_.set_xlim([0, 2000])
 gax_.set_ylim([0, 1000])
 gax_.axes.get_xaxis().set_visible(False)
 text_ = gax_.text(0.02, 0.95, '', transform=gax_.transAxes)
 
-lax_ = plt.subplot(2, 1, 2)
-lax_.set_xlim([0, 1000])
-lax_.set_ylim([0, 1000])
-text_l_ = lax_.text(0.02, 0.95, '', transform=lax_.transAxes)
-
 # ax.set_autoscalex_on(True)
-lline_, = lax_.plot([], [], lw=0.5)
 gline_, = gax_.plot([], [])
 gline1_, = gax_.plot(0, 0, 'r*')
 
-ybuff_, xbuff_ = [], []
+# Initialize with 1 element.
+ybuff_, xbuff_ = [ 0 ], [ 1 ]
 stary_, startx_ = [], []
 
 save_dir_ = os.path.join( 
@@ -152,7 +143,6 @@ def get_default_serial_port( ):
 def init_serial( baudRate = 9600):
     global serial_port_
     global args_
-
     
     if args_.port is None:
         args_.port = get_default_serial_port( )
@@ -186,8 +176,6 @@ def collect_data( ):
     csType = None
     while True:
         arduinoData = serial_port_.read_line()
-        _logger.info('RX< %s' % arduinoData)
-
         y, x = line_to_yx(arduinoData)
         if x and y:
             q_.put((y,x))
@@ -201,10 +189,8 @@ def collect_data( ):
             anyTrialHasStarted = True
             print("[INFO] New trial starts")
             runningTrial += 1
-
             # global copy for display on matplotlib
             running_trial_.value = runningTrial  
-
             if int(runningTrial) >= 2:
                 print("[INFO] Writing previous trial %s" % ( int(runningTrial) - 1 ))
                 writeTrialData( runningTrial - 1, csType )
@@ -267,7 +253,7 @@ def init_arduino():
 def line_to_yx( line ):
     if not line.strip():
         return (None, None)
-    l = line.split(' ')
+    l = line.split()
     if not l:
         return (None, None)
     if len(l) == 1: 
@@ -280,46 +266,46 @@ def line_to_yx( line ):
 
 
 def init():
-    lline_.set_data([], [])
     text_.set_text('')
-    return lline_, gline_, gline1_, text_, text_l_
+    return gline_, gline1_, text_
 
 def animate(i):
-    global lline_
     global xbuff_, ybuff_
     global q_
     global running_trial_
     global args_
 
     # Get 20 elements from queue and plot them.
-    for i in range(20):
-        y, x = q_.get()
-        ybuff_.append(y)
-        xbuff_.append( len(ybuff_) + 1 )
+    if q_.qsize() < 10:
+        return gline_, gline1_, text_
+    for i in range(10):
+        d = q_.get()
+        ybuff_.append( d[0] )
+        xbuff_.append( xbuff_[-1] + 1 )
 
-    _logger.info("Got from queue: %s, %s" % (xbuff_[-20:], ybuff_[-20:]))
-    xmin, xmax = lax_.get_xlim()
+    _logger.debug("Got from queue: %s, %s" % (xbuff_[-10:], ybuff_[-10:]))
+    xmin, xmax = gax_.get_xlim()
     if len(xbuff_) >= xmax:
         _logger.info("Updating axes")
-        lax_.set_xlim((xmax-1000, xmax+1000))
-        gax_.set_xlim((xmax-3000, xmax))
+        gax_.set_xlim((xmax-2000, xmax+1000))
+        # This is real data (last 3000 points).
+        stary_.append(50)
+        # Its the location of stars
+        startx_.append(xbuff_[-1])
+        gline1_.set_data(startx_, stary_)
         xbuff_ = xbuff_[-3000:]
         ybuff_ = ybuff_[-3000:]
-        gline_.set_data(xbuff_, ybuff_)
-        startx_.append(xbuff_[-1])
-        stary_.append(50)
-        gline1_.set_data(startx_, stary_)
-    lline_.set_data(xbuff_[-1000:], ybuff_[-1000:])
+
+    gline_.set_data(xbuff_[-3000:], ybuff_[-3000:])
     text = 'TIME: %.3f' % (time.time() - tstart)
     text += ' MOUSE: %s' % args_.name
     text += ' SERIAL: %s' % args_.port
+    text += ' TRIAL: %d' % running_trial_.value
     text_.set_text(text)
-    text_l_.set_text('Running trial: %d' % running_trial_.value)
-    return lline_, gline_, gline1_, text_, text_l_
+    return gline_, gline1_, text
 
 def main():
     global args_
-    init_serial( )
     init_arduino( )
     p = Process( target = collect_data )
     p.start()
@@ -328,7 +314,7 @@ def main():
             , init_func = init
             , frames=1
             , interval = 1
-            , blit = True
+            , blit = False
             )
     plt.show()
     p.join()
@@ -361,6 +347,7 @@ if __name__ == '__main__':
     class Args: pass 
     args_ = Args()
     parser.parse_args( namespace=args_ )
+    init_serial()
     # Each serial port gets its own logger.
     logging.basicConfig(level=logging.DEBUG,
             format='%(asctime)s -- %(message)s',
