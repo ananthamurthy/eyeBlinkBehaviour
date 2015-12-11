@@ -48,6 +48,7 @@
 #include "Globals.h"
 #include "LCDRelated.h"
 #include "Initialize.h"
+#include "Solenoid.h"
 
 extern String mouseName;
 extern int sessionType_ind;
@@ -58,6 +59,10 @@ extern int totalTrials;
 
 void initialize()
 {
+  int tone_key = read_lcd_button();
+  int puff_key = read_lcd_button();
+
+
   Serial.print("#Please enter the mouse ID number: ");
   while (!Serial.available());
   mouseName = "MouseK" + String(Serial.readString().toInt());
@@ -81,6 +86,20 @@ void initialize()
   startT = millis();
   while (read_lcd_button() != btnSELECT)
   {
+    if (puff_key == btnUP)
+    {
+      playPuff(puff_do, HIGH);
+      delay(puffTime);
+      playPuff(puff_do, LOW);
+    }
+    
+    if (tone_key == btnDOWN)
+    {
+      tone( tonePin, CS_PLUS_ToneFreq);
+      delay(CSTime);
+      noTone(tonePin);
+    }
+
     if (startT > sampleInterval)
     {
       blink = analogRead(blink_ai);
