@@ -68,7 +68,7 @@ class ArduinoPort( ):
         if wait:
             print("[INFO] Waiting for port %s to open" % self.path, end='')
             while not self.port.isOpen():
-                if (time.time() - tstart) % 2 == 0:
+                if int(time.time() - tstart) % 2 == 0:
                     print('.', end='')
                     sys.stdout.flush()
         print(" ... OPEN")
@@ -79,9 +79,8 @@ class ArduinoPort( ):
 
     def write_msg(self, msg):
         print('[INFO] Writing %s to serial port' % msg)
-        _logger.info('Writing %s to serial port' % msg)
-        sys.stdout.flush()
         self.port.write(b'%s' % msg)
+        time.sleep(0.1)
 
 # Command line arguments/Other globals.
 args_ = None 
@@ -96,7 +95,7 @@ fig_ = plt.figure( )
 fig_.title = 'Overall profile'
 
 gax_ = plt.subplot(1, 1, 1)
-gax_.set_xlim([0, 2000])
+gax_.set_xlim([0, 3000])
 gax_.set_ylim([0, 1000])
 gax_.axes.get_xaxis().set_visible(False)
 text_ = gax_.text(0.02, 0.95, '', transform=gax_.transAxes)
@@ -177,7 +176,7 @@ def collect_data( ):
     while True:
         arduinoData = serial_port_.read_line()
         y, x = line_to_yx(arduinoData)
-        if x and y:
+        if x is not None and y is not None:
             q_.put((y,x))
 
         if not arduinoData:
@@ -213,18 +212,15 @@ def read_until( msg ):
     while True:
         line = serial_port_.read_line()
         if msg.lower() in line.lower():
+            print("%s ...  Found" % line)
             return True
-        else:
-            #print('.', end='')
-            print(line)
-            sys.stdout.flush()
-    return False
 
 def init_arduino():
     global serial_port_
     global save_dir_
     global args_
 
+    print("[INFO] Waiting for questions to appear")
     read_until('#Please enter')
     serial_port_.write_msg('%s\r' % args_.name )
     time.sleep(1)
@@ -257,7 +253,7 @@ def line_to_yx( line ):
     if not l:
         return (None, None)
     if len(l) == 1: 
-        l.append( time.time() - tstart )
+        l.append( 0 )
     try:
         return (float(l[0]), float(l[1]))
     except Exception as e:
@@ -278,6 +274,7 @@ def animate(i):
     # Get 20 elements from queue and plot them.
     if q_.qsize() < 10:
         return gline_, gline1_, text_
+
     for i in range(10):
         d = q_.get()
         ybuff_.append( d[0] )
@@ -285,16 +282,16 @@ def animate(i):
 
     _logger.debug("Got from queue: %s, %s" % (xbuff_[-10:], ybuff_[-10:]))
     xmin, xmax = gax_.get_xlim()
-    if len(xbuff_) >= xmax:
+    if xbuff_[-1] >= xmax:
         _logger.info("Updating axes")
-        gax_.set_xlim((xmax-2000, xmax+1000))
+        gax_.set_xlim((xmin+1000, xmax+1000))
         # This is real data (last 3000 points).
         stary_.append(50)
         # Its the location of stars
         startx_.append(xbuff_[-1])
         gline1_.set_data(startx_, stary_)
-        xbuff_ = xbuff_[-3000:]
-        ybuff_ = ybuff_[-3000:]
+        xbuff_ = xbuff_[-5000:]
+        ybuff_ = ybuff_[-5000:]
 
     gline_.set_data(xbuff_[-3000:], ybuff_[-3000:])
     text = 'TIME: %.3f' % (time.time() - tstart)
