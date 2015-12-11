@@ -32,53 +32,12 @@ except Exception as e:
 import matplotlib.pyplot as plt
 from matplotlib import animation
 import logging
-
-logging.basicConfig(level=logging.DEBUG,
-    format='%(asctime)s -- %(message)s',
-    datefmt='%m-%d %H:%M',
-    filename='blink.log',
-    filemode='w')
-_logger = logging.getLogger('')
+_logger = None
 
 tstart = time.time()
 
-import sqlite3 as sql
-
-class BlinkDb():
-    """Keep raw data in sqlite3. Write every 3 seconds"""
-    def __init__(self, path):
-        self.table = datetime.date.today().strftime('data_%H%M%d')
-        self.conn = sql.connect( path )
-        self.cur = self.conn.cursor()
-
-    def query(self, q, commit = False):
-        self.cur.execute( q )
-        if commit:
-            self.conn.commit()
-        # Commit after every 3 seconds
-        if int(time.time() - tstart) % 3 == 0:
-            self.conn.commit()
-
-    def init(self):
-        self.query("""
-                CREATE TABLE IF NOT EXISTS {0} (timestamp, line) 
-                """.format( self.table ) , commit = True
-                )
-
-    def insert( self, line):
-        if not line:
-            return
-        self.query( """INSERT INTO {0} VALUES ( 'now()', '{1}' )""".format(
-            self.table, line))
-
-    def cleanup(self):
-        self.conn.close()
-
-db_ = BlinkDb( 'blink.sqlite' )
-db_.init()
-
 def cleanup():
-    db_.cleanup()
+    pass
 
 # Create a class to handle serial port.
 class ArduinoPort( ):
@@ -124,7 +83,6 @@ class ArduinoPort( ):
         _logger.info('Writing %s to serial port' % msg)
         sys.stdout.flush()
         self.port.write(b'%s' % msg)
-        time.sleep(1.1)
 
 # Command line arguments/Other globals.
 args_ = None 
@@ -194,12 +152,14 @@ def get_default_serial_port( ):
 def init_serial( baudRate = 9600):
     global serial_port_
     global args_
+
+    
     if args_.port is None:
         args_.port = get_default_serial_port( )
     print("[INFO] Using port: %s" % args_.port)
     serial_port_ = ArduinoPort( args_.port, baudRate )
     serial_port_.open( wait = True )
-
+   
 def writeTrialData( runningTrial, csType ):
     #The first line after '@' will give us
     global save_dir_
@@ -227,7 +187,6 @@ def collect_data( ):
     while True:
         arduinoData = serial_port_.read_line()
         _logger.info('RX< %s' % arduinoData)
-        db_.insert( arduinoData )
 
         y, x = line_to_yx(arduinoData)
         if x and y:
@@ -263,17 +222,34 @@ def collect_data( ):
         else:
             pass
 
+def read_until( msg ):
+    global serial_port_
+    while True:
+        line = serial_port_.read_line()
+        if msg.lower() in line.lower():
+            return True
+        else:
+            #print('.', end='')
+            print(line)
+            sys.stdout.flush()
+    return False
+
 def init_arduino():
     global serial_port_
     global save_dir_
     global args_
 
-    _logger.info('RX< %s' % serial_port_.read_line())
+    read_until('#Please enter')
     serial_port_.write_msg('%s\r' % args_.name )
-    _logger.info('RX< %s' % serial_port_.read_line())
-    serial_port_.write_msg('%s\r' % args_.session_num )
-    _logger.info('RX< %s' % serial_port_.read_line())
+    time.sleep(1)
+
+    read_until('#Please enter')
     serial_port_.write_msg( '%s\r' % args_.session_type )
+    time.sleep(1)
+
+    read_until('#Please enter')
+    serial_port_.write_msg('%s\r' % args_.session_num )
+    time.sleep(1)
 
     timeStamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     mouseName = 'MouseK%s' % args_.name
@@ -385,6 +361,13 @@ if __name__ == '__main__':
     class Args: pass 
     args_ = Args()
     parser.parse_args( namespace=args_ )
+    # Each serial port gets its own logger.
+    logging.basicConfig(level=logging.DEBUG,
+            format='%(asctime)s -- %(message)s',
+            datefmt='%m-%d %H:%M',
+            filename='blink_%s.log' % (args_.port.split('/')[-1]),
+            filemode='w')
+    _logger = logging.getLogger('')
     try:
         main( )
     except KeyboardInterrupt as e:
