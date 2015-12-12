@@ -193,7 +193,6 @@ def init( ):
             answer_three_questions( )
             break
 
-    quit()
     timeStamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     mouseName = 'MouseK%s' % config.args_.name
     outfile = os.path.join( mouseName
