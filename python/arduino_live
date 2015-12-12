@@ -1,135 +1,40 @@
 #!/usr/bin/env python2
+"""arduino_live.py: 
+
+    Read the data from serial port and plot it using FuncAnimation from
+    matplotlib.
+
+"""
+    
+__author__           = "Dilawar Singh, Ananthamurhty, and Shriya P"
+__copyright__        = "Copyright 2015, Bhalla lab, NCBS Bangalore"
+__credits__          = ["NCBS Bangalore"]
+__license__          = "GNU GPL"
+__version__          = "1.0.0"
+__maintainer__       = __author__
+__email__            = "dilawars@ncbs.res.in"
+__status__           = "Development"
 
 from __future__ import print_function
+from config import *
+from arduino import ArduinoPort
 
-"""
-Created on Sat Nov  7 15:38:48 2015
-
-@author: Dilawar, Ananth, Shriya
-"""
 import os
 import sys
 import time
 
-import serial
-import io
-
-import serial.tools.list_ports 
 from collections import defaultdict
 import datetime
 import csv
 import numpy as np
 import codecs
 from multiprocessing  import Process, Queue, Value
-
-import matplotlib
-try:
-    matplotlib.use('GTKAgg') 
-except Exception as e:
-    print("Cant load GTKAgg. Using default")
-
 import matplotlib.pyplot as plt
 from matplotlib import animation
 import logging
-_logger = None
-
-tstart = time.time()
 
 def cleanup():
     pass
-
-# Create a class to handle serial port.
-class ArduinoPort( ):
-
-    def __init__(self, path, baud_rate = 9600, **kwargs):
-        self.path = path
-        self.baudRate = kwargs.get('baud_rate', 9600)
-        self.port = None
-
-    def open(self, wait = True):
-        # ATTN: timeout is essential else realine will block.
-        try:
-            self.port = serial.serial_for_url(args_.port, self.baudRate, timeout = 1)
-        except OSError as e:
-            # Most like to be a busy resourse. Wait till it opens.
-            print("[FATAL] Could not connect")
-            print(e)
-            if wait:
-                print("[INFO] Device seems to be busy. I'll try to reconnect"
-                        " after  some time..."
-                        )
-                time.sleep(1)
-                self.open( True )
-            else:
-                quit()
-        except Exception as e:
-            print("[FATAL] Failed to connect to port. Error %s" % e)
-            quit()
-        if wait:
-            print("[INFO] Waiting for port %s to open" % self.path, end='')
-            while not self.port.isOpen():
-                if int(time.time() - tstart) % 2 == 0:
-                    print('.', end='')
-                    sys.stdout.flush()
-        print(" ... OPEN")
-
-    def read_line(self, **kwargs):
-        line = self.port.readline()
-        return line.strip()
-
-    def write_msg(self, msg):
-        print('[INFO] Writing %s to serial port' % msg)
-        self.port.write(b'%s' % msg)
-        time.sleep(0.1)
-
-# Command line arguments/Other globals.
-args_ = None 
-
-# Our shared queue used in multiprocessing
-q_ = Queue()
-running_trial_ = Value('d', 0)
-
-# This is a shared variable for both animation and dumping.
-
-fig_ = plt.figure( )
-fig_.title = 'Overall profile'
-
-gax_ = plt.subplot(1, 1, 1)
-gax_.set_xlim([0, 3000])
-gax_.set_ylim([0, 1000])
-gax_.axes.get_xaxis().set_visible(False)
-text_ = gax_.text(0.02, 0.95, '', transform=gax_.transAxes)
-
-# ax.set_autoscalex_on(True)
-gline_, = gax_.plot([], [])
-gline1_, = gax_.plot(0, 0, 'r*')
-
-# Initialize with 1 element.
-ybuff_, xbuff_ = [ 0 ], [ 1 ]
-stary_, startx_ = [], []
-
-save_dir_ = os.path.join( 
-        os.environ['HOME']
-        , 'Desktop'
-        , 'Work'
-        , 'Behaviour'
-        )
-
-# not blocking in pylab
-
-
-DATA_BEGIN_MARKER = '['
-DATA_END_MARKER = ']'
-COMMENT_MARKER = '#'
-TRIAL_DATA_MARKER = '@'
-PROFILING_DATA_MARKER = '$'
-SESSION_BEGIN_MARKER = '<'
-SESSION_END_MARKER = '>'
-
-serial_port_ = None
-
-trial_data_ = []
-trial_dict_ = defaultdict(list)
 
 def get_default_serial_port( ):
     # If port part is not given from command line, find a serial port by
