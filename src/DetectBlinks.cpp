@@ -1,8 +1,8 @@
 //
-// DetectBlinks.cpp 
+// DetectBlinks.cpp
 // C++ code
 // ----------------------------------
-// Developed with embedXcode 
+// Developed with embedXcode
 // http://embedXcode.weebly.com
 //
 // Project 		eye-Blink_Conditioning
@@ -50,7 +50,7 @@
 
 void detectBlinks() //(unsigned long currentTime)
 {
-    
+
     if ( currentPhaseTime - lastTime > sampleInterval ) {
 
         //int temp = analogRead(blink_ai);

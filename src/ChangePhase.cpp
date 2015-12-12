@@ -1,8 +1,8 @@
 //
-// ChangePhase.cpp 
+// ChangePhase.cpp
 // C++ code
 // ----------------------------------
-// Developed with embedXcode 
+// Developed with embedXcode
 // http://embedXcode.weebly.com
 //
 // Project 		eye-Blink_Conditioning

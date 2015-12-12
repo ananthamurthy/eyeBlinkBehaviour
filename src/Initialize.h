@@ -3,16 +3,16 @@
 // Header
 //
 // Details		<#details#>
-//	
+//
 // Project		 eye-Blink_Conditioning
 // Developed with [embedXcode](http://embedXcode.weebly.com)
-// 
+//
 // Author		Kambadur Ananthamurthy
 // 				Kambadur Ananthamurthy
 //
 // Date			13/09/15 11:06 am
 // Version		<#version#>
-// 
+//
 // Copyright	© Kambadur Ananthamurthy, 2015
 // Licence    <#license#>
 //

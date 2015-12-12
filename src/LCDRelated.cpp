@@ -1,8 +1,8 @@
 //
-// LCDRelated.cpp 
+// LCDRelated.cpp
 // C++ code
 // ----------------------------------
-// Developed with embedXcode 
+// Developed with embedXcode
 // http://embedXcode.weebly.com
 //
 // Project 		eye-Blink_Conditioning
@@ -60,14 +60,14 @@ void printStatus( int value , int trialNum)
 {
     unsigned long dt = millis() - startT;
     int time_min = dt / 60000;
-    
+
     //Serial.print( dt );
     //Serial.print( '\t' );
-    
+
     //Serial.print( '\t' );
     //Serial.print( currTime );
     //Serial.println( value );
-    
+
     lcd.setCursor( 14, 0 );
     lcd.print( time_min );
     lcd.setCursor( 5, 1 );

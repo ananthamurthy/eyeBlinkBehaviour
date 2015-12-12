@@ -3,16 +3,16 @@
 // Header
 //
 // Details		<#details#>
-//	
+//
 // Project		 eye-Blink_Conditioning
 // Developed with [embedXcode](http://embedXcode.weebly.com)
-// 
+//
 // Author		Kambadur Ananthamurthy
 // 				Kambadur Ananthamurthy
 //
 // Date			04/08/15 1:39 pm
 // Version		<#version#>
-// 
+//
 // Copyright	© Kambadur Ananthamurthy, 2015
 // Licence    <#license#>
 //
@@ -53,7 +53,7 @@
 // NOTE: Include it in ino file
 
 // This is an Arduino Library
-#include <LiquidCrystal.h> 
+#include <LiquidCrystal.h>
 
 // Initialize LC library with # of interface pins
 extern LiquidCrystal lcd;

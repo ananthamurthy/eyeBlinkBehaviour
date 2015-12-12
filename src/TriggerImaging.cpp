@@ -49,13 +49,13 @@
 
 void triggerImaging(int pinID, bool value)
 {
-  digitalWrite(pinID, value);
-  //digitalWrite(pinID, LOW);
-  if (value == HIGH)
-  {
-    if (trialNum<=1)
-      {
-        delay(shutterDelay);
-      }
-  }
+    digitalWrite(pinID, value);
+    //digitalWrite(pinID, LOW);
+    if (value == HIGH)
+    {
+        if (trialNum<=1)
+        {
+            delay(shutterDelay);
+        }
+    }
 }

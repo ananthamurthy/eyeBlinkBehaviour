@@ -84,7 +84,7 @@ void initialize()
     int tone_key = read_lcd_button();
     int puff_key = read_lcd_button();
 
-    /* 
+    /*
      * Keep sending question onto serial port every second.
      */
     while(true)
@@ -112,7 +112,7 @@ void initialize()
         }
         delay(500);
     }
-    
+
     while(true)
     {
         Serial.println("#Q3: Please enter the session number: ");
@@ -131,12 +131,12 @@ void initialize()
     while (read_lcd_button() != btnSELECT)
     {
         if (puff_key == btnUP)
-        {  playPuff(puff_do, HIGH);
+        {   playPuff(puff_do, HIGH);
             delay(puffTime);
             playPuff(puff_do, LOW);
         }
         if (tone_key == btnDOWN)
-        { tone( tonePin, CS_PLUS_ToneFreq);
+        {   tone( tonePin, CS_PLUS_ToneFreq);
             delay(CSTime);
             noTone(tonePin);
         }
