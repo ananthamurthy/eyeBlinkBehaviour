@@ -49,16 +49,16 @@ ARDUINO_LIBS 	  = LiquidCrystal
 OBJDIR            = $(PROJECT_DIR)/bin/$(BOARD_TAG)/$(CURRENT_DIR)
 
 ## INO file and other cpp files
-LOCAL_INO_SRCS     = $(PROJECT_DIR)/eye-Blink_Conditioning/eye-Blink_Conditioning.ino 
-LOCAL_CPP_SRCS     = $(PROJECT_DIR)/eye-Blink_Conditioning/TriggerImaging.cpp \
-		$(PROJECT_DIR)/eye-Blink_Conditioning/Solenoid.cpp \
-		$(PROJECT_DIR)/eye-Blink_Conditioning/PhaseChangeRoutine.cpp \
-		$(PROJECT_DIR)/eye-Blink_Conditioning/main.cpp \
-		$(PROJECT_DIR)/eye-Blink_Conditioning/LocalLibrary.cpp \
-		$(PROJECT_DIR)/eye-Blink_Conditioning/LCDRelated.cpp \
-		$(PROJECT_DIR)/eye-Blink_Conditioning/Initialize.cpp \
-		$(PROJECT_DIR)/eye-Blink_Conditioning/DetectBlinks.cpp \
-		$(PROJECT_DIR)/eye-Blink_Conditioning/ChangePhase.cpp 
+LOCAL_INO_SRCS     = $(PROJECT_DIR)/src/eye_blink_main.ino 
+LOCAL_CPP_SRCS     = $(PROJECT_DIR)/src/TriggerImaging.cpp \
+		$(PROJECT_DIR)/src/Solenoid.cpp \
+		$(PROJECT_DIR)/src/PhaseChangeRoutine.cpp \
+		$(PROJECT_DIR)/src/main.cpp \
+		$(PROJECT_DIR)/src/LocalLibrary.cpp \
+		$(PROJECT_DIR)/src/LCDRelated.cpp \
+		$(PROJECT_DIR)/src/Initialize.cpp \
+		$(PROJECT_DIR)/src/DetectBlinks.cpp \
+		$(PROJECT_DIR)/src/ChangePhase.cpp 
 
 ### Do not touch - the path to Arduino.mk, inside the ARDMK_DIR
 include $(ARDMK_DIR)/Arduino.mk
