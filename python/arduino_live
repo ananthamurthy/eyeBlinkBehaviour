@@ -152,17 +152,29 @@ def animate(i):
 def answer_three_questions( ):
     # All great UI has three questions. Yes we have to, they all starts with
     # Please.
-    l = arduino.read_until('#Please enter')
-    print('[ANS] %s = %s' % (l, config.args_.name))
-    config.serial_port_.write_msg('%s\r' % config.args_.name )
+    questionsAnswered = 0
+    for i in range( 10 ):
+        l = arduino.read_until('Please enter', timeout = 1.0)
+        config._logger.info('RX< %s' % l)
+        if 'mouse ID number' in l:
+            print('[ANSW] %s = %s' % (l, config.args_.name))
+            config.serial_port_.write_msg('%s\r' % config.args_.name )
+            questionsAnswered += 1
+        elif 'session type' in l:
+            print('[ANSW] %s = %s' % (l, config.args_.session_type))
+            config.serial_port_.write_msg( '%s\r' % config.args_.session_type )
+            questionsAnswered += 1
+        elif 'session number' in l:
+            print('[ANSW] %s = %s' % (l, config.args_.session_num))
+            config.serial_port_.write_msg('%s\r' % config.args_.session_num )
+            questionsAnswered += 1
+        else:
+            pass
 
-    l = arduino.read_until('#Please enter the')
-    print('[ANS] %s = %s' % (l, config.args_.session_type))
-    config.serial_port_.write_msg( '%s\r' % config.args_.session_type )
+        if questionsAnswered == 3:
+            print('[INFO] All questions are answered')
+            return 
 
-    l = arduino.read_until('#Please enter the')
-    print('[ANS] %s = %s' % (l, config.args_.session_num))
-    config.serial_port_.write_msg('%s\r' % config.args_.session_num )
 
 def init( ):
     """
@@ -176,11 +188,12 @@ def init( ):
     lines = []
     for i in range(3):
         l = config.serial_port_.read_line( )
-        if '#Please enter' in l:
+        if 'Please enter' in l:
             # mere sawalo ka jawav do... do naa!
             answer_three_questions( )
             break
 
+    quit()
     timeStamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     mouseName = 'MouseK%s' % config.args_.name
     outfile = os.path.join( mouseName

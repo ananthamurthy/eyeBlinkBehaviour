@@ -66,10 +66,9 @@ extern int totalTrials;
  *
  * @param delay, unsigned int. For that much time we should wait.
  */
-bool wait_for_read( unsigned int delay )
+bool wait_for_read( unsigned long delay )
 {
     unsigned long tstart = millis();
-    Serial.println( String( Serial.available() ));
     while( ! Serial.available() )
     {
         if( (millis() - tstart) > delay )
@@ -90,7 +89,7 @@ void initialize()
      */
     while(true)
     {
-        Serial.println("#Please enter the mouse ID number: ");
+        Serial.println("#Q1: Please enter the mouse ID number: ");
         if( wait_for_read( 500 ))
         {
             // Probably answer to our question.
@@ -98,12 +97,12 @@ void initialize()
             Serial.println("#Got mouse name: #" + mouseName);
             break;
         }
-        delay(0.5);
+        delay(500);
     }
 
     while(true)
     {
-        Serial.println("#Please enter the session type index: ");
+        Serial.println("#Q2: Please enter the session type index: ");
         if( wait_for_read( 500 ))
         {
             // Probably answer to our question.
@@ -111,21 +110,20 @@ void initialize()
             Serial.println("#Got session Type: " + String(sessionType_ind));
             break;
         }
-        delay(0.5);
+        delay(500);
     }
     
     while(true)
     {
-        Serial.println("#Please enter the session number: ");
+        Serial.println("#Q3: Please enter the session number: ");
         if( wait_for_read( 500 ))
         {
             // Probably answer to our question.
             session = Serial.readString().toInt();
             Serial.println("#Got session :" + String(session));
-            delay(0.5);
             break;
         }
-        delay(0.5);
+        delay(500);
     }
 
     Serial.println("#Please press the SELECT button to begin!");

@@ -74,9 +74,13 @@ def get_default_serial_port( ):
     coms = list(serial.tools.list_ports.grep( 'PID' ))
     return coms[-1][0]
 
-def read_until( msg, debug = False ):
+def read_until( msg, timeout = 100.0, debug = False ):
+    t = time.time()
     while True:
         line = config.serial_port_.read_line()
         config._logger.debug('RX< %s' % line)
         if msg.lower() in line.lower():
             return line
+        if time.time() - t > timeout:
+            print("[INFO] Timeout for waiting.. %s" % (time.time() - t))
+            return '0, 0'
