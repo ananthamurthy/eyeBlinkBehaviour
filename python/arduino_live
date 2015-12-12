@@ -118,10 +118,11 @@ def animate(i):
     gline_ = config.gline_
     text_ = config.text_
 
-    # Get 20 elements from queue and plot them.
-    if config.q_.qsize() < 10:
+    # Queue can become empty in ITI sessions.
+    qsize = config.q_.qsize( )
+    if qsize < 5:
         return gline_, gline1_, text_
-
+    # Get some elements from queue and plot them.
     for i in range(10):
         d = config.q_.get()
         config.ybuff_.append( d[0] )
@@ -142,10 +143,10 @@ def animate(i):
         config.ybuff_ = config.ybuff_[-5000:]
 
     gline_.set_data(config.xbuff_[-3000:], config.ybuff_[-3000:])
-    text = 'TIME: %.3f' % (time.time() - config.tstart)
-    text += ' MOUSE: %s' % config.args_.name
-    text += ' SERIAL: %s' % config.args_.port
-    text += ' TRIAL: %d' % config.running_trial_.value
+    text = 'Port: %s' % config.args_.port
+    text += '@ %.2f sec\n' % (time.time() - config.tstart)
+    text += 'Mouse: %s' % config.args_.name
+    text += ' Trial: %d' % config.running_trial_.value
     text_.set_text(text)
     return gline_, gline1_, text_
 
