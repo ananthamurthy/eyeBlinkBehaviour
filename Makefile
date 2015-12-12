@@ -36,7 +36,7 @@ CXXFLAGS         += -pedantic -Wall -Wextra
 
 ### MONITOR_PORT
 ### The port your board is connected to. Using an '*' tries all the ports and finds the right one.
-MONITOR_PORT      = $(shell python $(PROJECT_DIR)/get_serial_ports.py)
+MONITOR_PORT      = $(shell python $(PROJECT_DIR)/config/get_serial_ports.py)
 
 ### CURRENT_DIR
 ### Do not touch - used for binaries path
