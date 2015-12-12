@@ -102,6 +102,7 @@ volatile unsigned int int_counter;
 volatile unsigned char seconds, minutes;
 unsigned int tcnt2; // used to store timer value
 
+
 // Arduino runs at 16 Mhz, so we have 1000 overflows per second...
 // this ISR will get hit once a millisecond
 ISR(TIMER2_OVF_vect) {
@@ -158,17 +159,11 @@ void setupTimer (void) {
 // Include application, user and local libraries
 #include "Globals.h"
 #include "Initialize.h"
-#include "LCDRelated.h"noTone(tonePin);
+#include "LCDRelated.h" 
 #include "DetectBlinks.h"
 #include "Solenoid.h"
 #include "ChangePhase.h"
 #include "TriggerImaging.h"
-
-#ifdef __XCODE__
-#else
-#include <LiquidCrystal.h>
-#endif
-
 //Globals:
 int blink = 0;
 

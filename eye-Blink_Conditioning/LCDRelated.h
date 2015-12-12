@@ -52,10 +52,10 @@
 
 // NOTE: Include it in ino file
 
-#include <LiquidCrystal.h> // This is an Arduino Library
+// This is an Arduino Library
+#include <LiquidCrystal.h> 
 
 // Initialize LC library with # of interface pins
-
 extern LiquidCrystal lcd;
 
 static const char* sessionType[] = {"Cntrl", "Trace", "Delay"};
