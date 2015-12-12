@@ -16,39 +16,13 @@
 // See 			Initialize.h and ReadMe.txt for references
 //
 
-
-// Core library for code-sense - IDE-based
-#if defined(WIRING) // Wiring specific
-#   include "Wiring.h"
-#elif defined(MAPLE_IDE) // Maple specific
-#   include "WProgram.h"
-#elif defined(MPIDE) // chipKIT specific
-#   include "WProgram.h"
-#elif defined(DIGISPARK) // Digispark specific
-#   include "Arduino.h"
-#elif defined(ENERGIA) // LaunchPad specific
-#   include "Energia.h"
-#elif defined(LITTLEROBOTFRIENDS) // LittleRobotFriends specific
-#   include "LRF.h"
-#elif defined(MICRODUINO) // Microduino specific
-#   include "Arduino.h"
-#elif defined(TEENSYDUINO) // Teensy specific
-#   include "Arduino.h"
-#elif defined(REDBEARLAB) // RedBearLab specific
-#   include "Arduino.h"
-#elif defined(SPARK) // Spark specific
-#   include "application.h"
-#elif defined(ARDUINO) // Arduino 1.0 and 1.5 specific
-#   include "Arduino.h"
-#else // error
-#   error Platform not defined
-#endif // end IDE
-
 // Code
 #include "Globals.h"
 #include "LCDRelated.h"
 #include "Initialize.h"
 #include "Solenoid.h"
+#include <avr/wdt.h>
+
 
 extern String mouseName;
 extern int sessionType_ind;
@@ -78,9 +52,39 @@ bool wait_for_read( unsigned long delay )
     return true;
 }
 
+/**
+ * @brief Initialize watchdog timer.
+ */
+void watchdog_setup( void )
+{
+    // Clear all interuppts.
+    cli();
+
+    reset_watchdog();
+
+    // Set the timer to 2 sec.
+    wdt_enable( WDTO_2S );
+    // Set interuppts again.
+    sei();
+}
+
+/**
+ * @brief Interrupt serviving routine.
+ *
+ * @param _vect
+ */
+ISR(WDT_vect)
+{
+    // Handle interuppts here.
+    // Nothing to handle.
+}
 
 void initialize()
 {
+
+    // set the reset_ global to false at every initialization.
+    reset_ = false;
+
     int tone_key = read_lcd_button();
     int puff_key = read_lcd_button();
 
@@ -89,6 +93,7 @@ void initialize()
      */
     while(true)
     {
+        reset_watchdog();
         Serial.println("#Q1: Please enter the mouse ID number: ");
         if( wait_for_read( 500 ))
         {
@@ -102,6 +107,7 @@ void initialize()
 
     while(true)
     {
+        reset_watchdog();
         Serial.println("#Q2: Please enter the session type index: ");
         if( wait_for_read( 500 ))
         {
@@ -115,6 +121,7 @@ void initialize()
 
     while(true)
     {
+        reset_watchdog();
         Serial.println("#Q3: Please enter the session number: ");
         if( wait_for_read( 500 ))
         {
@@ -130,6 +137,7 @@ void initialize()
     startT = millis();
     while (read_lcd_button() != btnSELECT)
     {
+        reset_watchdog();
         if (puff_key == btnUP)
         {   playPuff(puff_do, HIGH);
             delay(puffTime);

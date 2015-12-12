@@ -48,6 +48,7 @@ NOTE: Pressing SELECT is going to start the trial whether or not the session det
 //For Profiling Purpose:
 #include <avr/interrupt.h>
 #include <avr/io.h>
+#include <avr/wdt.h>
 #include <HardwareSerial.h>
 
 // this can be used to turn profiling on and off
@@ -191,7 +192,6 @@ void setup()
 
     // Initialize the serial port
     Serial.begin(9600);
-    //    Serial.println("#setup()");
 
     int_counter = 0;
     seconds = 0;
@@ -199,6 +199,9 @@ void setup()
 
     //    Serial.println("#setupTimer()");
     setupTimer();
+
+    // Setup my watchdog. 
+    watchdog_setup();
 
     // Set up the trigger pin
     pinMode(imagingTrigger_do, OUTPUT);
@@ -243,11 +246,14 @@ void loop()
     if (start != 1)
     {
         initialize();
-
+        reset_watchdog( );
     }
 
     while (start == 1)
     {
+        // As long as we reset the watchdog timer, the arduino will not restart.
+        reset_watchdog();
+
         if (trialNum == 0)
         {
             startPhaseTime = millis();

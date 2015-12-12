@@ -58,4 +58,6 @@
 
 void initialize();
 
+void watchdog_setup( );
+
 #endif

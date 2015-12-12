@@ -76,4 +76,8 @@ extern const int CSTime;
 extern const int CS_PLUS_ToneFreq;
 extern const int CS_MINUS_ToneFreq;
 
+// reset the arduino within 1 seconds.
+extern bool reset_;
+void reset_watchdog( );
+
 #endif
