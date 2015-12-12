@@ -15,10 +15,8 @@ __maintainer__       = __author__
 __email__            = "dilawars@ncbs.res.in"
 __status__           = "Development"
 
-from __future__ import print_function
-from config import *
-from arduino import ArduinoPort
-
+import config
+import arduino 
 import os
 import sys
 import time
@@ -36,65 +34,48 @@ import logging
 def cleanup():
     pass
 
-def get_default_serial_port( ):
-    # If port part is not given from command line, find a serial port by
-    # default.
-    print("[WARN] Searching for ARDUINO port since no --port/-p is given")
-    print("       Only listing ports with VENDOR ID ")
-    coms = list(serial.tools.list_ports.grep( 'PID' ))
-    return coms[-1][0]
-
 def init_serial( baudRate = 9600):
-    global serial_port_
-    global args_
-    
-    if args_.port is None:
-        args_.port = get_default_serial_port( )
-    print("[INFO] Using port: %s" % args_.port)
-    serial_port_ = ArduinoPort( args_.port, baudRate )
-    serial_port_.open( wait = True )
+    if config.args_.port is None:
+        config.args_.port = arduino.get_default_serial_port( )
+    print("[INFO] Using port: %s" % config.args_.port)
+    config.serial_port_ = arduino.ArduinoPort( config.args_.port, baudRate )
+    config.serial_port_.open( wait = True )
    
 def writeTrialData( runningTrial, csType ):
     #The first line after '@' will give us
-    global save_dir_
-    global trial_dict_
     
-    outfile = os.path.join( save_dir_, 'Trial%s.csv' % runningTrial )
+    outfile = os.path.join( config.save_dir_, 'Trial%s.csv' % runningTrial )
     print("[INFO] Writing trial data to : %s" % outfile)
     with open(outfile, 'w') as f:
         f.write("# 3rd row values are trial index, cs type.\n")
         f.write("# Actual trial data starts from row 4\n")
         f.write( "%s,%s\n" % (runningTrial, csType))
-        for (blinkValue, timeStamp) in trial_dict_[runningTrial]:
+        for (blinkValue, timeStamp) in config.trial_dict_[runningTrial]:
             f.write("%s,%s\n" % (blinkValue, timeStamp))
 
 def collect_data( ):
-    global serial_port_
-    global trial_dict_
-    global running_trial_
-    global cur_
 
     # Used to ignore garbage data in the begining.
     anyTrialHasStarted = False
     runningTrial = 0
     csType = None
     while True:
-        arduinoData = serial_port_.read_line()
+        arduinoData = config.serial_port_.read_line()
         y, x = line_to_yx(arduinoData)
         if x is not None and y is not None:
-            q_.put((y,x))
+            config.q_.put((y,x))
 
         if not arduinoData:
             continue
 
         # When TRIAL_DATA_MARKER is found, collect trial data and write the
         # previous non-zero trial.
-        if TRIAL_DATA_MARKER in arduinoData:
+        if config.TRIAL_DATA_MARKER in arduinoData:
             anyTrialHasStarted = True
             print("[INFO] New trial starts")
             runningTrial += 1
             # global copy for display on matplotlib
-            running_trial_.value = runningTrial  
+            config.running_trial_.value = runningTrial  
             if int(runningTrial) >= 2:
                 print("[INFO] Writing previous trial %s" % ( int(runningTrial) - 1 ))
                 writeTrialData( runningTrial - 1, csType )
@@ -107,49 +88,10 @@ def collect_data( ):
                 print("[INFO] Trial: %s, CSType: %s" % (runningTrial, csType))
             else:
                 if x and y:
-                    trial_dict_[runningTrial].append((y,x))
+                    config.trial_dict_[runningTrial].append((y,x))
                 
         else:
             pass
-
-def read_until( msg ):
-    global serial_port_
-    while True:
-        line = serial_port_.read_line()
-        if msg.lower() in line.lower():
-            print("%s ...  Found" % line)
-            return True
-
-def init_arduino():
-    global serial_port_
-    global save_dir_
-    global args_
-
-    print("[INFO] Waiting for questions to appear")
-    read_until('#Please enter')
-    serial_port_.write_msg('%s\r' % args_.name )
-    time.sleep(1)
-
-    read_until('#Please enter')
-    serial_port_.write_msg( '%s\r' % args_.session_type )
-    time.sleep(1)
-
-    read_until('#Please enter')
-    serial_port_.write_msg('%s\r' % args_.session_num )
-    time.sleep(1)
-
-    timeStamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    mouseName = 'MouseK%s' % args_.name
-    outfile = os.path.join( mouseName
-            , '%s_SessionType%s_Session%s' % ( 
-                args_.name, args_.session_type, args_.session_num)
-            )
-    save_dir_ = os.path.join( save_dir_, outfile )
-    if os.path.exists(save_dir_):
-        save_dir_ = os.path.join(save_dir_, timeStamp)
-        os.makedirs(save_dir_)
-    else:
-        os.makedirs(save_dir_) 
 
 def line_to_yx( line ):
     if not line.strip():
@@ -165,56 +107,102 @@ def line_to_yx( line ):
         return (None, None)
     return l
 
-
-def init():
-    text_.set_text('')
-    return gline_, gline1_, text_
+def init_gui():
+    config.text_.set_text('')
+    return config.gline_, config.gline1_, config.text_
 
 def animate(i):
-    global xbuff_, ybuff_
-    global q_
-    global running_trial_
-    global args_
+
+    gax_ = config.gax_
+    gline1_ = config.gline1_
+    gline_ = config.gline_
+    text_ = config.text_
 
     # Get 20 elements from queue and plot them.
-    if q_.qsize() < 10:
+    if config.q_.qsize() < 10:
         return gline_, gline1_, text_
 
     for i in range(10):
-        d = q_.get()
-        ybuff_.append( d[0] )
-        xbuff_.append( xbuff_[-1] + 1 )
+        d = config.q_.get()
+        config.ybuff_.append( d[0] )
+        config.xbuff_.append( config.xbuff_[-1] + 1 )
 
-    _logger.debug("Got from queue: %s, %s" % (xbuff_[-10:], ybuff_[-10:]))
+    config._logger.debug("Got from queue: %s, %s" % (config.xbuff_[-10:],
+        config.ybuff_[-10:]))
     xmin, xmax = gax_.get_xlim()
-    if xbuff_[-1] >= xmax:
-        _logger.info("Updating axes")
+    if config.xbuff_[-1] >= xmax:
+        config._logger.info("Updating axes")
         gax_.set_xlim((xmin+1000, xmax+1000))
         # This is real data (last 3000 points).
-        stary_.append(50)
+        config.stary_.append(50)
         # Its the location of stars
-        startx_.append(xbuff_[-1])
-        gline1_.set_data(startx_, stary_)
-        xbuff_ = xbuff_[-5000:]
-        ybuff_ = ybuff_[-5000:]
+        config.startx_.append(config.xbuff_[-1])
+        gline1_.set_data(config.startx_, config.stary_)
+        config.xbuff_ = config.xbuff_[-5000:]
+        config.ybuff_ = config.ybuff_[-5000:]
 
-    gline_.set_data(xbuff_[-3000:], ybuff_[-3000:])
-    text = 'TIME: %.3f' % (time.time() - tstart)
-    text += ' MOUSE: %s' % args_.name
-    text += ' SERIAL: %s' % args_.port
-    text += ' TRIAL: %d' % running_trial_.value
+    gline_.set_data(config.xbuff_[-3000:], config.ybuff_[-3000:])
+    text = 'TIME: %.3f' % (time.time() - config.tstart)
+    text += ' MOUSE: %s' % config.args_.name
+    text += ' SERIAL: %s' % config.args_.port
+    text += ' TRIAL: %d' % config.running_trial_.value
     text_.set_text(text)
-    return gline_, gline1_, text
+    return gline_, gline1_, text_
 
-def main():
-    global args_
-    init_arduino( )
+def answer_three_questions( ):
+    # All great UI has three questions. Yes we have to, they all starts with
+    # Please.
+    l = arduino.read_until('#Please enter')
+    print('[ANS] %s = %s' % (l, config.args_.name))
+    config.serial_port_.write_msg('%s\r' % config.args_.name )
+
+    l = arduino.read_until('#Please enter the')
+    print('[ANS] %s = %s' % (l, config.args_.session_type))
+    config.serial_port_.write_msg( '%s\r' % config.args_.session_type )
+
+    l = arduino.read_until('#Please enter the')
+    print('[ANS] %s = %s' % (l, config.args_.session_num))
+    config.serial_port_.write_msg('%s\r' % config.args_.session_num )
+
+def init( ):
+    """
+    Wait for first three questions to appear which requires writing to serial
+    port. If serial port is sending legal data then continue, questions are
+    probably answered.
+    """
+
+    # Get 3 lines from arduino, and check if arduino is sending legal data or
+    # just waiting for questions to be answered.
+    lines = []
+    for i in range(3):
+        l = config.serial_port_.read_line( )
+        if '#Please enter' in l:
+            # mere sawalo ka jawav do... do naa!
+            answer_three_questions( )
+            break
+
+    timeStamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    mouseName = 'MouseK%s' % config.args_.name
+    outfile = os.path.join( mouseName
+            , '%s_SessionType%s_Session%s' % ( 
+                config.args_.name, config.args_.session_type, config.args_.session_num)
+            )
+    config.save_dir_ = os.path.join( config.save_dir_, outfile )
+    if os.path.exists(config.save_dir_):
+        config.save_dir_ = os.path.join(config.save_dir_, timeStamp)
+        os.makedirs(config.save_dir_)
+    else:
+        os.makedirs(config.save_dir_) 
+
+def main( ):
+    init( )
     p = Process( target = collect_data )
     p.start()
-    anim = animation.FuncAnimation(fig_
+    anim = animation.FuncAnimation(
+            config.fig_
             , animate
-            , init_func = init
-            , frames=1
+            , init_func = init_gui
+            , frames = 1
             , interval = 1
             , blit = False
             )
@@ -224,7 +212,7 @@ def main():
 if __name__ == '__main__':
     import argparse
     # Argument parser.
-    description = '''Arduino reader.'''
+    description = '''Animate arduino data from serial port'''
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('--name', '-n'
         , required = True
@@ -246,17 +234,15 @@ if __name__ == '__main__':
         , default = None
         , help = 'Serial port [full path]'
         )
-    class Args: pass 
-    args_ = Args()
-    parser.parse_args( namespace=args_ )
+    parser.parse_args( namespace = config.args_ )
     init_serial()
     # Each serial port gets its own logger.
     logging.basicConfig(level=logging.DEBUG,
             format='%(asctime)s -- %(message)s',
             datefmt='%m-%d %H:%M',
-            filename='blink_%s.log' % (args_.port.split('/')[-1]),
+            filename='blink_%s.log' % (config.args_.port.split('/')[-1]),
             filemode='w')
-    _logger = logging.getLogger('')
+    config._logger = logging.getLogger('')
     try:
         main( )
     except KeyboardInterrupt as e:

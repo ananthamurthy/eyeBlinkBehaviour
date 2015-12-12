@@ -79,5 +79,4 @@ def read_until( msg, debug = False ):
         line = config.serial_port_.read_line()
         config._logger.debug('RX< %s' % line)
         if msg.lower() in line.lower():
-            print("%s ...  Found" % line)
-            return True
+            return line
