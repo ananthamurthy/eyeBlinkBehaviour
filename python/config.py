@@ -1,6 +1,7 @@
 """config.py: 
 
 """
+from __future__ import print_function
     
 __author__           = "Dilawar Singh"
 __copyright__        = "Copyright 2015, Dilawar Singh and NCBS Bangalore"
@@ -18,9 +19,21 @@ try:
 except Exception as e:
     print("Cant load GTKAgg. Using default")
 
+import matplotlib.pyplot as plt
+import os 
+import sys
+from collections import defaultdict
+import time 
+import datetime
+from multiprocessing import Queue, Process, Value
+
+
 # Command line arguments/Other globals.
-args_ = None 
+class Args: pass 
+args_ = Args()
+
 _logger = None
+
 tstart = time.time()
 
 # Our shared queue used in multiprocessing
@@ -53,9 +66,6 @@ save_dir_ = os.path.join(
         , 'Behaviour'
         )
 
-# not blocking in pylab
-
-
 DATA_BEGIN_MARKER = '['
 DATA_END_MARKER = ']'
 COMMENT_MARKER = '#'
@@ -65,6 +75,5 @@ SESSION_BEGIN_MARKER = '<'
 SESSION_END_MARKER = '>'
 
 serial_port_ = None
-
 trial_data_ = []
 trial_dict_ = defaultdict(list)

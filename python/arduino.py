@@ -3,6 +3,7 @@
     Helper functions to communicate with arduino.
 
 """
+from __future__ import print_function
     
 __author__           = "Dilawar Singh"
 __copyright__        = "Copyright 2015, Dilawar Singh and NCBS Bangalore"
@@ -13,8 +14,10 @@ __maintainer__       = "Dilawar Singh"
 __email__            = "dilawars@ncbs.res.in"
 __status__           = "Development"
 
+import time
 import serial
 import serial.tools.list_ports 
+import config
 
 # Create a class to handle serial port.
 class ArduinoPort( ):
@@ -27,7 +30,10 @@ class ArduinoPort( ):
     def open(self, wait = True):
         # ATTN: timeout is essential else realine will block.
         try:
-            self.port = serial.serial_for_url(args_.port, self.baudRate, timeout = 1)
+            self.port = serial.serial_for_url(
+                    config.args_.port
+                    , self.baudRate,
+                    timeout = 1)
         except OSError as e:
             # Most like to be a busy resourse. Wait till it opens.
             print("[FATAL] Could not connect")
@@ -60,4 +66,18 @@ class ArduinoPort( ):
         self.port.write(b'%s' % msg)
         time.sleep(0.1)
 
+def get_default_serial_port( ):
+    # If port part is not given from command line, find a serial port by
+    # default.
+    print("[WARN] Searching for ARDUINO port since no --port/-p is given")
+    print("       Only listing ports with VENDOR ID ")
+    coms = list(serial.tools.list_ports.grep( 'PID' ))
+    return coms[-1][0]
 
+def read_until( msg, debug = False ):
+    while True:
+        line = config.serial_port_.read_line()
+        config._logger.debug('RX< %s' % line)
+        if msg.lower() in line.lower():
+            print("%s ...  Found" % line)
+            return True
