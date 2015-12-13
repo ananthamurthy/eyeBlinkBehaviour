@@ -88,7 +88,7 @@ void initialize()
     {
         reset_watchdog();
         Serial.println("#Q1: Please enter the mouse ID number: ");
-        if( wait_for_read( 500 ))
+        if( wait_for_read( 2000 ))
         {
             // Probably answer to our question.
             String answer = Serial.readString();
@@ -100,7 +100,6 @@ void initialize()
                 Serial.println("#Got mouse name: #" + mouseName);
                 break;
             }
-            delay(500);
         }
     }
 
@@ -108,7 +107,7 @@ void initialize()
     {
         reset_watchdog();
         Serial.println("#Q2: Please enter the session type index: ");
-        if( wait_for_read( 500 ))
+        if( wait_for_read( 2000 ))
         {
             // Probably answer to our question.
             String answer = Serial.readString();
@@ -116,14 +115,13 @@ void initialize()
             Serial.println("#Got session Type: " + String(sessionType_ind));
             break;
         }
-        delay(500);
     }
 
     while(true)
     {
         reset_watchdog();
         Serial.println("#Q3: Please enter the session number: ");
-        if( wait_for_read( 500 ))
+        if( wait_for_read( 2000 ))
         {
             // Probably answer to our question.
             String answer = Serial.readString();
@@ -135,7 +133,6 @@ void initialize()
                 Serial.println("#Got session :" + answer);
                 break;
             }
-            delay(500);
         }
     }
 

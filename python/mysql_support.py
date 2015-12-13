@@ -25,8 +25,6 @@ server = 'ghevar.ncbs.res.in'
 password = 'Jhapki1'
 dbName = 'jhapki'
 
-
-
 db_alive_ = False
 cursor_ = None
 db_ = None
@@ -39,9 +37,9 @@ try:
     print('[INFO] MySql is alive')
     db_alive_ = True
     cursor_ = db_.cursor()
-    init()
 except Exception as e:
     print("[INFO] Could not connect to mysql. Disabling support")
+    print("Error was %s" % e)
     db_alive_ = False
 
 def init( ):
@@ -53,6 +51,7 @@ def init( ):
             '''CREATE TABLE IF NOT EXISTS {0} (timestamp TIMESTAMP
             , data VARCHAR(100) )'''.format(table_name)
             )
+    db_.commit()
 
 def insert_line( line, auto_commit = True, commit_interval = 2 ):
     global cursor_ 
@@ -74,13 +73,17 @@ def commit( ):
         return
     db_.commit()
 
+
 def cleanup( ):
     if not db_alive_:
         return
     db_.close()
 
+# initialize db.
+init()
+
 def main():
-    init()
+    pass
 
 if __name__ == '__main__':
     main()

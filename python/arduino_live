@@ -62,7 +62,7 @@ def send_press_select( reftime, interval ):
         return False
     print('[INFO] Sending SELECT to board')
     config.serial_port_.write_msg("```\r")
-    time.sleep(1)
+    time.sleep(0.5)
     print('[INFO] Waiting for Board to respond .', end='')
     sys.stdout.flush()
     while '>>>Recieved' not in config.serial_port_.read_line():
@@ -207,7 +207,7 @@ def answer_three_questions( ):
             if l not in questionsAnswered:
                 questionsAnswered.append(l)
         else:
-            pass
+                pass
 
         if len(questionsAnswered) == 3:
             print('[INFO] All questions are answered')
@@ -286,7 +286,7 @@ if __name__ == '__main__':
         )
     parser.add_argument('--select_after', '-sa'
         , required = False
-        , default = 600.0
+        , default = 60000000.0
         , type = float
         , help = 'Press SELECT after time. Default 600 sec.'
         )
