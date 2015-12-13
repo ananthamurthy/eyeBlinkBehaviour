@@ -39,6 +39,7 @@ try:
     print('[INFO] MySql is alive')
     db_alive_ = True
     cursor_ = db_.cursor()
+    init()
 except Exception as e:
     print("[INFO] Could not connect to mysql. Disabling support")
     db_alive_ = False
