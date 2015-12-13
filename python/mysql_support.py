@@ -58,7 +58,7 @@ def insert_line( line, auto_commit = True, commit_interval = 2 ):
     global cursor_ 
     if not db_alive_:
         return 
-    cursor_.execute('''INSERT INTO {0} VALUES( 'now()', '{1}')'''.format(
+    cursor_.execute('''INSERT INTO {0} VALUES( now(), '{1}')'''.format(
         table_name, line)
         )
     if auto_commit:
