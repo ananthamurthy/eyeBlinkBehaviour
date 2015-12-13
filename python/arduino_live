@@ -47,13 +47,13 @@ def init_serial( baudRate = 9600):
    
 def writeTrialData( runningTrial, csType ):
     #The first line after '@' will give us
-    
     outfile = os.path.join( config.save_dir_, 'Trial%s.csv' % runningTrial )
     print("[INFO] Writing trial data to : %s" % outfile)
     with open(outfile, 'w') as f:
         f.write("# 3rd row values are trial index, cs type.\n")
         f.write("# Actual trial data starts from row 4\n")
         f.write( "%s,%s\n" % (runningTrial, csType))
+        print('\t Total entries = %s' % len(config.trial_dict_[runningTrial]))
         for (blinkValue, timeStamp) in config.trial_dict_[runningTrial]:
             f.write("%s,%s\n" % (blinkValue, timeStamp))
 
@@ -66,6 +66,7 @@ def collect_data( ):
     validDataStarts = 0
     while True:
         arduinoData = config.serial_port_.read_line()
+        _logger.log('RX< %s' % arduinoData)
         y, x = line_to_yx(arduinoData)
         if x is not None and y is not None:
             config.q_.put((y,x))
@@ -76,25 +77,27 @@ def collect_data( ):
                 validDataStarts = time.time()
             if (time.time() - validDataStarts) >= config.args_.select_after:
                 _logger.log("Sending SELECT command")
-                print('[INFO] Sending SELECT command ', end = '')
-                sys.stdout.flush()
                 config.serial_port_.write_msg("```")
-                sys.stdout.flush()
-                print('. SENT')
+                time.sleep(0.05)
                 break
             # Or if x value is not -1 then we are also out of this loop.
-            if x != -1:
-                _logger.log('Trial starting... ')
+            if x != -1 or config.TRIAL_DATA_MARKER in arduinoData:
+                anyTrialHasStarted = True
+                runningTrial += 1
+                config.running_trial_.value = runningTrial  
+                print("[INFO] New trial starts")
                 break
 
     _logger.log('Out of first loop.')
     while True:
         arduinoData = config.serial_port_.read_line()
+        _logger.log('RX< %s' % arduinoData)
         if not arduinoData:
             continue
         y, x = line_to_yx(arduinoData)
         if y is not None and x is not None:
             config.q_.put((y,x))
+
         # When TRIAL_DATA_MARKER is found, collect trial data and write the
         # previous non-zero trial.
         if config.TRIAL_DATA_MARKER in arduinoData:
@@ -122,7 +125,7 @@ def collect_data( ):
 def line_to_yx( line ):
     if not line.strip():
         return (None, None)
-    l = line.split()
+    l = filter(None, line.split())
     if not l:
         return (None, None)
     if len(l) == 1: 
@@ -146,8 +149,8 @@ def animate(i):
 
     # Queue can become empty in ITI sessions.
     qsize = config.q_.qsize( )
-    if qsize < 5:
-        _logger.log('Queue  size less than 5')
+    if qsize < 10:
+        _logger.log('Queue  size less than 10')
         return gline_, gline1_, text_
     # Get some elements from queue and plot them.
     for i in range(10):
@@ -155,9 +158,9 @@ def animate(i):
         config.ybuff_.append( d[0] )
         config.xbuff_.append( config.xbuff_[-1] + 1 )
 
-    config._logger.log("Got from queue: %s, %s" % (
-        config.xbuff_[-10:], config.ybuff_[-10:])
-        )
+    #config._logger.log("Got from queue: %s, %s" % (
+    #    config.xbuff_[-10:], config.ybuff_[-10:])
+    #    )
 
     xmin, xmax = gax_.get_xlim()
     if config.xbuff_[-1] >= xmax:

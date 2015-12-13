@@ -202,11 +202,6 @@ void setup()
     seconds = 0;
     minutes = 0;
 
-    //    Serial.println("#setupTimer()");
-#ifndef DISABLE_TIMER
-    setupTimer();
-#endif
-
     // Setup my watchdog. 
     watchdog_setup();
 
@@ -221,24 +216,6 @@ void setup()
 
     // Initialize LCD
     lcd.begin( 16, 2 );
-
-    //     lcd.setCursor( 0, 0 );
-    //     lcd.print("Press SELECT");
-    //     lcd.setCursor( 0, 1 );
-    //     lcd.print(" to start");
-    //
-    //     lcd.setCursor( 0, 1 );
-    //     lcd.print("S");
-    //     lcd.setCursor(1, 1);
-    //     lcd.print(session);
-    //     lcd.setCursor( 4, 1 );
-    //     lcd.print("T");
-    //
-    //     lcd.setCursor( 0, 0 );
-    //     lcd.print(mouseName);
-    //
-    //     lcd.setCursor(8, 0);
-    //     lcd.print(sessionType[sessionType_ind]);
 
     lcd.setCursor(4, 1);
     lcd.print("PRESS SELECT");
@@ -294,6 +271,7 @@ void loop()
             {
                 pause = 1;
             }
+
             switch ( condition )
             {
             case 0: // PRE
