@@ -243,8 +243,11 @@ void setup()
 void loop()
 {
     // Press "Select" to start Session
+    reboot_ = false;
+
     if (start != 1)
     {
+        reboot_ = false;
         initialize();
         reset_watchdog( );
     }
@@ -252,12 +255,25 @@ void loop()
     while (start == 1)
     {
 
-        // Here, if someone keeps sending to serial port for 2 seconds, the watchdog
-        // timer will not reset and restart the arduino.
+        // Seding ````` will reset the arduino
         if( Serial.available() )
         {
             Serial.setTimeout( 100 );
-            Serial.readString();
+            String incoming = Serial.readString( );
+
+            int count = 0;
+            while( incoming == "`" )
+            {
+                incoming = Serial.readString( );
+                count += 1; 
+                if(count == 5) 
+                { 
+                    reboot_ = true;
+                    Serial.println("+++ Software RESET in 2 seconds, puny human!");
+                    Serial.println("And there is nothing you can do. Ha Ha!");
+                    break;
+                }
+            }
         }
         else
             reset_watchdog();

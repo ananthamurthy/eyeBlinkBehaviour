@@ -83,8 +83,8 @@ ISR(WDT_vect)
 void initialize()
 {
 
-    // set the reset_ global to false at every initialization.
-    reset_ = false;
+    // set the reboot_ global to false at every initialization.
+    reboot_ = false;
 
     int tone_key = read_lcd_button();
     int puff_key = read_lcd_button();
@@ -94,6 +94,7 @@ void initialize()
      */
     while(true)
     {
+        reboot_ = false;
         reset_watchdog();
         delay(500);
         Serial.println("#Q1: Please enter the mouse ID number: ");
@@ -114,6 +115,7 @@ void initialize()
 
     while(true)
     {
+        reboot_ = false;
         reset_watchdog();
         delay(500);
         Serial.println("#Q2: Please enter the session type index: ");
@@ -129,6 +131,7 @@ void initialize()
 
     while(true)
     {
+        reboot_ = false;
         reset_watchdog();
         delay(500);
         Serial.println("#Q3: Please enter the session number: ");
