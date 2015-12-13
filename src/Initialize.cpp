@@ -57,15 +57,9 @@ bool wait_for_read( unsigned long delay )
  */
 void watchdog_setup( void )
 {
-    // Clear all interuppts.
-    cli();
-
-    reset_watchdog();
-
     // Set the timer to 2 sec.
     wdt_enable( WDTO_2S );
-    // Set interuppts again.
-    sei();
+    wdt_reset();
 }
 
 /**
@@ -82,10 +76,7 @@ ISR(WDT_vect)
 
 void initialize()
 {
-
-    // set the reboot_ global to false at every initialization.
     reboot_ = false;
-    Serial.setTimeout( 500 );
 
     int tone_key = read_lcd_button();
     int puff_key = read_lcd_button();
@@ -95,7 +86,6 @@ void initialize()
      */
     while(true)
     {
-        reboot_ = false;
         reset_watchdog();
         Serial.println("#Q1: Please enter the mouse ID number: ");
         if( wait_for_read( 500 ))
@@ -116,7 +106,6 @@ void initialize()
 
     while(true)
     {
-        reboot_ = false;
         reset_watchdog();
         Serial.println("#Q2: Please enter the session type index: ");
         if( wait_for_read( 500 ))
@@ -132,7 +121,6 @@ void initialize()
 
     while(true)
     {
-        reboot_ = false;
         reset_watchdog();
         Serial.println("#Q3: Please enter the session number: ");
         if( wait_for_read( 500 ))
@@ -179,7 +167,6 @@ void initialize()
 
         if( Serial.available() )
         {
-            Serial.setTimeout( 300 );
             bool foundSelect = Serial.find( "```" );
 
             if( foundSelect )

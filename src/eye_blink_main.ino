@@ -18,7 +18,7 @@
 
 
 /*
-INSTRUCTIONS: (Skip 1 and 2 if already performed)
+
 1. Hook the arduino up to a usb port
 2. Verify/Compile the code and upload to the arduino
 3. Run the python code to send in the session details and start reading data
@@ -52,6 +52,7 @@ NOTE: Pressing SELECT is going to start the trial whether or not the session det
 #include <HardwareSerial.h>
 
 // this can be used to turn profiling on and off
+#define DISABLE_TIMER
 #define PROFILING 0
 // this needs to be true in at least ONE .c, .cpp, or .ino file in your sketch
 #define PROFILING_MAIN 1
@@ -75,10 +76,12 @@ volatile unsigned char seconds, minutes;
 unsigned int tcnt2; // used to store timer value
 
 
+#ifndef DISABLE_TIMER
+
 // Arduino runs at 16 Mhz, so we have 1000 overflows per second...
 // this ISR will get hit once a millisecond
-ISR(TIMER2_OVF_vect) {
-
+ISR(TIMER2_OVF_vect) 
+{
     int_counter++;
     if (int_counter == 1000) {
         seconds++;
@@ -127,6 +130,8 @@ void setupTimer (void) {
     TIMSK2 |= (1<<TOIE2);
     sei();
 }
+
+#endif
 
 // Include application, user and local libraries
 #include "Globals.h"
@@ -198,7 +203,9 @@ void setup()
     minutes = 0;
 
     //    Serial.println("#setupTimer()");
+#ifndef DISABLE_TIMER
     setupTimer();
+#endif
 
     // Setup my watchdog. 
     watchdog_setup();
@@ -243,11 +250,8 @@ void setup()
 void loop()
 {
     // Press "Select" to start Session
-    reboot_ = false;
-
     if (start != 1)
     {
-        reboot_ = false;
         initialize();
         reset_watchdog( );
     }
@@ -258,21 +262,13 @@ void loop()
         // Seding ````` will reset the arduino
         if( Serial.available() )
         {
-            Serial.setTimeout( 100 );
-            String incoming = Serial.readString( );
-
-            int count = 0;
-            while( incoming == "`" )
+            bool foundReboot = Serial.find("`````");
+            if( foundReboot )
             {
-                incoming = Serial.readString( );
-                count += 1; 
-                if(count == 5) 
-                { 
-                    reboot_ = true;
-                    Serial.println("+++ Software RESET in 2 seconds, puny human!");
-                    Serial.println("And there is nothing you can do. Ha Ha!");
-                    break;
-                }
+                reboot_ = true;
+                Serial.println("+++ Software RESET in 2 seconds, puny human!");
+                Serial.println("And there is nothing you can do. Ha Ha!");
+                break;
             }
         }
         else
@@ -423,8 +419,8 @@ void loop()
                     if (currentPhaseTime >= interTrialTime)
                     {
                         trialNum++;
-                        //                            Serial.print("Blink Count = ");
-                        //                            Serial.println(blinkCount);
+                        // Serial.print("Blink Count = ");
+                        // Serial.println(blinkCount);
                         blinkCount = 0;
                         if (trialNum > totalTrials)
                         {
