@@ -65,7 +65,7 @@ def send_press_select( reftime, interval ):
     time.sleep(1)
     print('[INFO] Waiting for Board to respond .', end='')
     sys.stdout.flush()
-    while '>>>Recieved SELECT' not in config.serial_port_.read_line():
+    while '>>>Recieved' not in config.serial_port_.read_line():
         print('.', end='')
         sys.stdout.flush()
     return True
