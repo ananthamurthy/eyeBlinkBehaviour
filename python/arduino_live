@@ -5,6 +5,7 @@
     matplotlib.
 
 """
+from __future__ import print_function
     
 __author__           = "Dilawar Singh, Ananthamurhty, and Shriya P"
 __copyright__        = "Copyright 2015, Bhalla lab, NCBS Bangalore"
@@ -16,10 +17,12 @@ __email__            = "dilawars@ncbs.res.in"
 __status__           = "Development"
 
 import config
+from config import _logger
 import arduino 
 import os
 import sys
 import time
+
 
 from collections import defaultdict
 import datetime
@@ -60,11 +63,27 @@ def collect_data( ):
     anyTrialHasStarted = False
     runningTrial = 0
     csType = None
+    validDataStarts = 0
+    selectIsSent = False
     while True:
         arduinoData = config.serial_port_.read_line()
         y, x = line_to_yx(arduinoData)
         if x is not None and y is not None:
             config.q_.put((y,x))
+            # All right. If we are here then we are waiting for SELECT to be
+            # pressed. Let's press is by sending three ` to serialport after
+            # some timeout.
+            if validDataStarts == 0:
+                validDataStarts = time.time()
+            if (time.time() - validDataStarts) >= config.args_.select_after:
+                if not selectIsSent:
+                    _logger.log("Sending SELECT command")
+                    print('[INFO] Sending SELECT command ', end = '')
+                    sys.stdout.flush()
+                    config.serial_port_.write_msg("```")
+                    sys.stdout.flush()
+                    print('. SENT')
+                    selectIsSent = True
 
         if not arduinoData:
             continue
@@ -90,7 +109,6 @@ def collect_data( ):
             else:
                 if x and y:
                     config.trial_dict_[runningTrial].append((y,x))
-                
         else:
             pass
 
@@ -122,6 +140,7 @@ def animate(i):
     # Queue can become empty in ITI sessions.
     qsize = config.q_.qsize( )
     if qsize < 5:
+        _logger.log('Queue  size less than 5')
         return gline_, gline1_, text_
     # Get some elements from queue and plot them.
     for i in range(10):
@@ -129,8 +148,10 @@ def animate(i):
         config.ybuff_.append( d[0] )
         config.xbuff_.append( config.xbuff_[-1] + 1 )
 
-    config._logger.log("Got from queue: %s, %s" % (config.xbuff_[-10:],
-        config.ybuff_[-10:]))
+    config._logger.log("Got from queue: %s, %s" % (
+        config.xbuff_[-10:], config.ybuff_[-10:])
+        )
+
     xmin, xmax = gax_.get_xlim()
     if config.xbuff_[-1] >= xmax:
         config._logger.log("Updating axes")
@@ -154,29 +175,32 @@ def animate(i):
 def answer_three_questions( ):
     # All great UI has three questions. Yes we have to, they all starts with
     # Please.
-    questionsAnswered = 0
-    for i in range( 10 ):
+    questionsAnswered = [ ]
+    for i in range( 20 ):
         l = arduino.read_until('Please enter', timeout = 1.0)
         config._logger.log('RX< %s' % l)
         if 'mouse ID number' in l:
             print('[ANSW] %s = %s' % (l, config.args_.name))
             config.serial_port_.write_msg('%s\r' % config.args_.name )
             time.sleep(0.5)
-            questionsAnswered += 1
+            if l not in questionsAnswered:
+                questionsAnswered.append(l)
         elif 'session type' in l:
             print('[ANSW] %s = %s' % (l, config.args_.session_type))
             config.serial_port_.write_msg( '%s\r' % config.args_.session_type )
             time.sleep(0.5)
-            questionsAnswered += 1
+            if l not in questionsAnswered:
+                questionsAnswered.append(l)
         elif 'session number' in l:
             print('[ANSW] %s = %s' % (l, config.args_.session_num))
             config.serial_port_.write_msg('%s\r' % config.args_.session_num )
             time.sleep(0.5)
-            questionsAnswered += 1
+            if l not in questionsAnswered:
+                questionsAnswered.append(l)
         else:
             pass
 
-        if questionsAnswered == 3:
+        if len(questionsAnswered) == 3:
             print('[INFO] All questions are answered')
             return 
 
@@ -250,6 +274,12 @@ if __name__ == '__main__':
         , required = False
         , default = None
         , help = 'Serial port [full path]'
+        )
+    parser.add_argument('--select_after', '-sa'
+        , required = False
+        , default = 3.0
+        , type = float
+        , help = 'Press SELECT after time. Default 5 sec.'
         )
     parser.parse_args( namespace = config.args_ )
     init_serial()

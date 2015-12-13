@@ -32,10 +32,9 @@ class ArduinoPort( ):
     def open(self, wait = True):
         # ATTN: timeout is essential else realine will block.
         try:
-            self.port = serial.serial_for_url(
-                    config.args_.port
-                    , self.baudRate,
-                    timeout = 1)
+            self.port = serial.serial_for_url( config.args_.port
+                    , self.baudRate , timeout = 1
+                    )
         except OSError as e:
             # Most like to be a busy resourse. Wait till it opens.
             print("[FATAL] Could not connect")
@@ -66,8 +65,8 @@ class ArduinoPort( ):
 
     def write_msg(self, msg):
         _logger.log('Writing %s to serial port' % msg)
-        self.port.write('%s'.encode() % msg)
-        time.sleep(0.1)
+        self.port.write(b'%s' % msg)
+        time.sleep(0.05)
 
 def get_default_serial_port( ):
     # If port part is not given from command line, find a serial port by
@@ -77,11 +76,11 @@ def get_default_serial_port( ):
     coms = list(serial.tools.list_ports.grep( 'PID' ))
     return coms[-1][0]
 
-def read_until( msg, timeout = 100.0, debug = False ):
+def read_until( msg, timeout = 2.0, debug = False ):
     t = time.time()
     while True:
         line = config.serial_port_.read_line()
-        config._logger.log('RX< %s' % line)
+        _logger.log('RX< %s' % line)
         if msg.lower() in line.lower():
             return line
         if time.time() - t > timeout:

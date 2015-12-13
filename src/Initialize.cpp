@@ -97,7 +97,6 @@ void initialize()
     {
         reboot_ = false;
         reset_watchdog();
-        delay(500);
         Serial.println("#Q1: Please enter the mouse ID number: ");
         if( wait_for_read( 500 ))
         {
@@ -111,6 +110,7 @@ void initialize()
                 Serial.println("#Got mouse name: #" + mouseName);
                 break;
             }
+            delay(500);
         }
     }
 
@@ -118,7 +118,6 @@ void initialize()
     {
         reboot_ = false;
         reset_watchdog();
-        delay(500);
         Serial.println("#Q2: Please enter the session type index: ");
         if( wait_for_read( 500 ))
         {
@@ -128,13 +127,13 @@ void initialize()
             Serial.println("#Got session Type: " + String(sessionType_ind));
             break;
         }
+        delay(500);
     }
 
     while(true)
     {
         reboot_ = false;
         reset_watchdog();
-        delay(500);
         Serial.println("#Q3: Please enter the session number: ");
         if( wait_for_read( 500 ))
         {
@@ -148,8 +147,8 @@ void initialize()
                 Serial.println("#Got session :" + answer);
                 break;
             }
+            delay(500);
         }
-        delay(500);
     }
 
     Serial.println("#Please press the SELECT button to begin!");
@@ -180,21 +179,12 @@ void initialize()
 
         if( Serial.available() )
         {
-            Serial.setTimeout( 100 );
-            String incoming = Serial.readString( );
+            Serial.setTimeout( 300 );
+            bool foundSelect = Serial.find( "```" );
 
-            int count = 0;
-            while( incoming == "`" )
-            {
-                count += 1;
-                incoming = Serial.readString( );
-                if(count == 3) 
-                { 
-                    break; 
-                }
-            }
-            if( count == 3 ) 
+            if( foundSelect )
             { 
+                Serial.println("Recieved SELECT from SERIAL");
                 break; 
             }
         }
