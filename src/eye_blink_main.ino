@@ -75,64 +75,6 @@ volatile unsigned int int_counter;
 volatile unsigned char seconds, minutes;
 unsigned int tcnt2; // used to store timer value
 
-
-#ifndef DISABLE_TIMER
-
-// Arduino runs at 16 Mhz, so we have 1000 overflows per second...
-// this ISR will get hit once a millisecond
-ISR(TIMER2_OVF_vect) 
-{
-    int_counter++;
-    if (int_counter == 1000) {
-        seconds++;
-        int_counter = 0;
-        if(seconds == 60) {
-            seconds = 0;
-            minutes++;
-        }
-    }
-#if PROFILING
-    prof_array[prof_line]++;
-#endif
-    TCNT2 = tcnt2;  // reset the timer for next time
-}
-
-// Timer setup code borrowed from Sebastian Wallin
-// http://popdevelop.com/2010/04/mastering-timer-interrupts-on-the-arduino/
-// further borrowed from: http://www.desert-home.com/p/super-thermostat.html
-void setupTimer (void) {
-    //Timer2 Settings:  Timer Prescaler /1024
-    // First disable the timer overflow interrupt while we're configuring
-    TIMSK2 &= ~(1<<TOIE2);
-    // Configure timer2 in normal mode (pure counting, no PWM etc.)
-    TCCR2A &= ~((1<<WGM21) | (1<<WGM20));
-    // Select clock source: internal I/O clock
-    ASSR &= ~(1<<AS2);
-    // Disable Compare Match A interrupt enable (only want overflow)
-    TIMSK2 &= ~(1<<OCIE2A);
-
-    // Now configure the prescaler to CPU clock divided by 128
-    TCCR2B |= (1<<CS22)  | (1<<CS20); // Set bits
-    TCCR2B &= ~(1<<CS21);             // Clear bit
-
-    /* We need to calculate a proper value to load the timer counter.
-     * The following loads the value 131 into the Timer 2 counter register
-     * The math behind this is:
-     * (CPU frequency) / (prescaler value) = 125000 Hz = 8us.
-     * (desired period) / 8us = 125.
-     * MAX(uint8) - 125 = 131;
-     */
-    /* Save value globally for later reload in ISR */
-    tcnt2 = 131;
-
-    /* Finally load end enable the timer */
-    TCNT2 = tcnt2;
-    TIMSK2 |= (1<<TOIE2);
-    sei();
-}
-
-#endif
-
 // Include application, user and local libraries
 #include "Globals.h"
 #include "Initialize.h"
@@ -181,8 +123,9 @@ unsigned long currentPhaseTime = 0;
 unsigned long lastTime = 0;
 unsigned short sampleInterval = 10; // Ten milliseconds for 100 Hz
 unsigned int interTrialTime = 0;
+
 int trialNum = 0;
-boolean CS_plus = 1;
+
 boolean start = 0;
 boolean trialState = 0;
 
@@ -276,7 +219,6 @@ void loop()
             {
             case 0: // PRE
                 PF((condition+1));
-                //Serial.println("Case0");
                 detectBlinks();
                 if (currentPhaseTime >= preTime)
                 {
@@ -296,7 +238,6 @@ void loop()
 
             case 1: // CS+
                 PF((condition+1));
-                //Serial.println("Case1");
                 detectBlinks();
                 if (currentPhaseTime >= CSTime)
                 {
@@ -308,7 +249,6 @@ void loop()
 
             case 2: // CS-
                 PF((condition+1));
-                //Serial.println("Case2");
                 detectBlinks();
                 if (currentPhaseTime >= CSTime)
                 {
@@ -319,7 +259,6 @@ void loop()
 
             case 3: // trace
                 PF((condition+1));
-                //Serial.println("Case3");
                 detectBlinks();
                 if (currentPhaseTime >= traceTime)
                 {
@@ -348,7 +287,6 @@ void loop()
 
             case 4: // Puff (US)
                 PF((condition+1));
-                //Serial.println("Case4");
                 detectBlinks();
                 if (currentPhaseTime >= puffTime)
                 {
@@ -360,7 +298,6 @@ void loop()
 
             case 5: // No-Puff
                 PF((condition+1));
-                //Serial.println("Case5");
                 detectBlinks();
                 if (currentPhaseTime >= puffTime)
                 {
@@ -372,7 +309,6 @@ void loop()
 
             case 6: // Post Pairing/Stimuli
                 PF((condition+1));
-                //Serial.println("Case6");
                 detectBlinks();
                 if (currentPhaseTime >= postTime)
                 {
@@ -393,37 +329,25 @@ void loop()
                 }
                 else
                 {
-                    //Serial.println("Case7");
                     if (currentPhaseTime >= interTrialTime)
                     {
                         trialNum++;
-                        // Serial.print("Blink Count = ");
-                        // Serial.println(blinkCount);
                         blinkCount = 0;
                         if (trialNum > totalTrials)
                         {
-                            Serial.println(DATA_END_MARKER);
                             changePhase( 8, END ); // END of session
                             break;
                         }
                         else
                         {
-                            Serial.println(DATA_END_MARKER);
-                            Serial.println(TRIAL_DATA_MARKER);
                             if (random(10) >= 5) //change made on 20150826
                             {
                                 CS_plus = 1; //play CS+
-                                Serial.print(trialNum);
-                                Serial.println(" 1");
                             }
                             else
                             {
                                 CS_plus = 0; //play CS-
-                                Serial.print(trialNum);
-                                Serial.println(" 0");
                             }
-                            Serial.println(DATA_BEGIN_MARKER);
-
                             printStatus(START_PRE, trialNum);
                             changePhase( 0, START_PRE ); // Next cycle
 
@@ -437,21 +361,14 @@ void loop()
                 }
 
             case 8: // End of session
-                //Serial.println("Case8");
                 if (profilingDataDump == 1)
                 {
-                    Serial.println(PROFILING_DATA_MARKER);
-                    Serial.println(DATA_BEGIN_MARKER);
-                    //dump_profiling_data();
-                    Serial.println(DATA_END_MARKER);
                     profilingDataDump = 0;
                 }
-                Serial.println(SESSION_END_MARKER); //tells data saving to close everything
                 while(1); //has the microcontroller on indefinite hold
                 break;
 
             case 9:  // Pause
-                //Serial.println("Case9");
                 int unpause_key = read_lcd_button();
                 if (unpause_key == btnLEFT)
                 {

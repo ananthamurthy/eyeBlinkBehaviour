@@ -71,7 +71,6 @@ ISR(WDT_vect)
 {
     // Handle interuppts here.
     // Nothing to handle.
-    Serial.println("+++ WATCHDOG reset");
 }
 
 void initialize()
@@ -87,17 +86,17 @@ void initialize()
     while(true)
     {
         reset_watchdog();
-        Serial.println("#Q1: Please enter the mouse ID number: ");
-        if( wait_for_read( 2000 ))
+        Serial.println("?? Please enter the mouse ID number: ");
+        if( wait_for_read( 1000 ))
         {
             // Probably answer to our question.
             String answer = Serial.readString();
             if( answer.toInt() == 0 ) // Mouse name can't be zero
-                Serial.println(" >>>> Expected a positive interger.");
+                Serial.println("!! Expected a positive interger.");
             else
             {
                 mouseName = "MouseK" + answer;
-                Serial.println("#Got mouse name: #" + mouseName);
+                Serial.println("-> Got mouse name: #" + mouseName);
                 break;
             }
         }
@@ -106,13 +105,13 @@ void initialize()
     while(true)
     {
         reset_watchdog();
-        Serial.println("#Q2: Please enter the session type index: ");
-        if( wait_for_read( 2000 ))
+        Serial.println("?? Please enter the session type index: ");
+        if( wait_for_read( 1000 ))
         {
             // Probably answer to our question.
             String answer = Serial.readString();
             sessionType_ind = answer.toInt();
-            Serial.println("#Got session Type: " + String(sessionType_ind));
+            Serial.println("-> Got session Type: " + String(sessionType_ind));
             break;
         }
     }
@@ -120,23 +119,23 @@ void initialize()
     while(true)
     {
         reset_watchdog();
-        Serial.println("#Q3: Please enter the session number: ");
-        if( wait_for_read( 2000 ))
+        Serial.println("?? Please enter the session number: ");
+        if( wait_for_read( 1000 ))
         {
             // Probably answer to our question.
             String answer = Serial.readString();
             if( answer.toInt() == 0 ) // Session number can't be zero
-                Serial.println(" >>>> Expected a positive interger.");
+                Serial.println("!! Expected a positive interger.");
             else
             {
                 session = answer.toInt();
-                Serial.println("#Got session :" + answer);
+                Serial.println("-> Got session :" + answer);
                 break;
             }
         }
     }
 
-    Serial.println("#Please press the SELECT button to begin!");
+    Serial.println("|| Please press the SELECT button to begin!");
     startT = millis();
     
     // I should also be able to trigger that loop by writing START to serial
@@ -158,7 +157,7 @@ void initialize()
         if (startT > sampleInterval)
         {
             blink = analogRead(blink_ai);
-            Serial.println(blink);
+            write_data_line( blink, 0 );
             startT = millis();
         }
 
@@ -167,7 +166,7 @@ void initialize()
             bool foundSelect = Serial.find( "```" );
             if( foundSelect )
             {
-                Serial.println(">>>Recieved SELECT");
+                Serial.println("-> Recieved SELECT");
                 break; 
             }
         }
@@ -190,11 +189,6 @@ void initialize()
     lcd.print(sessionType[sessionType_ind]);
     lcd.setCursor(6, 1);
     lcd.print("          ");
-    Serial.println(SESSION_BEGIN_MARKER);
-    Serial.println(TRIAL_DATA_MARKER);
-    //Serial.print(trialNum);
-    Serial.println("1 1"); // Just to not confuse data saving; NOTE: we always start the session with a CS+ trial
-    Serial.println(DATA_BEGIN_MARKER);
 
     // Get totalTrials and traceTime based on the Session Type
     if (sessionType_ind == 2)
