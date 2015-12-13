@@ -77,6 +77,7 @@ ISR(WDT_vect)
 {
     // Handle interuppts here.
     // Nothing to handle.
+    Serial.println("+++ WATCHDOG reset");
 }
 
 void initialize()
@@ -94,47 +95,64 @@ void initialize()
     while(true)
     {
         reset_watchdog();
+        delay(500);
         Serial.println("#Q1: Please enter the mouse ID number: ");
         if( wait_for_read( 500 ))
         {
             // Probably answer to our question.
-            mouseName = "MouseK" + String(Serial.readString().toInt());
-            Serial.println("#Got mouse name: #" + mouseName);
-            break;
+            String answer = Serial.readString();
+            if( answer.toInt() == 0 ) // Mouse name can't be zero
+                Serial.println(" >>>> Expected a positive interger.");
+            else
+            {
+                mouseName = "MouseK" + answer;
+                Serial.println("#Got mouse name: #" + mouseName);
+                break;
+            }
         }
-        delay(500);
     }
 
     while(true)
     {
         reset_watchdog();
+        delay(500);
         Serial.println("#Q2: Please enter the session type index: ");
         if( wait_for_read( 500 ))
         {
             // Probably answer to our question.
-            sessionType_ind = Serial.readString().toInt();
+            String answer = Serial.readString();
+            sessionType_ind = answer.toInt();
             Serial.println("#Got session Type: " + String(sessionType_ind));
             break;
         }
-        delay(500);
     }
 
     while(true)
     {
         reset_watchdog();
+        delay(500);
         Serial.println("#Q3: Please enter the session number: ");
         if( wait_for_read( 500 ))
         {
             // Probably answer to our question.
-            session = Serial.readString().toInt();
-            Serial.println("#Got session :" + String(session));
-            break;
+            String answer = Serial.readString();
+            if( answer.toInt() == 0 ) // Session number can't be zero
+                Serial.println(" >>>> Expected a positive interger.");
+            else
+            {
+                session = answer.toInt();
+                Serial.println("#Got session :" + answer);
+                break;
+            }
         }
         delay(500);
     }
 
     Serial.println("#Please press the SELECT button to begin!");
     startT = millis();
+    
+    // I should also be able to trigger that loop by writing START to serial
+    // port.
     while (read_lcd_button() != btnSELECT)
     {
         reset_watchdog();
@@ -149,12 +167,32 @@ void initialize()
             noTone(tonePin);
         }
 
-
         if (startT > sampleInterval)
         {
             blink = analogRead(blink_ai);
             Serial.println(blink);
             startT = millis();
+        }
+
+        if( Serial.available() )
+        {
+            Serial.setTimeout( 100 );
+            String incoming = Serial.readString( );
+
+            int count = 0;
+            while( incoming == "~" )
+            {
+                count += 1;
+                incoming = Serial.readString( );
+                if(count == 3) 
+                { 
+                    break; 
+                }
+            }
+            if( count == 3 ) 
+            { 
+                break; 
+            }
         }
     }
 

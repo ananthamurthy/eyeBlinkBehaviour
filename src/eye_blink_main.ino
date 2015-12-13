@@ -251,8 +251,16 @@ void loop()
 
     while (start == 1)
     {
-        // As long as we reset the watchdog timer, the arduino will not restart.
-        reset_watchdog();
+
+        // Here, if someone keeps sending to serial port for 2 seconds, the watchdog
+        // timer will not reset and restart the arduino.
+        if( Serial.available() )
+        {
+            Serial.setTimeout( 100 );
+            Serial.readString();
+        }
+        else
+            reset_watchdog();
 
         if (trialNum == 0)
         {
