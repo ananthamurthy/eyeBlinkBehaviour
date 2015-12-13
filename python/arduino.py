@@ -18,6 +18,7 @@ import time
 import serial
 import serial.tools.list_ports 
 import config
+from config import _logger
 import mysql_support as mysql
 
 # Create a class to handle serial port.
@@ -64,8 +65,8 @@ class ArduinoPort( ):
         return line.strip()
 
     def write_msg(self, msg):
-        print('[INFO] Writing %s to serial port' % msg)
-        self.port.write(b'%s' % msg)
+        _logger.log('Writing %s to serial port' % msg)
+        self.port.write('%s'.encode() % msg)
         time.sleep(0.1)
 
 def get_default_serial_port( ):
@@ -80,7 +81,7 @@ def read_until( msg, timeout = 100.0, debug = False ):
     t = time.time()
     while True:
         line = config.serial_port_.read_line()
-        config._logger.debug('RX< %s' % line)
+        config._logger.log('RX< %s' % line)
         if msg.lower() in line.lower():
             return line
         if time.time() - t > timeout:

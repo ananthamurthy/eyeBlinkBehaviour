@@ -16,13 +16,15 @@ __status__           = "Development"
 import MySQLdb as sql
 import datetime
 import config
-from config import _logger
 import time
+import logging 
+_logger =  logging.getLogger('')
 
 username = 'eyeblink'
 server = 'ghevar.ncbs.res.in'
 password = 'Jhapki1'
 dbName = 'jhapki'
+
 
 
 db_alive_ = False
@@ -69,6 +71,11 @@ def commit( ):
     if not db_alive_:
         return
     db_.commit()
+
+def cleanup( ):
+    if not db_alive_:
+        return
+    db_.close()
 
 def main():
     init()

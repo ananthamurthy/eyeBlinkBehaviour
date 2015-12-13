@@ -29,15 +29,16 @@ import codecs
 from multiprocessing  import Process, Queue, Value
 import matplotlib.pyplot as plt
 from matplotlib import animation
-import logging
+import mysql_support as mysql
 
 def cleanup():
-    pass
+    mysql.cleanup()
 
 def init_serial( baudRate = 9600):
     if config.args_.port is None:
         config.args_.port = arduino.get_default_serial_port( )
     print("[INFO] Using port: %s" % config.args_.port)
+    config._logger.set_name( 'eyeblink_%s' % (config.args_.port.split('/')[-1]))
     config.serial_port_ = arduino.ArduinoPort( config.args_.port, baudRate )
     config.serial_port_.open( wait = True )
    
@@ -128,11 +129,11 @@ def animate(i):
         config.ybuff_.append( d[0] )
         config.xbuff_.append( config.xbuff_[-1] + 1 )
 
-    config._logger.debug("Got from queue: %s, %s" % (config.xbuff_[-10:],
+    config._logger.log("Got from queue: %s, %s" % (config.xbuff_[-10:],
         config.ybuff_[-10:]))
     xmin, xmax = gax_.get_xlim()
     if config.xbuff_[-1] >= xmax:
-        config._logger.info("Updating axes")
+        config._logger.log("Updating axes")
         gax_.set_xlim((xmin+1000, xmax+1000))
         # This is real data (last 3000 points).
         config.stary_.append(50)
@@ -156,18 +157,21 @@ def answer_three_questions( ):
     questionsAnswered = 0
     for i in range( 10 ):
         l = arduino.read_until('Please enter', timeout = 1.0)
-        config._logger.info('RX< %s' % l)
+        config._logger.log('RX< %s' % l)
         if 'mouse ID number' in l:
             print('[ANSW] %s = %s' % (l, config.args_.name))
             config.serial_port_.write_msg('%s\r' % config.args_.name )
+            time.sleep(0.5)
             questionsAnswered += 1
         elif 'session type' in l:
             print('[ANSW] %s = %s' % (l, config.args_.session_type))
             config.serial_port_.write_msg( '%s\r' % config.args_.session_type )
+            time.sleep(0.5)
             questionsAnswered += 1
         elif 'session number' in l:
             print('[ANSW] %s = %s' % (l, config.args_.session_num))
             config.serial_port_.write_msg('%s\r' % config.args_.session_num )
+            time.sleep(0.5)
             questionsAnswered += 1
         else:
             pass
@@ -249,13 +253,6 @@ if __name__ == '__main__':
         )
     parser.parse_args( namespace = config.args_ )
     init_serial()
-    # Each serial port gets its own logger.
-    logging.basicConfig(level=logging.DEBUG,
-            format='%(asctime)s -- %(message)s',
-            datefmt='%m-%d %H:%M',
-            filename='blink_%s.log' % (config.args_.port.split('/')[-1]),
-            filemode='w')
-    config._logger = logging.getLogger('')
     try:
         main( )
     except KeyboardInterrupt as e:

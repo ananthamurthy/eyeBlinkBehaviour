@@ -26,13 +26,30 @@ from collections import defaultdict
 import time 
 import datetime
 from multiprocessing import Queue, Process, Value
-
+import logging
 
 # Command line arguments/Other globals.
 class Args: pass 
 args_ = Args()
 
-_logger = None
+class Logger():
+
+    def __init__(self, name = ''):
+        if not name: 
+            name = 'eyeblink.log'
+        self.filename = os.path.join( os.curdir,  name+'.log')
+        with open(self.filename, 'w') as f:
+            f.write('\n')
+
+    def log(self, msg):
+        with open(self.filename, 'a') as f:
+            stamp = datetime.datetime.now().isoformat()
+            f.write('%s - %s\n' % (stamp, msg))
+
+    def set_name(self, name):
+        self.__init__(name)
+
+_logger = Logger( )
 
 tstart = time.time()
 
