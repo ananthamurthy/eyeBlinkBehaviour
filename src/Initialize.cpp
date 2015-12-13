@@ -85,6 +85,7 @@ void initialize()
 
     // set the reboot_ global to false at every initialization.
     reboot_ = false;
+    Serial.setTimeout( 500 );
 
     int tone_key = read_lcd_button();
     int puff_key = read_lcd_button();
@@ -183,7 +184,7 @@ void initialize()
             String incoming = Serial.readString( );
 
             int count = 0;
-            while( incoming == "~" )
+            while( incoming == "`" )
             {
                 count += 1;
                 incoming = Serial.readString( );
