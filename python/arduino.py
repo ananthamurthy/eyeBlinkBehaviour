@@ -60,12 +60,14 @@ class ArduinoPort( ):
 
     def read_line(self, **kwargs):
         line = self.port.readline()
+        config._logger.log('RX< %s' % line)
         mysql.insert_line( line , auto_commit = True)
         return line.strip()
 
     def write_msg(self, msg):
         _logger.log('Writing %s to serial port' % msg)
         self.port.write(b'%s' % msg)
+        self.port.flush()
 
 def get_default_serial_port( ):
     # If port part is not given from command line, find a serial port by
@@ -79,7 +81,6 @@ def read_until( msg, timeout = 2.0, debug = False ):
     t = time.time()
     while True:
         line = config.serial_port_.read_line()
-        _logger.log('RX< %s' % line)
         if msg.lower() in line.lower():
             return line
         if time.time() - t > timeout:

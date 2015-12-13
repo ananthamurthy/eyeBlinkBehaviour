@@ -57,45 +57,47 @@ def writeTrialData( runningTrial, csType ):
         for (blinkValue, timeStamp) in config.trial_dict_[runningTrial]:
             f.write("%s,%s\n" % (blinkValue, timeStamp))
 
-def collect_data( ):
+def send_press_select( reftime, interval ):
+    if time.time() - reftime < interval:
+        return False
+    print('[INFO] Sending SELECT to board')
+    config.serial_port_.write_msg("```\r")
+    time.sleep(1)
+    print('[INFO] Waiting for Board to respond .', end='')
+    sys.stdout.flush()
+    while '>>>Recieved SELECT' not in config.serial_port_.read_line():
+        print('.', end='')
+        sys.stdout.flush()
+    return True
 
+def collect_data( ):
     # Used to ignore garbage data in the begining.
     anyTrialHasStarted = False
     runningTrial = 0
     csType = None
-    validDataStarts = 0
+    tstart = time.time()
     while True:
         arduinoData = config.serial_port_.read_line()
-        _logger.log('RX< %s' % arduinoData)
         y, x = line_to_yx(arduinoData)
-        if x is not None and y is not None:
+        if config.DATA_BEGIN_MARKER in arduinoData:
+            anyTrialHasStarted = True
+            runningTrial += 1
+            config.running_trial_.value = runningTrial
+            break
+        if (x and y) is not None:
             config.q_.put((y,x))
-            # All right. If we are here then we are waiting for SELECT to be
-            # pressed. Let's press is by sending three ` to serialport after
-            # some timeout.
-            if validDataStarts == 0:
-                validDataStarts = time.time()
-            if (time.time() - validDataStarts) >= config.args_.select_after:
-                _logger.log("Sending SELECT command")
-                config.serial_port_.write_msg("```")
-                time.sleep(0.05)
-                break
-            # Or if x value is not -1 then we are also out of this loop.
-            if x != -1 or config.TRIAL_DATA_MARKER in arduinoData:
-                anyTrialHasStarted = True
-                runningTrial += 1
-                config.running_trial_.value = runningTrial  
-                print("[INFO] New trial starts")
-                break
+        # All right. If we are here then we are waiting for SELECT to be
+        # pressed. Let's press is by sending three ` to serialport after
+        # some timeout.
+        if send_press_select( tstart, config.args_.select_after ):
+            print("SELECT sent")
+            break
 
     _logger.log('Out of first loop.')
     while True:
         arduinoData = config.serial_port_.read_line()
-        _logger.log('RX< %s' % arduinoData)
-        if not arduinoData:
-            continue
         y, x = line_to_yx(arduinoData)
-        if y is not None and x is not None:
+        if (x and y) is not None:
             config.q_.put((y,x))
 
         # When TRIAL_DATA_MARKER is found, collect trial data and write the
@@ -119,8 +121,6 @@ def collect_data( ):
             else:
                 if x and y:
                     config.trial_dict_[runningTrial].append((y,x))
-        else:
-            pass
 
 def line_to_yx( line ):
     if not line.strip():
@@ -188,7 +188,6 @@ def answer_three_questions( ):
     questionsAnswered = [ ]
     for i in range( 20 ):
         l = arduino.read_until('Please enter', timeout = 1.0)
-        config._logger.log('RX< %s' % l)
         if 'mouse ID number' in l:
             print('[ANSW] %s = %s' % (l, config.args_.name))
             config.serial_port_.write_msg('%s\r' % config.args_.name )

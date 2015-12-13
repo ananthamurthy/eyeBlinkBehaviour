@@ -167,13 +167,14 @@ void initialize()
 
         if( Serial.available() )
         {
-            Serial.setTimeout(50);
             bool foundSelect = Serial.find( "```" );
             if( foundSelect )
+            {
+                Serial.println(">>>Recieved SELECT");
                 break; 
+            }
         }
     }
-    Serial.setTimeout(500);
 
     // From here, the Arduino will start running the behaviour
     startT = millis();
