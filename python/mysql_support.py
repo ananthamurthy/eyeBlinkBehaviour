@@ -31,7 +31,8 @@ db_alive_ = False
 cursor_ = None
 db_ = None
 
-table_name = datetime.date.today().strftime('data_%Y%M')
+# one table for every months.
+table_name = datetime.date.today().strftime('data_%Y%m')
 
 try:
     db_ = sql.connect( server, username, password, dbName)
