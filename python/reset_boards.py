@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 
 import serial
+import time
 import serial.tools.list_ports
 
 def get_default_serial_port( ):
@@ -19,7 +20,16 @@ def reset_port( portname ):
             print('|- No need to reset port %s' % p.name)
             return 
     print('+ Writing RESET to port %s' % p.name)
-    p.write(b'``````\r')
+    p.write(b'```\r')
+    time.sleep(1)
+    p.write(b'``````')
+    time.sleep(1)
+    print('Waiting for reset')
+    while  True:
+        line = p.readline()
+        print(line)
+        if 'Software RESET' in p.readline():
+            break
     return 
 
 def main( ):
