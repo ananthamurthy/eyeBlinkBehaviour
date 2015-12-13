@@ -25,7 +25,6 @@ void detectBlinks() //(unsigned long currentTime)
 
     if ( currentPhaseTime - lastTime > sampleInterval ) {
         blink = analogRead(blink_ai);
-        Serial.print(" ");
         write_data_line( blink, currentPhaseTime % 10000 );
         lastTime += sampleInterval;
     }

@@ -14,9 +14,7 @@ void reset_watchdog( )
 
 void write_data_line( int data, unsigned long timestamp )
 {
-    Serial.println("@" + String(timestamp) 
-            + ",V=" + String(data) 
-            + ",T=" + trialNum 
-            + ",CS=" + String(CS_plus)
-            ); 
+    char msg[30];
+    sprintf(msg, "%4d,V=%4d,T=%2d,CS=%2d\n", timestamp, data, trialNum, CS_plus); 
+    Serial.print(msg);
 }

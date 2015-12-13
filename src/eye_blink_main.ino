@@ -139,7 +139,7 @@ void setup()
 #endif
 
     // Initialize the serial port
-    Serial.begin(9600);
+    Serial.begin(38400);
 
     int_counter = 0;
     seconds = 0;
