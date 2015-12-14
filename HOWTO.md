@@ -14,6 +14,13 @@ And you are done
 
 # To reboot boards
 
-    ./reset_all_boards.sh 
+    $ ./reset_all_boards.sh 
 
 It will reset all the boards connected to any serial port.
+
+# To start new session, call
+
+    $ ./record_and_plot.sh -n <mouse_index> -st <session_type> -sn <session_num>
+    -p <port> 
+
+
