@@ -32,10 +32,9 @@ import codecs
 from multiprocessing  import Process, Queue, Value
 import matplotlib.pyplot as plt
 from matplotlib import animation
-import mysql_support as mysql
 
 def cleanup():
-    mysql.cleanup()
+    pass
 
 def init_serial( baudRate = 38400):
     if config.args_.port is None:
@@ -185,7 +184,7 @@ def answer_three_questions( ):
     # Please.
     questionsAnswered = [ ]
     for i in range( 20 ):
-        l = arduino.read_until('Please enter', timeout = 1.0)
+        l = arduino.read_until('Please enter', timeout = 0.5)
         if 'mouse ID number' in l:
             print('[ANSW] %s = %s' % (l, config.args_.name))
             config.serial_port_.write_msg('%s\r' % config.args_.name )
@@ -252,7 +251,7 @@ def main( ):
             , init_func = init_gui
             , frames = 1
             , interval = 1
-            , blit = False
+            , blit = True
             )
     plt.show()
     p.join()
