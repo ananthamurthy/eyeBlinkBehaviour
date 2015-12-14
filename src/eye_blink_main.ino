@@ -74,14 +74,14 @@ boolean profilingDataDump = 0; // For dumping profiling data
 //Protocol Information
 const int preTime = 5000; //in ms
 const int CSTime = 350; //in ms
-const int puffTime = 100; //in ms
+const int puffTime = 50; //in ms //change made on 20151214
 const int postTime = 5000; //in ms
 const int minITI = 10000; //in ms
 const int randITI = 5000; //in ms
 
 // CS+/- frequencies
-const int CS_PLUS_ToneFreq = 7000;
-const int CS_MINUS_ToneFreq = 4000; //change made on 20150826
+const int CS_PLUS_ToneFreq = 4000;
+const int CS_MINUS_ToneFreq = 7000; //change made on 20151214
 
 // Miscellaneous Initializations
 int condition = 0;

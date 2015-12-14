@@ -32,12 +32,11 @@ import codecs
 from multiprocessing  import Process, Queue, Value
 import matplotlib.pyplot as plt
 from matplotlib import animation
-import mysql_support as mysql
 
 def cleanup():
-    mysql.cleanup()
+    pass
 
-def init_serial( baudRate = 9600):
+def init_serial( baudRate = 38400):
     if config.args_.port is None:
         config.args_.port = arduino.get_default_serial_port( )
     print("[INFO] Using port: %s" % config.args_.port)
@@ -185,7 +184,7 @@ def answer_three_questions( ):
     # Please.
     questionsAnswered = [ ]
     for i in range( 20 ):
-        l = arduino.read_until('Please enter', timeout = 1.0)
+        l = arduino.read_until('Please enter', timeout = 0.5)
         if 'mouse ID number' in l:
             print('[ANSW] %s = %s' % (l, config.args_.name))
             config.serial_port_.write_msg('%s\r' % config.args_.name )
@@ -232,7 +231,7 @@ def init( ):
     timeStamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     mouseName = 'MouseK%s' % config.args_.name
     outfile = os.path.join( mouseName
-            , '%s_SessionType%s_Session%s' % ( 
+            , 'Mouse%s_SessionType%s_Session%s' % ( 
                 config.args_.name, config.args_.session_type, config.args_.session_num)
             )
     config.save_dir_ = os.path.join( config.save_dir_, outfile )
@@ -252,7 +251,7 @@ def main( ):
             , init_func = init_gui
             , frames = 1
             , interval = 1
-            , blit = False
+            , blit = True
             )
     plt.show()
     p.join()

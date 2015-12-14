@@ -24,16 +24,16 @@ import mysql_support as mysql
 # Create a class to handle serial port.
 class ArduinoPort( ):
 
-    def __init__(self, path, baud_rate = 9600, **kwargs):
+    def __init__(self, path, baud_rate = 38400, **kwargs):
         self.path = path
-        self.baudRate = kwargs.get('baud_rate', 9600)
+        self.baudRate = kwargs.get('baud_rate', 38400)
         self.port = None
 
     def open(self, wait = True):
         # ATTN: timeout is essential else realine will block.
         try:
             self.port = serial.serial_for_url( config.args_.port
-                    , self.baudRate , timeout = 1
+                    , self.baudRate , timeout = 0.5
                     )
         except OSError as e:
             # Most like to be a busy resourse. Wait till it opens.
@@ -60,14 +60,13 @@ class ArduinoPort( ):
 
     def read_line(self, **kwargs):
         line = self.port.readline()
-        config._logger.log('RX< %s' % line)
-        mysql.insert_line( line , auto_commit = True)
+        # config._logger.log('RX< %s' % line)
+        # mysql.insert_line( line , auto_commit = True)
         return line.strip()
 
     def write_msg(self, msg):
         _logger.log('Writing %s to serial port' % msg)
         self.port.write(b'%s' % msg)
-        self.port.flush()
 
 def get_default_serial_port( ):
     # If port part is not given from command line, find a serial port by
