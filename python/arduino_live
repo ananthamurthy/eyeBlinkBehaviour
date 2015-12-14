@@ -70,68 +70,51 @@ def send_press_select( reftime, interval ):
     return True
 
 def collect_data( ):
-    anyTrialHasStarted = False
-    runningTrial = 0
-    csType = None
     tstart = time.time()
+    runningTrial = 0
     while True:
         arduinoData = config.serial_port_.read_line()
-        y, x = line_to_yx(arduinoData)
-        if config.TRIAL_DATA_MARKER in arduinoData:
-            anyTrialHasStarted = True
-            runningTrial += 1
-            config.running_trial_.value = runningTrial
+        x, y, trialNum, cs = line_to_data(arduinoData)
+        if (x and y) is None:
+            continue
+
+        config.q_.put((y,x))
+        config.trial_dict_[runningTrial].append((y,x))
+
+        # Valid trial has started.
+        if trialNum != 0:
             break
-        if (x and y) is not None:
-            config.q_.put((y,x))
         # All right. If we are here then we are waiting for SELECT to be
         # pressed. Let's press is by sending three ` to serialport after
         # some timeout.
         if send_press_select( tstart, config.args_.select_after ):
             print("SELECT sent")
             break
+
     _logger.log('Out of first loop.')
     while True:
         arduinoData = config.serial_port_.read_line()
-        y, x = line_to_yx(arduinoData)
-        if (x and y) is not None:
-            config.q_.put((y,x))
+        x, y, trialNum, cs = line_to_data(arduinoData)
+        print("2", y,x,trialNum,cs)
+        if (x and y) is None:
+            continue
 
-        # When TRIAL_DATA_MARKER is found, collect trial data and write the
-        # previous non-zero trial.
-        if config.TRIAL_DATA_MARKER in arduinoData:
-            anyTrialHasStarted = True
-            print("[INFO] New trial starts")
-            runningTrial += 1
-            # global copy for display on matplotlib
-            config.running_trial_.value = runningTrial  
-            if int(runningTrial) >= 2:
-                print("[INFO] Writing previous trial %s" % ( int(runningTrial) - 1 ))
-                writeTrialData( runningTrial - 1, csType )
-                # Reset csType to None
-                csType = None
-        elif anyTrialHasStarted:
-            if not csType:
-                runningTrial, csType = arduinoData.split()
-                runningTrial = int(runningTrial)
-                print("[INFO] Trial: %s, CSType: %s" % (runningTrial, csType))
-            else:
-                if x and y:
-                    config.trial_dict_[runningTrial].append((y,x))
+        config.trial_dict_[runningTrial].append((y,x))
+        config.q_.put((y,x))
+        if trialNum > runningTrial:
+            print('[INFO] New trial: Trial :%s, cs: %s' % (trialNum, cs))
+            writeTrialData( runningTrial, cs )
+            runningTrial = trialNum
 
-def line_to_yx( line ):
+def line_to_data( line ):
     if not line.strip():
-        return (None, None)
-    l = filter(None, line.split())
-    if not l:
-        return (None, None)
-    if len(l) == 1: 
-        l.append( -1 )
+        return None, None, None, None
     try:
-        return (float(l[0]), float(l[1]))
+        t, v, trial_num, cs = line.split(',')
     except Exception as e:
-        return (None, None)
-    return l
+        _logger.log("Invalid data line: %s" % line)
+        return None, None, None, None
+    return int(t), int(v), int(trial_num), int(cs)
 
 def init_gui():
     config.text_.set_text('')
@@ -184,7 +167,7 @@ def answer_three_questions( ):
     # Please.
     questionsAnswered = [ ]
     for i in range( 20 ):
-        l = arduino.read_until('Please enter', timeout = 0.5)
+        l = arduino.read_until('?? Please enter', timeout = 0.5)
         if 'mouse ID number' in l:
             print('[ANSW] %s = %s' % (l, config.args_.name))
             config.serial_port_.write_msg('%s\r' % config.args_.name )

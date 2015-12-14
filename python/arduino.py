@@ -60,7 +60,7 @@ class ArduinoPort( ):
 
     def read_line(self, **kwargs):
         line = self.port.readline()
-        # config._logger.log('RX< %s' % line)
+        config._logger.log('RX< %s' % line)
         # mysql.insert_line( line , auto_commit = True)
         return line.strip()
 

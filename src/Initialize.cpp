@@ -157,6 +157,8 @@ void initialize()
         if (startT > sampleInterval)
         {
             blink = analogRead(blink_ai);
+            // Since this is not timestamped data, send 0 as timestamp. 
+            // NOTE: Can't use -1 since it is unsigned long.
             write_data_line( blink, 0 );
             startT = millis();
         }
