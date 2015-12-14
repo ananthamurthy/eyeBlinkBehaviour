@@ -30,7 +30,7 @@ cursor_ = None
 db_ = None
 
 # one table for every months.
-table_name = datetime.date.today().strftime('data_%Y%m')
+table_name = datetime.date.today().strftime('data_%Y_%m')
 
 try:
     db_ = sql.connect( server, username, password, dbName)
@@ -49,7 +49,8 @@ def init( ):
     print('Table name: %s' % table_name)
     cursor_.execute(
             '''CREATE TABLE IF NOT EXISTS {0} (timestamp TIMESTAMP
-            , data VARCHAR(100) )'''.format(table_name)
+            , data VARCHAR(100), port VARCHAR(10), mouse_name VARCHAR(10) 
+            )'''.format(table_name)
             )
     db_.commit()
 
@@ -57,9 +58,10 @@ def insert_line( line, auto_commit = True, commit_interval = 2 ):
     global cursor_ 
     if not db_alive_:
         return 
-    cursor_.execute('''INSERT INTO {0} VALUES( now(), '{1}')'''.format(
-        table_name, line)
-        )
+    cursor_.execute(
+            '''INSERT INTO {0} VALUES( now(), '{1}', '{2}', '{3}')'''.format(
+                table_name, line, config.args_.port, config.args_.name)
+            )
     if auto_commit:
         # commit to server after commit_interval
         if int(time.time() - config.tstart) % commit_interval == 0:
