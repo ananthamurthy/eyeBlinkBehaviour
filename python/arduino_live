@@ -145,7 +145,10 @@ def plot_data( ):
         for i in range(10):
             d = config.q_.get()
             config.ybuff_.append( int(d[0]) )
-        config.gfig_.plot( np.asarray(config.ybuff_[-2000:]))
+        config.gfig_.plot( np.asarray(config.ybuff_[-2000:])
+                , unset='grid'
+                , terminal='dumb 80 40'
+                )
 
 def answer_three_questions( ):
     # All great UI has three questions. Yes we have to, they all starts with
