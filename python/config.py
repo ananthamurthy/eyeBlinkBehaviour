@@ -13,13 +13,7 @@ __email__            = "dilawars@ncbs.res.in"
 __status__           = "Development"
 
 
-import matplotlib
-try:
-    matplotlib.use('GTKAgg') 
-except Exception as e:
-    print("Cant load GTKAgg. Using default")
-
-import matplotlib.pyplot as plt
+import gnuplotlib as gp
 import os 
 import sys
 from collections import defaultdict
@@ -31,6 +25,9 @@ import logging
 # Command line arguments/Other globals.
 class Args: pass 
 args_ = Args()
+
+# Fig using gnuplot
+gfig_ = gp.gnuplotlib(title = 'Eyeblink Behaviour')
 
 class Logger():
 
@@ -58,19 +55,6 @@ q_ = Queue()
 running_trial_ = Value('d', 0)
 
 # This is a shared variable for both animation and dumping.
-
-fig_ = plt.figure( )
-fig_.title = 'Overall profile'
-
-gax_ = plt.subplot(1, 1, 1)
-gax_.set_xlim([0, 3000])
-gax_.set_ylim([0, 1000])
-gax_.axes.get_xaxis().set_visible(False)
-text_ = gax_.text(0.02, 0.95, '', transform=gax_.transAxes)
-
-# ax.set_autoscalex_on(True)
-gline_, = gax_.plot([], [])
-gline1_, = gax_.plot(0, 0, 'r*')
 
 # Initialize with 1 element.
 ybuff_, xbuff_ = [ 0 ], [ 1 ]

@@ -30,8 +30,6 @@ import csv
 import numpy as np
 import codecs
 from multiprocessing  import Process, Queue, Value
-import matplotlib.pyplot as plt
-from matplotlib import animation
 
 running_data_line_ = 0
 
@@ -136,47 +134,18 @@ def init_gui():
     config.text_.set_text('')
     return config.gline_, config.gline1_, config.text_
 
-def animate(i):
-
-    gax_ = config.gax_
-    gline1_ = config.gline1_
-    gline_ = config.gline_
-    text_ = config.text_
-
-    # Queue can become empty in ITI sessions.
-    qsize = config.q_.qsize( )
-    if qsize < 10:
-        _logger.log('Queue  size less than 10')
-        return gline_, gline1_, text_
-    # Get some elements from queue and plot them.
-    for i in range(10):
-        d = config.q_.get()
-        config.ybuff_.append( d[0] )
-        config.xbuff_.append( config.xbuff_[-1] + 1 )
-
-    #config._logger.log("Got from queue: %s, %s" % (
-    #    config.xbuff_[-10:], config.ybuff_[-10:])
-    #    )
-
-    xmin, xmax = gax_.get_xlim()
-    if config.xbuff_[-1] >= xmax:
-        config._logger.log("Updating axes")
-        gax_.set_xlim((xmin+1000, xmax+1000))
-        # This is real data (last 3000 points).
-        config.stary_.append(50)
-        # Its the location of stars
-        config.startx_.append(config.xbuff_[-1])
-        gline1_.set_data(config.startx_, config.stary_)
-        config.xbuff_ = config.xbuff_[-5000:]
-        config.ybuff_ = config.ybuff_[-5000:]
-
-    gline_.set_data(config.xbuff_[-3000:], config.ybuff_[-3000:])
-    text = 'Port: %s' % config.args_.port
-    text += '@ %.2f sec\n' % (time.time() - config.tstart)
-    text += 'Mouse: %s' % config.args_.name
-    text += ' Trial: %d' % config.running_trial_.value
-    text_.set_text(text)
-    return gline_, gline1_, text_
+def plot_data( ):
+    while True:
+        # Queue can become empty in ITI sessions.
+        qsize = config.q_.qsize( )
+        if qsize < 10:
+            _logger.log('Queue  size less than 10')
+            continue
+        # Get some elements from queue and plot them.
+        for i in range(10):
+            d = config.q_.get()
+            config.ybuff_.append( int(d[0]) )
+        config.gfig_.plot( np.asarray(config.ybuff_[-2000:]))
 
 def answer_three_questions( ):
     # All great UI has three questions. Yes we have to, they all starts with
@@ -243,17 +212,9 @@ def init( ):
 
 def main( ):
     init( )
-    p = Process( target = collect_data )
-    p.start()
-    anim = animation.FuncAnimation(
-            config.fig_
-            , animate
-            , init_func = init_gui
-            , frames = 1
-            , interval = 1
-            , blit = True
-            )
-    plt.show()
+    collectProcess = Process( target = collect_data )
+    collectProcess.start()
+    plot_data()
     p.join()
 
 if __name__ == '__main__':
