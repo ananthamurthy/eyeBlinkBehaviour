@@ -30,6 +30,7 @@ import csv
 import numpy as np
 import codecs
 from multiprocessing  import Process, Queue, Value
+import gnuplotlib as gp
 
 running_data_line_ = 0
 
@@ -139,17 +140,29 @@ def init_gui():
     return config.gline_, config.gline1_, config.text_
 
 def plot_data( ):
+    ptstart = time.time()
     while True:
         # Queue can become empty in ITI sessions.
         qsize = config.q_.qsize( )
-        if qsize < 10:
-            _logger.log('Queue  size less than 10')
+        if qsize < 20:
+            _logger.log('Queue  size less than 20')
             continue
         # Get some elements from queue and plot them.
         for i in range(10):
             d = config.q_.get()
             config.ybuff_.append( int(d[0]) )
-        config.gfig_.plot( np.asarray(config.ybuff_[-2000:]))
+        
+        title = '%s %2.2f, Mouse: %s, Trial: %2d' % (  config.args_.port
+                , time.time() - ptstart 
+                , config.args_.name
+                , config.running_trial_.value
+                )
+
+        gp.plot( np.asarray(config.ybuff_[-2000:]) 
+                , title = title
+                , terminal = 'x11'
+                , yrange = '200:800'
+                )
 
 def answer_three_questions( ):
     # All great UI has three questions. Yes we have to, they all starts with

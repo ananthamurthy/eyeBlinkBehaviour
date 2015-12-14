@@ -13,7 +13,6 @@ __email__            = "dilawars@ncbs.res.in"
 __status__           = "Development"
 
 
-import gnuplotlib as gp
 import os 
 import sys
 from collections import defaultdict
@@ -25,12 +24,6 @@ import logging
 # Command line arguments/Other globals.
 class Args: pass 
 args_ = Args()
-
-# Fig using gnuplot
-gfig_ = gp.gnuplotlib(
-        title = 'Blink'
-        , terminal = 'x11'
-        )
 
 class Logger():
 
