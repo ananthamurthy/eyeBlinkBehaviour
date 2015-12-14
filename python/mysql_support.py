@@ -35,7 +35,7 @@ table_name = datetime.date.today().strftime('data_%Y_%m')
 try:
     db_ = sql.connect( server, username, password, dbName)
     print('[INFO] MySql is alive')
-    db_alive_ = True
+    # db_alive_ = True
     cursor_ = db_.cursor()
 except Exception as e:
     print("[INFO] Could not connect to mysql. Disabling support")
@@ -53,6 +53,7 @@ def init( ):
             )'''.format(table_name)
             )
     db_.commit()
+    print("[INFO] Database initialized successfullly")
 
 def insert_line( line, auto_commit = True, commit_interval = 2 ):
     global cursor_ 
