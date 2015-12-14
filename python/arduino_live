@@ -37,7 +37,7 @@ import mysql_support as mysql
 def cleanup():
     mysql.cleanup()
 
-def init_serial( baudRate = 9600):
+def init_serial( baudRate = 38400):
     if config.args_.port is None:
         config.args_.port = arduino.get_default_serial_port( )
     print("[INFO] Using port: %s" % config.args_.port)
@@ -232,7 +232,7 @@ def init( ):
     timeStamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     mouseName = 'MouseK%s' % config.args_.name
     outfile = os.path.join( mouseName
-            , '%s_SessionType%s_Session%s' % ( 
+            , 'Mouse%s_SessionType%s_Session%s' % ( 
                 config.args_.name, config.args_.session_type, config.args_.session_num)
             )
     config.save_dir_ = os.path.join( config.save_dir_, outfile )
