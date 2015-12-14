@@ -27,7 +27,10 @@ class Args: pass
 args_ = Args()
 
 # Fig using gnuplot
-gfig_ = gp.gnuplotlib(title = 'Eyeblink Behaviour')
+gfig_ = gp.gnuplotlib(
+        title = 'Blink'
+        , terminal = 'x11'
+        )
 
 class Logger():
 

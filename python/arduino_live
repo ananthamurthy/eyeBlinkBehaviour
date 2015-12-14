@@ -91,8 +91,12 @@ def collect_data( ):
         if (x and y) is None:
             continue
 
-        config.q_.put((y,x))
-        config.trial_dict_[runningTrial].append((y,x))
+        try:
+            x, y = int(x), int(y)
+            config.q_.put((y,x))
+            config.trial_dict_[runningTrial].append((y,x))
+        except Exception as e:
+            pass
 
         # Valid trial has started.
         if trialNum != 0:
@@ -145,10 +149,7 @@ def plot_data( ):
         for i in range(10):
             d = config.q_.get()
             config.ybuff_.append( int(d[0]) )
-        config.gfig_.plot( np.asarray(config.ybuff_[-2000:])
-                , unset='grid'
-                , terminal='dumb 80 40'
-                )
+        config.gfig_.plot( np.asarray(config.ybuff_[-2000:]))
 
 def answer_three_questions( ):
     # All great UI has three questions. Yes we have to, they all starts with
