@@ -73,8 +73,9 @@ def collect_data( ):
     tstart = time.time()
     runningTrial = 0
     while True:
-        arduinoData = config.serial_port_.read_line()
-        x, y, trialNum, cs = line_to_data(arduinoData)
+        line = config.serial_port_.read_line( )
+        print("1 -> ", line)
+        x, y, trialNum, cs = line_to_data( line )
         if (x and y) is None:
             continue
 
@@ -93,12 +94,12 @@ def collect_data( ):
 
     _logger.log('Out of first loop.')
     while True:
-        arduinoData = config.serial_port_.read_line()
-        x, y, trialNum, cs = line_to_data(arduinoData)
-        print("2", y,x,trialNum,cs)
+        config.running_trial_.value = runningTrial
+        line = config.serial_port_.read_line()
+        x, y, trialNum, cs = line_to_data(line)
+        print("2 -> ", line)
         if (x and y) is None:
             continue
-
         config.trial_dict_[runningTrial].append((y,x))
         config.q_.put((y,x))
         if trialNum > runningTrial:
@@ -167,7 +168,7 @@ def answer_three_questions( ):
     # Please.
     questionsAnswered = [ ]
     for i in range( 20 ):
-        l = arduino.read_until('?? Please enter', timeout = 0.5)
+        l = arduino.read_until('?? Please enter', timeout = 1)
         if 'mouse ID number' in l:
             print('[ANSW] %s = %s' % (l, config.args_.name))
             config.serial_port_.write_msg('%s\r' % config.args_.name )
@@ -201,11 +202,12 @@ def init( ):
     probably answered.
     """
 
-    # Get 3 lines from arduino, and check if arduino is sending legal data or
+    # Get 5 lines from arduino, and check if arduino is sending legal data or
     # just waiting for questions to be answered.
-    lines = []
-    for i in range(3):
+    for i in range(5):
         l = config.serial_port_.read_line( )
+        while not l:
+            l = config.serial_port_.read_line( )
         if 'Please enter' in l:
             # mere sawalo ka jawav do... do naa!
             answer_three_questions( )

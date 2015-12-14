@@ -137,7 +137,7 @@ void initialize()
 
     Serial.println("|| Please press the SELECT button to begin!");
     startT = millis();
-    
+
     // I should also be able to trigger that loop by writing START to serial
     // port.
     while (read_lcd_button() != btnSELECT)
@@ -157,7 +157,7 @@ void initialize()
         if (startT > sampleInterval)
         {
             blink = analogRead(blink_ai);
-            // Since this is not timestamped data, send 0 as timestamp. 
+            // Since this is not timestamped data, send 0 as timestamp.
             // NOTE: Can't use -1 since it is unsigned long.
             write_data_line( blink, 0 );
             startT = millis();
@@ -169,7 +169,7 @@ void initialize()
             if( foundSelect )
             {
                 Serial.println("-> Recieved SELECT");
-                break; 
+                break;
             }
         }
     }

@@ -482,7 +482,7 @@ void loop() __attribute__((weak));
 
 int main(void)
 {
-//    init();
+    //    init();
 
     setup();
 
@@ -933,11 +933,11 @@ int main()
     taskParams.priority = Task_numPriorities - 1;
     taskParams.stackSize = 0x800;
 
-//    // Add rtosSetup() as first tasks
-//    taskParams.arg0 = (xdc_UArg) rtos_Setup;
-//    taskParams.arg1 = (xdc_UArg) rtos_Loop;
-//    taskParams.instance->name = (xdc_String) "rtosSetup";
-//    Task_create(the_task, &taskParams, NULL);
+    //    // Add rtosSetup() as first tasks
+    //    taskParams.arg0 = (xdc_UArg) rtos_Setup;
+    //    taskParams.arg1 = (xdc_UArg) rtos_Loop;
+    //    taskParams.instance->name = (xdc_String) "rtosSetup";
+    //    Task_create(the_task, &taskParams, NULL);
 
     // Add rtosSetup() as first tasks
     taskParams.instance->name = (xdc_String) "rtosSetup";

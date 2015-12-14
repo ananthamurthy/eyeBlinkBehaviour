@@ -71,7 +71,13 @@ const int START_POST = 6;
 const int START_ITI = 7;
 const int END = 8;
 const int PAUSE = 9;
-static const char* printStr[] = {"    Pre", "    CS+", "    CS-", "  Trace", "     US", "No-Puff", "   POST", "    ITI", "    END", " Pause "}; // all values should have 7 letters/spaces between quotes
+
+// all values should have 7 letters/spaces between quotes
+static const char* printStr[] = {
+    "    Pre", "    CS+", "    CS-"
+    , "  Trace", "     US", "No-Puff", "   POST"
+    , "    ITI", "    END", " Pause "
+};
 
 /**
  @description Updates the lcd screen with the Trial Number, Phase, and Session Duration (mins)
