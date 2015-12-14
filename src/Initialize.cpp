@@ -88,7 +88,7 @@ void initialize()
     {
         reset_watchdog();
         Serial.println("#Q1: Please enter the mouse ID number: ");
-        if( wait_for_read( 2000 ))
+        if( wait_for_read( 1000 ))
         {
             // Probably answer to our question.
             String answer = Serial.readString();
@@ -107,7 +107,7 @@ void initialize()
     {
         reset_watchdog();
         Serial.println("#Q2: Please enter the session type index: ");
-        if( wait_for_read( 2000 ))
+        if( wait_for_read( 1000 ))
         {
             // Probably answer to our question.
             String answer = Serial.readString();
@@ -121,7 +121,7 @@ void initialize()
     {
         reset_watchdog();
         Serial.println("#Q3: Please enter the session number: ");
-        if( wait_for_read( 2000 ))
+        if( wait_for_read( 1000 ))
         {
             // Probably answer to our question.
             String answer = Serial.readString();

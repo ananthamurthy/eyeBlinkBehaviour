@@ -71,7 +71,6 @@ def send_press_select( reftime, interval ):
     return True
 
 def collect_data( ):
-    # Used to ignore garbage data in the begining.
     anyTrialHasStarted = False
     runningTrial = 0
     csType = None
@@ -79,7 +78,7 @@ def collect_data( ):
     while True:
         arduinoData = config.serial_port_.read_line()
         y, x = line_to_yx(arduinoData)
-        if config.DATA_BEGIN_MARKER in arduinoData:
+        if config.TRIAL_DATA_MARKER in arduinoData:
             anyTrialHasStarted = True
             runningTrial += 1
             config.running_trial_.value = runningTrial
@@ -92,7 +91,6 @@ def collect_data( ):
         if send_press_select( tstart, config.args_.select_after ):
             print("SELECT sent")
             break
-
     _logger.log('Out of first loop.')
     while True:
         arduinoData = config.serial_port_.read_line()
