@@ -111,6 +111,8 @@ def collect_data( ):
             print("SELECT sent")
             break
 
+    # Either we have pressed the SELECT or we have sent the select command ```.
+    select_sent_ = True
     _logger.log('Out of first loop.')
     while True:
         running_data_line_ += 1
@@ -231,17 +233,23 @@ def init( ):
 
 def send_command():
     # all commands should be two characters long
+    global select_sent_
     command = ""
     while True:
+        # Do not send any command if select button is send or we are in second
+        # loop.
+        if select_sent_:
+            return None
         k = readchar.readkey()
-        if k in "+-p":
+        if k in "+-p`":
             command += k
-            if len(command) == 2:
+            if command in [ "pp", "++", "--", "```" ]:
                 print("[INFO] Sending command: %s" % command)
                 config.serial_port_.write_msg( command )
                 command = ""
             else:
-                pass
+                if len(command) > 3:
+                    command = ""
         elif k in [ '\x03', '\x04', '\x1a' ]:
             raise KeyboardInterrupt
 
