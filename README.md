@@ -9,3 +9,7 @@ To build and upload to arduino
     $ make upload 
 
 
+# Dependencies
+
+- gnuplot-x11
+- pip install readchar
