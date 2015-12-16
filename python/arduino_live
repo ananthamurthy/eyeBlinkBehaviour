@@ -231,14 +231,15 @@ def init( ):
 
 def send_command():
     # all commands should be two characters long
-    command = []
+    command = ""
     while True:
         k = readchar.readkey()
         if k in "+-p":
-            command.append(k)
+            command += k
             if len(command) == 2:
-                config.serial_port_.write_msg( "".join(command) )
-                command = []
+                print("[INFO] Sending command: %s" % command)
+                config.serial_port_.write_msg( command )
+                command = ""
             else:
                 pass
         elif k in [ '\x03', '\x04', '\x1a' ]:
