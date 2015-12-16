@@ -77,8 +77,8 @@ void initialize()
 {
     reboot_ = false;
 
-    int tone_key = read_lcd_button();
-    int puff_key = read_lcd_button();
+    //int tone_key = read_lcd_button();
+    //int puff_key = read_lcd_button();
 
     /*
      * Keep sending question onto serial port every second.
@@ -143,16 +143,20 @@ void initialize()
     while (read_lcd_button() != btnSELECT)
     {
         reset_watchdog();
+
+#if 0
         if (puff_key == btnUP)
         {   playPuff(puff_do, HIGH);
             delay(puffTime);
             playPuff(puff_do, LOW);
         }
         if (tone_key == btnDOWN)
-        {   tone( tonePin, CS_PLUS_ToneFreq);
+        {   
+            tone( tonePin, CS_PLUS_ToneFreq);
             delay(CSTime);
             noTone(tonePin);
         }
+#endif
 
         if (startT > sampleInterval)
         {
@@ -162,14 +166,46 @@ void initialize()
             write_data_line( blink, 0 );
             startT = millis();
         }
-
         if( Serial.available() )
         {
-            bool foundSelect = Serial.find( "```" );
-            if( foundSelect )
+            // Read the character and decide what to do.
+            if( 43 == Serial.peek() )
             {
-                Serial.println("-> Recieved SELECT");
-                break;
+                if( Serial.find("++") ) // CSPlus Tone
+                {
+                    Serial.println("Play CS Plus");
+                    tone( tonePin, CS_PLUS_ToneFreq);
+                    delay( CSTime );
+                    noTone( tonePin );
+                }
+            }
+            else if( 45 == Serial.peek() )
+            {
+                if( Serial.find("--") ) // CSMinus Tone
+                {
+                    Serial.println("Play CS Minus");
+                    tone( tonePin, CS_MINUS_ToneFreq);
+                    delay( CSTime );
+                    noTone( tonePin );
+                }
+            }
+            else if( 112 == Serial.peek() )
+            {
+                if( Serial.find("pp") ) // Puff
+                {
+                    Serial.println("Puff");
+                    playPuff(puff_do, HIGH);
+                    delay(puffTime);
+                    playPuff(puff_do, LOW);
+                }
+            }
+            else if( 96 == Serial.peek() )
+            {
+                if( Serial.find( "```" ) )
+                {
+                    Serial.println("-> Recieved SELECT");
+                    break;
+                }
             }
         }
     }
