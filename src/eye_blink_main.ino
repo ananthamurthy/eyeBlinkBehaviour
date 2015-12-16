@@ -80,7 +80,7 @@ const int minITI               = 10000;     // in ms
 const int randITI              = 5000;      // in ms
 
 // CS+/- frequencies
-const int CS_PLUS_ToneFreq     = 4000;
+const int CS_PLUS_ToneFreq     = 2000;
 const int CS_MINUS_ToneFreq    = 7000;      // change made on 20151214
 
 // Miscellaneous Initializations

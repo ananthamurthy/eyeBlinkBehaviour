@@ -22,7 +22,7 @@ import arduino
 import os
 import sys
 import time
-
+import readchar
 
 from collections import defaultdict
 import datetime
@@ -33,6 +33,8 @@ from multiprocessing  import Process, Queue, Value
 import gnuplotlib as gp
 
 running_data_line_ = 0
+
+select_sent_ = False
 
 def cleanup():
     pass
@@ -87,7 +89,7 @@ def collect_data( ):
     while True:
         running_data_line_ += 1
         line = config.serial_port_.read_line( )
-        print_line( line )
+        #print_line( line )
         x, y, trialNum, cs = line_to_data( line )
         if (x and y) is None:
             continue
@@ -227,12 +229,33 @@ def init( ):
     else:
         os.makedirs(config.save_dir_) 
 
+def send_command():
+    # all commands should be two characters long
+    command = []
+    while True:
+        k = readchar.readkey()
+        if k in "+-p":
+            command.append(k)
+            if len(command) == 2:
+                config.serial_port_.write_msg( "".join(command) )
+                command = []
+            else:
+                pass
+        elif k in [ '\x03', '\x04', '\x1a' ]:
+            raise KeyboardInterrupt
+
 def main( ):
     init( )
     collectProcess = Process( target = collect_data )
+    plotProcess = Process( target = plot_data )
+
     collectProcess.start()
-    plot_data()
-    p.join()
+    plotProcess.start()
+
+    send_command() 
+
+    plotProcess.join()
+    collectProcess.join()
 
 if __name__ == '__main__':
     import argparse
