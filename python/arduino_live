@@ -17,7 +17,6 @@ __email__            = "dilawars@ncbs.res.in"
 __status__           = "Development"
 
 import config
-from config import _logger
 import arduino 
 import os
 import sys
@@ -29,12 +28,22 @@ import datetime
 import csv
 import numpy as np
 import codecs
-from multiprocessing  import Process, Queue, Value, Lock
+import Queue
+from threading import Thread, Lock
 import gnuplotlib as gp
+import logging
+
+_logger = logging.getLogger('')
 
 running_data_line_ = 0
 
 select_sent_ = False
+
+# Our shared queue used in multiprocessing
+q_ = Queue.Queue()
+running_trial_ = 0
+finished_all_ = 0
+
 
 def cleanup():
     pass
@@ -43,7 +52,6 @@ def init_serial( baudRate = 38400):
     if config.args_.port is None:
         config.args_.port = arduino.get_default_serial_port( )
     print("[INFO] Using port: %s" % config.args_.port)
-    config._logger.set_name( 'eyeblink_%s' % (config.args_.port.split('/')[-1]))
     config.serial_port_ = arduino.ArduinoPort( config.args_.port, baudRate )
     config.serial_port_.open( wait = True )
    
@@ -72,18 +80,22 @@ def send_press_select( reftime, interval ):
         sys.stdout.flush()
     return True
 
-def print_line( line ):
+def print_line( line, lock ):
     global running_data_line_
     ds = line.split(',')
     if len(ds) != 4:
         return 
     hline = '-'.join([ '' for x in range( min(80, int(ds[1])/10) ) ])
     # Only print if running data line is multiple of 10
-    if running_data_line_ % 10 == 0:
-        print("%s - %s" % (line, hline ))
+    if running_data_line_ % 20 == 0:
+        lock.acquire()
+        print("%s - %s\n" % (line, hline ))
+        lock.release()
 
 def collect_data( lock ):
+    global q_
     global running_data_line_
+    global running_trial_
     tstart = time.time()
     runningTrial = 0
     while True:
@@ -95,7 +107,7 @@ def collect_data( lock ):
 
         try:
             x, y = int(x), int(y)
-            config.q_.put((y,x))
+            q_.put((y,x))
             config.trial_dict_[runningTrial].append((y,x))
         except Exception as e:
             pass
@@ -114,17 +126,20 @@ def collect_data( lock ):
 
     # Either we have pressed the SELECT or we have sent the select command ss
     select_sent_ = True
-    _logger.log('Out of first loop.')
+    _logger.info('Out of first loop.')
     while True:
+        if finished_all_ == 1:
+            return None
+
         running_data_line_ += 1
-        config.running_trial_.value = runningTrial
+        running_trial_ = runningTrial
         line = config.serial_port_.read_line()
         x, y, trialNum, cs = line_to_data(line)
-        print_line( line )
+        print_line( line, lock )
         if (x and y) is None:
             continue
         config.trial_dict_[runningTrial].append((y,x))
-        config.q_.put((y,x))
+        q_.put((y,x))
         if trialNum > runningTrial:
             print('[INFO] New trial: Trial :%s, cs: %s' % (trialNum, cs))
             writeTrialData( runningTrial, cs )
@@ -136,31 +151,40 @@ def line_to_data( line ):
     try:
         t, v, trial_num, cs = line.split(',')
     except Exception as e:
-        _logger.log("Invalid data line: %s" % line)
+        _logger.info("Invalid data line: %s" % line)
         return None, None, None, None
-    return int(t), int(v), int(trial_num), int(cs)
+    try:
+        t, v, trial_num, cs = int(t), int(v), int(trial_num), int(cs)
+    except Exception as e:
+        t, v, trial_num, cs = None, None, None, None
+    
+    return t, v, trial_num, cs
 
 def init_gui():
     config.text_.set_text('')
     return config.gline_, config.gline1_, config.text_
 
 def plot_data( lock ):
+    global q_
+    global running_trial_
     ptstart = time.time()
     while True:
+        if finished_all_ == 1:
+            return None
         # Queue can become empty in ITI sessions.
-        qsize = config.q_.qsize( )
+        qsize = q_.qsize( )
         if qsize < 20:
-            _logger.log('Queue  size less than 20')
+            _logger.info('Queue  size less than 20')
             continue
         # Get some elements from queue and plot them.
         for i in range(10):
-            d = config.q_.get()
+            d = q_.get()
             config.ybuff_.append( int(d[0]) )
         
         title = '%s %2.2f, Mouse: %s, Trial: %2d' % (  config.args_.port
                 , time.time() - ptstart 
                 , config.args_.name
-                , config.running_trial_.value
+                , running_trial_
                 )
 
         gp.plot( np.asarray(config.ybuff_[-2000:]) 
@@ -232,46 +256,63 @@ def init( ):
     else:
         os.makedirs(config.save_dir_) 
 
-def send_command(  ):
+def send_command( ):
     # all commands should be two characters long
     global select_sent_
+    global finished_all_
     command = ""
     validCommands = [ "++", "--", "pp", "ss", "rr" ]
+    validStartChars = ''.join([ x[0] for x in validCommands ])
     while True:
         # Do not send any command if select button is send or we are in second
         # loop.
         k = readchar.readkey()
-        if k in "+-p`":
+        if k in validStartChars:
             command += k
-            if command in validCommands[0:-1] and not select_sent_:
+            if command in validCommands[0:-2] and not select_sent_:
                 print("[COMMAND] Sending command: %s" % command)
                 config.serial_port_.write_msg( command )
                 command = ""
-            elif command == validCommands[-1] and select_sent_:
-                print("[COMMAND] Reboot in 2 sec")
+            # Last two commands needs to be handled separately.
+            elif command == 'ss' and not select_sent_:
+                select_sent_ = True
                 config.serial_port_.write_msg( command )
+            elif command == 'rr':
+                # reboot. 
+                print("[WARN] Reboot in 2 seconds. You have to relaunch the")
+                print("       app")
+                config.serial_port_.write_msg( command )
+                finished_all_ = 1
+                cleanup()
+                return None
             else:
                 pass
-            if len(command) > 5 or command in validCommands:
+            if len(command) == 2:
                 command = ""
         elif k in [ '\x03', '\x04', '\x1a' ]:
+            finished_all_ = 1
             raise KeyboardInterrupt
 
 def main( ):
     init( )
 
     # Lock so that only one process prints to console at a time.
-    l = Lock( )
-    collectProcess = Process( target = collect_data, args=(l,) )
-    plotProcess = Process( target = plot_data, args=(l,) )
+    l = Lock( ) 
+
+    # When daemon is set to True, all threads will exit (ungracefully) when main
+    # terminates.
+    collectProcess = Thread( target = collect_data, args=(l,))
+    collectProcess.daemon = True
+    plotProcess = Thread( target = plot_data, args=(l,))
+    plotProcess.daemon = True
 
     collectProcess.start()
     plotProcess.start()
 
-    send_command() 
+    plotProcess.join( timeout = 1 )
+    collectProcess.join( timeout = 1 )
 
-    plotProcess.join()
-    collectProcess.join()
+    send_command( )
 
 if __name__ == '__main__':
     import argparse

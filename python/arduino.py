@@ -18,8 +18,9 @@ import time
 import serial
 import serial.tools.list_ports 
 import config
-from config import _logger
 import mysql_support as mysql
+import logging
+_logger = logging.getLogger('')
 
 # Create a class to handle serial port.
 class ArduinoPort( ):
@@ -60,12 +61,12 @@ class ArduinoPort( ):
 
     def read_line(self, **kwargs):
         line = self.port.readline()
-        config._logger.log('RX< %s' % line)
+        _logger.info('RX< %s' % line)
         # mysql.insert_line( line , auto_commit = True)
         return line.strip()
 
     def write_msg(self, msg):
-        _logger.log('Writing %s to serial port' % msg)
+        _logger.info('Writing %s to serial port' % msg)
         self.port.write(b'%s' % msg)
 
 def get_default_serial_port( ):

@@ -25,30 +25,13 @@ import logging
 class Args: pass 
 args_ = Args()
 
-class Logger():
-
-    def __init__(self, name = ''):
-        if not name: 
-            name = 'eyeblink.log'
-        self.filename = os.path.join( os.curdir,  name+'.log')
-        with open(self.filename, 'w') as f:
-            f.write('\n')
-
-    def log(self, msg):
-        with open(self.filename, 'a') as f:
-            stamp = datetime.datetime.now().isoformat()
-            f.write('%s - %s\n' % (stamp, msg))
-
-    def set_name(self, name):
-        self.__init__(name)
-
-_logger = Logger( )
+# Use this to write to console.
+formatter = logging.Formatter('%(message)s')
+ch = logging.StreamHandler()
+ch.setFormatter(formatter)
+logging.getLogger('').addHandler(ch)
 
 tstart = time.time()
-
-# Our shared queue used in multiprocessing
-q_ = Queue()
-running_trial_ = Value('d', 0)
 
 # This is a shared variable for both animation and dumping.
 
