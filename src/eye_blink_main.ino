@@ -140,31 +140,24 @@ void loop()
     // Press "Select" to start Session
     if (start != 1)
     {
+        reboot_ = false;
+        status = "001";
         initialize();
         reset_watchdog( );
     }
 
-    // Reset reboot_ flag.
-    reboot_ = false;
-
     while (start == 1)
     {
+        status = "111";
+        reset_watchdog( );
+
         // Seding rr will reset the arduino
-        if( Serial.available() )
+        if( is_command_read( RESET_COMMAND,  true ))
         {
-            if( 114 == Serial.peek() )
-            {
-                if( Serial.find("rr") )
-                {
-                    reboot_ = true;
-                    Serial.println("+++ Software RESET in 2 seconds, puny human!");
-                    Serial.println("And there is nothing you can do. Ha Ha!");
-                    break;
-                }
-            }
+            reboot_ = true;
+            Serial.println("+++ Software RESET in 2 seconds, puny human!");
+            Serial.println("And there is nothing you can do. Ha Ha!");
         }
-        else
-            reset_watchdog();
 
         if (trialNum == 0)
         {

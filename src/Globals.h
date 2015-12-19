@@ -24,6 +24,15 @@
 #ifndef Globals_h
 #define Globals_h
 
+#define DEBUG  1
+
+// Define command characters.
+
+#define RESET_COMMAND       "rr"
+#define SELECT_COMMAND      "ss"
+#define CS_PLUS_COMMAND     "++"
+#define CS_MINUS_COMMAND    "--"
+#define PUFF_COMMAND        "pp"
 
 #define DATA_BEGIN_MARKER "["
 #define DATA_END_MARKER "]"
@@ -53,8 +62,14 @@ extern const int CS_MINUS_ToneFreq;
 // reset the arduino within 1 seconds.
 extern bool reboot_;
 extern bool CS_plus;
+
+// A two character status of arduino board.
+extern String status; 
+
 void reset_watchdog( );
 
 void write_data_line( int analog_read, unsigned long timestamp );
+
+bool is_command_read( char* command , bool consume = false);
 
 #endif

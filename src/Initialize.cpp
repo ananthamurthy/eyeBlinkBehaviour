@@ -144,20 +144,6 @@ void initialize()
     {
         reset_watchdog();
 
-#if 0
-        if (puff_key == btnUP)
-        {   playPuff(puff_do, HIGH);
-            delay(puffTime);
-            playPuff(puff_do, LOW);
-        }
-        if (tone_key == btnDOWN)
-        {   
-            tone( tonePin, CS_PLUS_ToneFreq);
-            delay(CSTime);
-            noTone(tonePin);
-        }
-#endif
-
         if (startT > sampleInterval)
         {
             blink = analogRead(blink_ai);
@@ -166,47 +152,32 @@ void initialize()
             write_data_line( blink, 0 );
             startT = millis();
         }
-        if( Serial.available() )
+        // Read the character and decide what to do.
+        if( is_command_read( "++" , false) )
         {
-            // Read the character and decide what to do.
-            if( 43 == Serial.peek() )
-            {
-                if( Serial.find("++") ) // CSPlus Tone
-                {
-                    Serial.println("COMMAND: Play CS Plus");
-                    tone( tonePin, CS_PLUS_ToneFreq);
-                    delay( CSTime );
-                    noTone( tonePin );
-                }
-            }
-            else if( 45 == Serial.peek() )
-            {
-                if( Serial.find("--") ) // CSMinus Tone
-                {
-                    Serial.println("COMMAND: Play CS Minus");
-                    tone( tonePin, CS_MINUS_ToneFreq);
-                    delay( CSTime );
-                    noTone( tonePin );
-                }
-            }
-            else if( 112 == Serial.peek() )
-            {
-                if( Serial.find( "pp" ) ) // Puff
-                {
-                    Serial.println("COMMAND: Play puff");
-                    playPuff(puff_do, HIGH);
-                    delay(puffTime);
-                    playPuff(puff_do, LOW);
-                }
-            }
-            else if( 115 == Serial.peek() )
-            {
-                if( Serial.find( "ss" ) )
-                {
-                    Serial.println("COMMAND: SELECT");
-                    break;
-                }
-            }
+            Serial.println("COMMAND: Play CS Plus");
+            tone( tonePin, CS_PLUS_ToneFreq);
+            delay( CSTime );
+            noTone( tonePin );
+        }
+        else if( is_command_read( "--", false) )
+        {
+            Serial.println("COMMAND: Play CS Minus");
+            tone( tonePin, CS_MINUS_ToneFreq);
+            delay( CSTime );
+            noTone( tonePin );
+        }
+        else if( is_command_read( "pp", false ) ) // Puff
+        {
+            Serial.println("COMMAND: Play puff");
+            playPuff(puff_do, HIGH);
+            delay(puffTime);
+            playPuff(puff_do, LOW);
+        }
+        else if( is_command_read( "ss", true ) )
+        {
+            Serial.println("COMMAND: SELECT");
+            break;
         }
     }
 
