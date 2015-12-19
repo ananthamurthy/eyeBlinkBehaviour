@@ -144,19 +144,23 @@ void loop()
         reset_watchdog( );
     }
 
+    // Reset reboot_ flag.
+    reboot_ = false;
+
     while (start == 1)
     {
-
-        // Seding ````` will reset the arduino
+        // Seding rr will reset the arduino
         if( Serial.available() )
         {
-            bool foundReboot = Serial.find("`````");
-            if( foundReboot )
+            if( 114 == Serial.peek() )
             {
-                reboot_ = true;
-                Serial.println("+++ Software RESET in 2 seconds, puny human!");
-                Serial.println("And there is nothing you can do. Ha Ha!");
-                break;
+                if( Serial.find("rr") )
+                {
+                    reboot_ = true;
+                    Serial.println("+++ Software RESET in 2 seconds, puny human!");
+                    Serial.println("And there is nothing you can do. Ha Ha!");
+                    break;
+                }
             }
         }
         else

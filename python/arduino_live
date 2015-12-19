@@ -29,7 +29,7 @@ import datetime
 import csv
 import numpy as np
 import codecs
-from multiprocessing  import Process, Queue, Value
+from multiprocessing  import Process, Queue, Value, Lock
 import gnuplotlib as gp
 
 running_data_line_ = 0
@@ -63,7 +63,7 @@ def send_press_select( reftime, interval ):
     if time.time() - reftime < interval:
         return False
     print('[INFO] Sending SELECT to board')
-    config.serial_port_.write_msg("```\r")
+    config.serial_port_.write_msg("ss\r")
     time.sleep(0.5)
     print('[INFO] Waiting for Board to respond .', end='')
     sys.stdout.flush()
@@ -82,14 +82,13 @@ def print_line( line ):
     if running_data_line_ % 10 == 0:
         print("%s - %s" % (line, hline ))
 
-def collect_data( ):
+def collect_data( lock ):
     global running_data_line_
     tstart = time.time()
     runningTrial = 0
     while True:
         running_data_line_ += 1
         line = config.serial_port_.read_line( )
-        #print_line( line )
         x, y, trialNum, cs = line_to_data( line )
         if (x and y) is None:
             continue
@@ -108,10 +107,12 @@ def collect_data( ):
         # pressed. Let's press is by sending three ` to serialport after
         # some timeout.
         if send_press_select( tstart, config.args_.select_after ):
+            lock.acquire()
             print("SELECT sent")
+            lock.release()
             break
 
-    # Either we have pressed the SELECT or we have sent the select command ```.
+    # Either we have pressed the SELECT or we have sent the select command ss
     select_sent_ = True
     _logger.log('Out of first loop.')
     while True:
@@ -143,7 +144,7 @@ def init_gui():
     config.text_.set_text('')
     return config.gline_, config.gline1_, config.text_
 
-def plot_data( ):
+def plot_data( lock ):
     ptstart = time.time()
     while True:
         # Queue can become empty in ITI sessions.
@@ -231,32 +232,38 @@ def init( ):
     else:
         os.makedirs(config.save_dir_) 
 
-def send_command():
+def send_command(  ):
     # all commands should be two characters long
     global select_sent_
     command = ""
+    validCommands = [ "++", "--", "pp", "ss", "rr" ]
     while True:
         # Do not send any command if select button is send or we are in second
         # loop.
-        if select_sent_:
-            return None
         k = readchar.readkey()
         if k in "+-p`":
             command += k
-            if command in [ "pp", "++", "--", "```" ]:
-                print("[INFO] Sending command: %s" % command)
+            if command in validCommands[0:-1] and not select_sent_:
+                print("[COMMAND] Sending command: %s" % command)
                 config.serial_port_.write_msg( command )
                 command = ""
+            elif command == validCommands[-1] and select_sent_:
+                print("[COMMAND] Reboot in 2 sec")
+                config.serial_port_.write_msg( command )
             else:
-                if len(command) > 3:
-                    command = ""
+                pass
+            if len(command) > 5 or command in validCommands:
+                command = ""
         elif k in [ '\x03', '\x04', '\x1a' ]:
             raise KeyboardInterrupt
 
 def main( ):
     init( )
-    collectProcess = Process( target = collect_data )
-    plotProcess = Process( target = plot_data )
+
+    # Lock so that only one process prints to console at a time.
+    l = Lock( )
+    collectProcess = Process( target = collect_data, args=(l,) )
+    plotProcess = Process( target = plot_data, args=(l,) )
 
     collectProcess.start()
     plotProcess.start()

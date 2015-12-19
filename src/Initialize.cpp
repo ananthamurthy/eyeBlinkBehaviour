@@ -173,7 +173,7 @@ void initialize()
             {
                 if( Serial.find("++") ) // CSPlus Tone
                 {
-                    Serial.println("Play CS Plus");
+                    Serial.println("COMMAND: Play CS Plus");
                     tone( tonePin, CS_PLUS_ToneFreq);
                     delay( CSTime );
                     noTone( tonePin );
@@ -183,7 +183,7 @@ void initialize()
             {
                 if( Serial.find("--") ) // CSMinus Tone
                 {
-                    Serial.println("Play CS Minus");
+                    Serial.println("COMMAND: Play CS Minus");
                     tone( tonePin, CS_MINUS_ToneFreq);
                     delay( CSTime );
                     noTone( tonePin );
@@ -191,19 +191,19 @@ void initialize()
             }
             else if( 112 == Serial.peek() )
             {
-                if( Serial.find("pp") ) // Puff
+                if( Serial.find( "pp" ) ) // Puff
                 {
-                    Serial.println("Puff");
+                    Serial.println("COMMAND: Play puff");
                     playPuff(puff_do, HIGH);
                     delay(puffTime);
                     playPuff(puff_do, LOW);
                 }
             }
-            else if( 96 == Serial.peek() )
+            else if( 115 == Serial.peek() )
             {
-                if( Serial.find( "```" ) )
+                if( Serial.find( "ss" ) )
                 {
-                    Serial.println("-> Recieved SELECT");
+                    Serial.println("COMMAND: SELECT");
                     break;
                 }
             }
