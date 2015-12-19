@@ -232,9 +232,9 @@ def init( ):
     probably answered.
     """
 
-    # Get 5 lines from arduino, and check if arduino is sending legal data or
+    # Get 3 from arduino, and check if arduino is sending legal data or
     # just waiting for questions to be answered.
-    for i in range(5):
+    for i in range(3):
         l = config.serial_port_.read_line( )
         while not l:
             l = config.serial_port_.read_line( )
@@ -242,6 +242,13 @@ def init( ):
             # mere sawalo ka jawav do... do naa!
             answer_three_questions( )
             break
+        # If valid data is found in lines (trial is more than 1) then don't ask
+        # questions and quit immediately
+        else:
+            data = line_to_data( l )
+            if data[2] is not None:
+                if data[2] >= 0:
+                    break
 
     timeStamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     mouseName = 'MouseK%s' % config.args_.name

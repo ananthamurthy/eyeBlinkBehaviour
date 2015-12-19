@@ -4,5 +4,5 @@ if [ $# -lt 1 ]; then
     exit
 fi
 (
-    python ./python/arduino_live "$@" 
+    python ./python/arduino_live "$@"  
 )
