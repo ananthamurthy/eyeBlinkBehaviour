@@ -27,7 +27,7 @@ args_ = Args()
 
 # Use this to write to console.
 formatter = logging.Formatter('%(message)s')
-ch = logging.StreamHandler()
+ch = logging.StreamHandler( sys.stdout )
 ch.setFormatter(formatter)
 logging.getLogger('').addHandler(ch)
 

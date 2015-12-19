@@ -89,7 +89,7 @@ def print_line( line, lock ):
     # Only print if running data line is multiple of 10
     if running_data_line_ % 20 == 0:
         lock.acquire()
-        print("%s - %s\n" % (line, hline ))
+        print("%3s - %10s\n" % (line, hline ))
         lock.release()
 
 def collect_data( lock ):
