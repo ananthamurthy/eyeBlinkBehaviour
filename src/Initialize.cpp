@@ -77,9 +77,6 @@ void initialize()
 {
     reboot_ = false;
 
-    //int tone_key = read_lcd_button();
-    //int puff_key = read_lcd_button();
-
     /*
      * Keep sending question onto serial port every second.
      */
@@ -140,7 +137,11 @@ void initialize()
 
     // I should also be able to trigger that loop by writing START to serial
     // port.
+#ifdef ENABLE_LCD
     while (read_lcd_button() != btnSELECT)
+#else
+    while(true)
+#endif
     {
         reset_watchdog();
 
@@ -184,6 +185,8 @@ void initialize()
     // From here, the Arduino will start running the behaviour
     startT = millis();
     start = 1;
+
+#ifdef ENABLE_LCD
     lcd.setCursor( 0, 1 );
     lcd.print("S");
     lcd.setCursor(1, 1);
@@ -198,6 +201,7 @@ void initialize()
     lcd.print(sessionType[sessionType_ind]);
     lcd.setCursor(6, 1);
     lcd.print("          ");
+#endif
 
     // Get totalTrials and traceTime based on the Session Type
     if (sessionType_ind == 2)

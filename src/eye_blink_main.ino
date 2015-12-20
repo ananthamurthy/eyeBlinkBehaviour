@@ -29,13 +29,6 @@
 #define MAXPROF 30 //number of bins for profiler
 #include "Profiling.h"
 
-// some handy macros for printing debugging values
-#define DL(x) Serial.print(x)
-#define DLn(x) Serial.println(x)
-#define DV(m, v) do{Serial.print(m);Serial.print(v);Serial.print(" ");}while(0)
-#define DVn(m, v) do{Serial.print(m);Serial.println(v);}while(0)
-
-// more handy macros but unused in this example
 #define InterruptOff  do{TIMSK2 &= ~(1<<TOIE2)}while(0)
 #define InterruptOn  do{TIMSK2 |= (1<<TOIE2)}while(0)
 
@@ -47,11 +40,14 @@ unsigned int tcnt2; // used to store timer value
 // Include application, user and local libraries
 #include "Globals.h"
 #include "Initialize.h"
-#include "LCDRelated.h"
 #include "DetectBlinks.h"
 #include "Solenoid.h"
 #include "ChangePhase.h"
 #include "TriggerImaging.h"
+
+#if ENABLE_LCD
+#include "LCDRelated.h"
+#endif
 
 // Globals:
 int blink                      = 0;
@@ -124,11 +120,13 @@ void setup()
     //Set up the tone pin:
     pinMode(tonePin, OUTPUT);
 
+#ifdef ENABLE_LCD
     // Initialize LCD
     lcd.begin( 16, 2 );
 
     lcd.setCursor(4, 1);
     lcd.print("PRESS SELECT");
+#endif
 
     //For randomizations
     // uses the exact time of key press (expected to be different every time)
@@ -166,7 +164,9 @@ void loop()
             trialNum = 1;
             // Switch ON the imaging trigger
             triggerImaging(imagingTrigger_do, HIGH);
+#if ENABLE_LCD
             printStatus(START_PRE, trialNum);
+#endif
         }
         else
         {
@@ -175,11 +175,13 @@ void loop()
             // has to be calculated for every loop; not being used anywhere
             unsigned long currentTime = millis() - startTrialTime;
 
+#ifdef ENABLE_LCD
             int lcd_key = read_lcd_button();
             if (lcd_key == btnRIGHT)
             {
                 pause = 1;
             }
+#endif
 
             switch ( condition )
             {
@@ -193,12 +195,16 @@ void loop()
                     if (CS_plus == 1)
                     {
                         tone( tonePin, CS_PLUS_ToneFreq);
+#if ENABLE_LCD
                         changePhase( 1, START_CS_PLUS );           // CS+
+#endif
                     }
                     else
                     {
                         tone( tonePin, CS_MINUS_ToneFreq );
+#if ENABLE_LCD
                         changePhase( 2, START_CS_MINUS );          // CS-
+#endif
                     }
                 }
                 break;
@@ -210,7 +216,9 @@ void loop()
                 {
                     // start the next phase
                     noTone(tonePin);
+#if ENABLE_LCD
                     changePhase( 3, START_TRACE );                 // Trace
+#endif
                 }
                 break;
 
@@ -220,7 +228,9 @@ void loop()
                 if (currentPhaseTime >= CSTime)
                 {
                     noTone(tonePin);
+#if ENABLE_LCD
                     changePhase( 3, START_TRACE );                 // Trace
+#endif
                 }
                 break;
 
@@ -236,13 +246,17 @@ void loop()
                         {
                             playPuff(puff_do, HIGH);
                             condition = 4;                 // US: Air-Puff
+#if ENABLE_LCD
                             changePhase( 4, START_US );    // US: Air-puff
+#endif
                         }
                         else
                         {
                             playPuff(puff_do, LOW);
                             // US: Air- no puff
+#if ENABLE_LCD
                             changePhase( 5, START_US_NO_PUFF );
+#endif
                         }
                     }
                     else
@@ -250,7 +264,9 @@ void loop()
                         // control case (No-Puff)
                         playPuff(puff_do, LOW);
                         // US: Air- no puff
+#if ENABLE_LCD
                         changePhase( 5, START_US_NO_PUFF );
+#endif
                     }
                 }
                 break;
@@ -263,7 +279,9 @@ void loop()
                     // start the next phase
                     playPuff(puff_do, LOW);
                     // Post pairing/stimuli
+#if ENABLE_LCD
                     changePhase( 6, START_POST );
+#endif
                 }
                 break;
 
@@ -275,7 +293,9 @@ void loop()
                     // start the next phase
                     playPuff(puff_do, LOW);
                     // Post pairing/stimuli
+#if ENABLE_LCD
                     changePhase( 6, START_POST );
+#endif
                 }
                 break;
 
@@ -286,7 +306,9 @@ void loop()
                 if (currentPhaseTime >= postTime)
                 {
                     interTrialTime = minITI + random( randITI );
+#if ENABLE_LCD
                     changePhase( 7, START_ITI );                   // ITI
+#endif
 
                     // Switch OFF the imaging trigger
                     triggerImaging(imagingTrigger_do, LOW);
@@ -298,7 +320,9 @@ void loop()
                 PF((condition+1));
                 if (pause == 1)
                 {
+#if ENABLE_LCD 
                     changePhase( 9, PAUSE );                       // PAUSE
+#endif
                     break;
                 }
                 else
@@ -309,7 +333,9 @@ void loop()
                         blinkCount = 0;
                         if (trialNum > totalTrials)
                         {
+#if ENABLE_LCD
                             changePhase( 8, END );                 // END of session
+#endif
                             break;
                         }
                         else
@@ -319,8 +345,10 @@ void loop()
                             else
                                 CS_plus = 0;                       // play CS-
 
+#ifdef ENABLE_LCD
                             printStatus(START_PRE, trialNum);
                             changePhase( 0, START_PRE );           // Next cycle
+#endif
 
                             // Switch ON the imaging trigger
                             triggerImaging(imagingTrigger_do, HIGH);
@@ -341,15 +369,19 @@ void loop()
                 while(1);                                          
                 break;
 
+#ifdef ENABLE_LCD
             case 9:                                              
                 int unpause_key = read_lcd_button();
                 if (unpause_key == btnLEFT)
                 {
                     pause = 0;
+#if ENABLE_LCD
                     changePhase( 7, START_ITI );                   
+#endif
                     break;                                        
                 }
                 break;                                             
+#endif
             }                                                      
 
         }       
