@@ -45,7 +45,7 @@ unsigned int tcnt2; // used to store timer value
 #include "ChangePhase.h"
 #include "TriggerImaging.h"
 
-#if ENABLE_LCD
+#ifdef ENABLE_LCD
 #include "LCDRelated.h"
 #endif
 
@@ -164,7 +164,7 @@ void loop()
             trialNum = 1;
             // Switch ON the imaging trigger
             triggerImaging(imagingTrigger_do, HIGH);
-#if ENABLE_LCD
+#ifdef ENABLE_LCD
             printStatus(START_PRE, trialNum);
 #endif
         }
@@ -195,14 +195,14 @@ void loop()
                     if (CS_plus == 1)
                     {
                         tone( tonePin, CS_PLUS_ToneFreq);
-#if ENABLE_LCD
+#ifdef ENABLE_LCD
                         changePhase( 1, START_CS_PLUS );           // CS+
 #endif
                     }
                     else
                     {
                         tone( tonePin, CS_MINUS_ToneFreq );
-#if ENABLE_LCD
+#ifdef ENABLE_LCD
                         changePhase( 2, START_CS_MINUS );          // CS-
 #endif
                     }
@@ -216,7 +216,7 @@ void loop()
                 {
                     // start the next phase
                     noTone(tonePin);
-#if ENABLE_LCD
+#ifdef ENABLE_LCD
                     changePhase( 3, START_TRACE );                 // Trace
 #endif
                 }
@@ -228,7 +228,7 @@ void loop()
                 if (currentPhaseTime >= CSTime)
                 {
                     noTone(tonePin);
-#if ENABLE_LCD
+#ifdef ENABLE_LCD
                     changePhase( 3, START_TRACE );                 // Trace
 #endif
                 }
@@ -246,7 +246,7 @@ void loop()
                         {
                             playPuff(puff_do, HIGH);
                             condition = 4;                 // US: Air-Puff
-#if ENABLE_LCD
+#ifdef ENABLE_LCD
                             changePhase( 4, START_US );    // US: Air-puff
 #endif
                         }
@@ -254,7 +254,7 @@ void loop()
                         {
                             playPuff(puff_do, LOW);
                             // US: Air- no puff
-#if ENABLE_LCD
+#ifdef ENABLE_LCD
                             changePhase( 5, START_US_NO_PUFF );
 #endif
                         }
@@ -264,7 +264,7 @@ void loop()
                         // control case (No-Puff)
                         playPuff(puff_do, LOW);
                         // US: Air- no puff
-#if ENABLE_LCD
+#ifdef ENABLE_LCD
                         changePhase( 5, START_US_NO_PUFF );
 #endif
                     }
@@ -279,7 +279,7 @@ void loop()
                     // start the next phase
                     playPuff(puff_do, LOW);
                     // Post pairing/stimuli
-#if ENABLE_LCD
+#ifdef ENABLE_LCD
                     changePhase( 6, START_POST );
 #endif
                 }
@@ -293,7 +293,7 @@ void loop()
                     // start the next phase
                     playPuff(puff_do, LOW);
                     // Post pairing/stimuli
-#if ENABLE_LCD
+#ifdef ENABLE_LCD
                     changePhase( 6, START_POST );
 #endif
                 }
@@ -306,7 +306,7 @@ void loop()
                 if (currentPhaseTime >= postTime)
                 {
                     interTrialTime = minITI + random( randITI );
-#if ENABLE_LCD
+#ifdef ENABLE_LCD
                     changePhase( 7, START_ITI );                   // ITI
 #endif
 
@@ -320,7 +320,7 @@ void loop()
                 PF((condition+1));
                 if (pause == 1)
                 {
-#if ENABLE_LCD 
+#ifdef ENABLE_LCD 
                     changePhase( 9, PAUSE );                       // PAUSE
 #endif
                     break;
@@ -333,7 +333,7 @@ void loop()
                         blinkCount = 0;
                         if (trialNum > totalTrials)
                         {
-#if ENABLE_LCD
+#ifdef ENABLE_LCD
                             changePhase( 8, END );                 // END of session
 #endif
                             break;
@@ -375,7 +375,7 @@ void loop()
                 if (unpause_key == btnLEFT)
                 {
                     pause = 0;
-#if ENABLE_LCD
+#ifdef ENABLE_LCD
                     changePhase( 7, START_ITI );                   
 #endif
                     break;                                        

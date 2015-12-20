@@ -21,7 +21,7 @@
 // Code
 #include "Globals.h"
 
-#if ENABLE_LCD
+#ifdef ENABLE_LCD
 #include "LCDRelated.h"
 #endif
 
@@ -34,7 +34,7 @@ extern unsigned long startPhaseTime;
 void changePhase( int cond, int status )
 {
     condition = cond;
-#if ENABLE_LCD
+#ifdef ENABLE_LCD
     printStatus(status, trialNum);
 #endif
     lastTime = 0;

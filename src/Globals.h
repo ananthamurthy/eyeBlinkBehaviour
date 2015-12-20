@@ -25,6 +25,7 @@
 #define Globals_h
 
 #define DEBUG  1
+#define ENABLE_LCD
 
 // Define command characters.
 
