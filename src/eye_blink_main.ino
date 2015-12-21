@@ -129,8 +129,7 @@ void setup()
 #endif
 
     //For randomizations
-    // uses the exact time of key press (expected to be different every time)
-    randomSeed(startT);
+    randomSeed(0); // 0 -> use system clock to generate random seed
 }
 
 void loop()
