@@ -126,7 +126,6 @@ def collect_data( lock ):
     while True:
         if finished_all_ == 1:
             return None
-
         running_data_line_ += 1
         running_trial_ = runningTrial
         line = config.serial_port_.read_line()
@@ -138,7 +137,7 @@ def collect_data( lock ):
         total_trials_ = totalTrials
         print_line( line, lock )
         if trialNum > runningTrial:
-            outfile = os.path.join( config.save_dir_, 'Trial%s.csv' % trialNum )
+            outfile = os.path.join( config.save_dir_, 'Trial%s.csv' % runningTrial )
             _logger.info("|| Wrote previous trial to %s" % outfile)
             _logger.info('== New Trial: :%s/%s, cs: %s' % (trialNum, totalTrials, cs))
             runningTrial = trialNum
