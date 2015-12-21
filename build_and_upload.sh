@@ -26,4 +26,4 @@ if [ $1 ]; then
     MAKE_PARAMS="$MAKE_PARAMS MONITOR_PORT=$1"
 fi
 $MAKE $MAKE_PARAMS
-$MAKE upload
+$MAKE $MAKE_PARAMS upload

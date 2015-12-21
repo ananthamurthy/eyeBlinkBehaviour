@@ -22,7 +22,7 @@ BOARD_TAG         = uno
 
 ### MONITOR_BAUDRATE
 ### It must be set to Serial baudrate value you are using.
-MONITOR_BAUDRATE  = 9600
+MONITOR_BAUDRATE  = 38400
 
 ### CFLAGS_STD
 ### Set the C standard to be used during compilation. Documentation (https://github.com/WeAreLeka/Arduino-Makefile/blob/std-flags/arduino-mk-vars.md#cflags_std)
