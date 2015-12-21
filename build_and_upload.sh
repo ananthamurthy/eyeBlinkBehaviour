@@ -1,12 +1,29 @@
 #!/bin/bash
 # First argument is optional. It is path to serial port. If not given, a port is
 # detected automatically for you.
-MAKE=make
+
+MAKE=`which make`
+MAKE_PARAMS=""
+case "$(uname -s)" in 
+    Darwin)
+        echo "Using mac"
+        MAKE_PARAMS="$MAKE_PARAMS ARDUINO_DIR=/Applications/Arduino.app/Content/Java"
+        ;;
+    Linux)
+        echo "On Linux"
+        ;;
+    CYGWIN)
+        echo "Cygwin+Windows";
+        ;;
+    *)
+        echo "Unknown.Quitting";
+        exit
+        ;;
+esac
+
 if [ $1 ]; then
     echo "Using user input for serial: $1"
-    MAKE="make MONITOR_PORT=$1"
-else
-    MAKE=make
+    MAKE_PARAMS="$MAKE_PARAMS MONITOR_PORT=$1"
 fi
-$MAKE 
+$MAKE $MAKE_PARAMS
 $MAKE upload

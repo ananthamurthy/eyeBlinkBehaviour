@@ -1,3 +1,5 @@
+UNAME_S := $(shell uname -s)
+
 ### PROJECT_DIR
 ### This is the path to where you have created/cloned your project
 PROJECT_DIR       = .
@@ -7,12 +9,12 @@ PROJECT_DIR       = .
 ARDMK_DIR         = $(PROJECT_DIR)/makefiles
 
 ### ARDUINO_DIR
-### Path to the Arduino application and resources directory.
-### On OS X:
 ARDUINO_BIN       = $(shell which arduino)
-ARDUINO_DIR       = $(dir $(shell readlink -f $(ARDUINO_BIN)))
-### or on Linux: (remove the one you don't want)
-ARDUINO_DIR       = /Applications/Arduino.app/Contents/Java
+ifeq ($(UNAME_S),Darwin)
+    ARDUINO_DIR       = /Applications/Arduino.app/Contents/Java
+else
+    ARDUINO_DIR       = $(dir $(shell readlink -f $(ARDUINO_BIN)))
+endif
 
 ### BOARD_TAG
 ### It must be set to the board you are currently using. (i.e uno, mega2560, etc.)
