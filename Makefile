@@ -12,7 +12,7 @@ ARDMK_DIR         = $(PROJECT_DIR)/makefiles
 ARDUINO_BIN       = $(shell which arduino)
 ARDUINO_DIR       = $(dir $(shell readlink -f $(ARDUINO_BIN)))
 ### or on Linux: (remove the one you don't want)
-##ARDUINO_DIR       = /usr/share/arduino
+ARDUINO_DIR       = /Applications/Arduino.app/Contents/Java
 
 ### BOARD_TAG
 ### It must be set to the board you are currently using. (i.e uno, mega2560, etc.)
