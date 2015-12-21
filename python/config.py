@@ -25,11 +25,17 @@ import logging
 class Args: pass 
 args_ = Args()
 
-# Use this to write to console.
-formatter = logging.Formatter('%(message)s')
-ch = logging.StreamHandler( sys.stdout )
-ch.setFormatter(formatter)
-logging.getLogger('').addHandler(ch)
+def init_logger( filename ):
+    # Use this to write to console.
+    formatter = logging.Formatter( '%(ascitime)s- %(levelname)s - %(message)s' )
+    logging.basicConfig(filename = filename
+            , level = logging.DEBUG
+            , formatter = formatter
+            , filemode = 'a'
+            )
+    ch = logging.StreamHandler( )
+    ch.setLevel( logging.INFO )
+    logging.getLogger('').addHandler(ch)
 
 tstart = time.time()
 
