@@ -18,7 +18,6 @@ import time
 import serial
 import serial.tools.list_ports 
 import config
-import mysql_support as mysql
 import logging
 _logger = logging.getLogger('')
 

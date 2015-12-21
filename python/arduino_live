@@ -255,7 +255,7 @@ def init( ):
     timeStamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     mouseName = 'MouseK%s' % config.args_.name
     outfile = os.path.join( mouseName
-            , 'Mouse%s_SessionType%s_Session%s' % ( 
+            , 'MouseK%s_SessionType%s_Session%s' % ( 
                 config.args_.name, config.args_.session_type, config.args_.session_num)
             )
     config.save_dir_ = os.path.join( config.save_dir_, outfile )
