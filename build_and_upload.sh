@@ -7,7 +7,6 @@ MAKE_PARAMS=""
 case "$(uname -s)" in 
     Darwin)
         echo "Using mac"
-        MAKE_PARAMS="$MAKE_PARAMS ARDUINO_DIR=/Applications/Arduino.app/Content/Java"
         ;;
     Linux)
         echo "On Linux"
