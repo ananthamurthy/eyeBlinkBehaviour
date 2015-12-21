@@ -20,7 +20,7 @@ void reset_watchdog( )
 void write_data_line( int data, unsigned long timestamp )
 {
     char msg[40];
-    sprintf(msg, "%6lu,%5d,%3d,%2d", timestamp, data, trialNum, CS_plus);
+    sprintf(msg, "%6lu,%5d,%3d,%3d,%2d", timestamp, data, trialNum, totalTrials, CS_plus);
     Serial.println(msg);
     //Serial.print(status + ":" + msg);
 }

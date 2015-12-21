@@ -207,18 +207,18 @@ void initialize()
     if (sessionType_ind == 2)
     {
         traceTime = 0; //in ms
-        totalTrials = 100;
+        totalTrials = 100+1; // Last trial is dummy needed for writing n trials.
     }
     else
     {
         traceTime = 250; //in ms
         if (sessionType_ind == 0)
         {
-            totalTrials = 50;
+            totalTrials = 30+1; // n+1 is needed to write n trials.
         }
         else
         {
-            totalTrials = 100;
+            totalTrials = 100+1; // n+1 is needed to write n trials.
         }
     }
 }

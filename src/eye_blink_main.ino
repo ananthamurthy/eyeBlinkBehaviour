@@ -62,7 +62,7 @@ String mouseName               = String(1); // Please enter the name of the mous
 int sessionType_ind            = 1;         // Please specify the Session Type (0: Control, 1: Trace, 2: Delay)
 int session                    = 1;
 int traceTime                  = 250;       // in ms
-int totalTrials                = 100;
+int totalTrials                = 101;       // n+1 trials  for valid n trials.
 int shutterDelay               = 60;        // in ms
 
 boolean profilingDataDump      = 0;         // For dumping profiling data
