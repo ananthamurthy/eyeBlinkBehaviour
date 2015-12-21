@@ -154,16 +154,16 @@ def line_to_data( line ):
     if not line.strip():
         return [None]*5
     try:
-        t, v, trial_num, totalTrial, cs = line.split(',')
+        t, v, trial_num, totalTrials, cs = line.split(',')
     except Exception as e:
         _logger.info("Invalid data line: %s" % line)
         return [None]*5
     try:
-        t, v, trial_num, totalTrial, cs = int(t), int(v), int(trial_num), int(cs)
+        t, v, trial_num, totalTrials, cs = int(t), int(v), int(trial_num), int(totalTrials), int(cs)
     except Exception as e:
-        t, v, trial_num, cs = [None]*5
+        t, v, trial_num, totalTrials, cs = [None]*5
     
-    return t, v, trial_num, totalTrial, cs
+    return t, v, trial_num, totalTrials, cs
 
 def init_gui():
     config.text_.set_text('')
