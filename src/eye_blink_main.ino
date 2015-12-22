@@ -72,7 +72,7 @@ const int preTime              = 5000;      // in ms
 const int CSTime               = 350;       // in ms
 const int puffTime             = 50;        // in ms //change made on 20151214
 const int postTime             = 5000;      // in ms
-const int minITI               = 10000;     // in ms
+const int minITI               = 15000;     // in ms
 const int randITI              = 5000;      // in ms
 
 // CS+/- frequencies
@@ -350,7 +350,7 @@ void loop()
                 if (unpause_key == btnLEFT)
                 {
                     pause = 0;
-                    changePhase( 7, START_ITI );                   
+                    changePhase( 7, PAUSE );                   
                     break;                                        
                 }
                 break;                                             
