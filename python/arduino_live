@@ -91,7 +91,7 @@ def print_line( line, lock ):
 def initialize_trial_file( trial_number ):
     trialFile = trial_file_path( trial_number )
     print('[INFO] Initializing a new trial file')
-    with open( trial_file_path, "w") as f:
+    with open( trialFile, "w") as f:
         f.write("# Written on: %s\n" % datetime.datetime.now().isoformat())
         f.write("# mouse id  : %s\n" % config.args_.name)
         f.write("# Session type : %s\n" % config.args_.session_type)
@@ -261,8 +261,6 @@ def init( ):
 
     now = datetime.datetime.now()
     timeStamp =  now.strftime('%Y-%m-%d_%H-%M-%S')
-    # This is to add to csv file. 
-    timeStampISO =  timeStamp.isoformat()
     mouseName = 'MouseK%s' % config.args_.name
     outdir = os.path.join( mouseName
             , 'MouseK%s_SessionType%s_Session%s' % ( 
