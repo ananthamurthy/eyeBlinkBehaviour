@@ -3,7 +3,7 @@
 clear all
 close all
 
-saveDirec = 'C:\Users\vinay\Desktop\upiLabrotation\vinay\';
+saveDirec = getenv("HOME") + 'Desktop/Work/Behaviour';
 
 listPath=('C:\Users\vinay\Desktop\upiLabrotation\TrialDataSave\folder_list.txt'); %Check path ID
 fid=fopen(listPath);
