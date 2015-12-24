@@ -45,6 +45,9 @@ q_ = Queue.Queue()
 running_trial_ = 0
 finished_all_ = 0
 
+def trial_file_path( trialNum ):
+    return os.path.join( config.save_dir_, 'Trial%s.csv' % trialNum )
+
 
 def cleanup():
     pass
@@ -56,8 +59,7 @@ def init_serial( baudRate = 38400):
     config.serial_port_ = arduino.ArduinoPort( config.args_.port, baudRate )
     config.serial_port_.open( wait = True )
 
-def append_trial_data( value, time, trialNum, cs ):
-    outfile = os.path.join( config.save_dir_, 'Trial%s.csv' % trialNum )
+def append_trial_data( outfile, value, time, trialNum, cs ):
     with open(outfile, 'a') as f:
         f.write('%s,%s,%s\n' % (value, time, cs))
 
@@ -85,6 +87,16 @@ def print_line( line, lock ):
         lock.acquire()
         _logger.info("%3s - %10s\n" % (line, hline ))
         lock.release()
+
+def initialize_trial_file( trial_number ):
+    trialFile = trial_file_path( trial_number )
+    print('[INFO] Initializing a new trial file')
+    with open( trial_file_path, "w") as f:
+        f.write("# Written on: %s\n" % datetime.datetime.now().isoformat())
+        f.write("# mouse id  : %s\n" % config.args_.name)
+        f.write("# Session type : %s\n" % config.args_.session_type)
+        f.write("# Session num : %s\n" % config.args_.session_num)
+
 
 def collect_data( lock ):
     global q_
@@ -133,13 +145,16 @@ def collect_data( lock ):
         if (x and y) is None:
             continue
         q_.put((y,x))
-        append_trial_data(y, x, trialNum, cs)
+        trialFile = trial_file_path( trialNum )
+        append_trial_data(trialFile, y, x, trialNum, cs)
         total_trials_ = totalTrials
         print_line( line, lock )
         if trialNum > runningTrial:
-            outfile = os.path.join( config.save_dir_, 'Trial%s.csv' % runningTrial )
+            outfile = trial_file_path( runningTrial )
             _logger.info("|| Wrote previous trial to %s" % outfile)
             _logger.info('== New Trial: :%s/%s, cs: %s' % (trialNum, totalTrials, cs))
+            # Also initialize the new trial file.
+            initialize_trial_file( trialNum )
             runningTrial = trialNum
 
 def line_to_data( line ):
@@ -244,7 +259,10 @@ def init( ):
                 if data[2] >= 0:
                     break
 
-    timeStamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    now = datetime.datetime.now()
+    timeStamp =  now.strftime('%Y-%m-%d_%H-%M-%S')
+    # This is to add to csv file. 
+    timeStampISO =  timeStamp.isoformat()
     mouseName = 'MouseK%s' % config.args_.name
     outdir = os.path.join( mouseName
             , 'MouseK%s_SessionType%s_Session%s' % ( 
