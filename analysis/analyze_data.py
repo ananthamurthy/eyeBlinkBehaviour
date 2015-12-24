@@ -67,31 +67,69 @@ def get_linear_time_vec( vec ):
 
     return newVec 
 
-
-def analize_trials( ):
+def modify_canvas( ):
     global args_
-    print("="*80)
-    print("| Collected all valid data")
-    print(". Total entries = %s" % len(data_))
-    if args_.subplots:
-        plt.figure( figsize = (20, 1.5*len(data_)))
+    if args_.analysis == 'plot':
+        if args_.subplots:
+            plt.figure( figsize = (20, 1.5*len(data_)), frameon=False)
+    elif args_.analysis == 'raster':
+        plt.figure( figsize = (10, 0.15*len(data_)), frameon=False)
+    else:
+        plt.figure()
+
+def value_and_time( data ):
+    values, time = data[:,0], data[:,1]
+    time = get_linear_time_vec( time )
+    return values, time
+
+
+def plot_raw_data( ):
+    global args_
+    modify_canvas( )
     for i, trial in enumerate(data_):
         tid = os.path.split( trial )[-1]
         print("Processing %s" % trial)
         data, metadata = data_[trial]
-        values, time = data[:,0], data[:,1]
-        time = get_linear_time_vec( time )
+        values, time = value_and_time( data )
         if args_.subplots:
-            ax = plt.subplot( len(data_), 1, i)
-            # ax.set_ylim( [ values.mean() - 100, values.mean() + 100 ] )
+            ax = plt.subplot( len(data_), 1, i, frameon = False)
         plt.plot(values, label = '%s' % tid )
-        plt.legend(loc='best')
+        plt.legend( frameon = False)
+    plt.ylabel( '# Trial')
+    plt.xlabel('TIme (ms)')
+    plt.title('Raw plots of arduino values')
 
     if args_.outfile:
         print("[INFO] Saving to %s" % args_.outfile)
-        plt.savefig( '%s' % args_.outfile)
+        plt.savefig( '%s' % args_.outfile, transparent = True)
     else:
         plt.show()
+
+def plot_raster( ):
+    global args_
+    global data_
+    modify_canvas()
+    scale = 1.0
+    for i, trial in enumerate(data_):
+        data, metadata = data_[trial]
+        # Threshold 
+        yvec, time = value_and_time( data )
+        yvec = np.where( yvec >= yvec.mean() + 2*yvec.std())
+        plt.vlines(yvec, scale*(i+0.5), scale*(i+1.5)
+                # , linestyle = 'dashed'
+                , color='blue'
+                )
+    plt.ylim(0, scale*len(data_)+scale)
+    plt.ylabel( '# Trial')
+    plt.xlabel('TIme (ms)')
+    plt.title('threshold = mean + 2 * std')
+    if args_.outfile:
+        print("[INFO] Saving to %s" % args_.outfile)
+        plt.savefig( '%s' % args_.outfile, transparent = True)
+    else:
+        plt.show()
+
+
 
 def collect_valid_data( direc ):
     global data_ 
@@ -122,7 +160,19 @@ def main(  ):
                 files_[d].append( filepath )
 
     [ collect_valid_data(d)  for d in files_ ]
-    analize_trials( )
+    print("="*80)
+    print("| Collected all valid data")
+    print(". Total entries = %s" % len(data_))
+
+    if args_.analysis == 'plot':
+        plot_raw_data( )
+    elif args_.analysis == 'raster':
+        print("[INFO] Plotting raster plots")
+        plot_raster( )
+    else:
+        print('[WARN] Unknown analysis %s' % args_.analysis)
+        print("[WARN] Currently 'plot' and 'raster' supported")
+        quit()
 
 if __name__ == '__main__':
     import argparse
@@ -145,6 +195,11 @@ if __name__ == '__main__':
     parser.add_argument('--outfile', '-o'
         , required = False
         , help = 'File to store you plot.'
+        )
+    parser.add_argument('--analysis', '-a'
+        , required = False
+        , default = 'plot'
+        , help = 'plot|raster, default = plot'
         )
     class Args: pass 
     args_ = Args()
