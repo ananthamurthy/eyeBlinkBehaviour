@@ -73,7 +73,8 @@ def modify_canvas( ):
         if args_.subplots:
             plt.figure( figsize = (20, 1.5*len(data_)), frameon=False)
     elif args_.analysis == 'raster':
-        plt.figure( figsize = (10, 0.15*len(data_)), frameon=False)
+        # plt.figure( figsize = (20, 0.1*len(data_)), frameon=False)
+        pass
     else:
         plt.figure()
 
@@ -131,23 +132,25 @@ def plot_raster( ):
 
 
 
-def collect_valid_data( direc ):
+def collect_valid_data(  ):
     global data_ 
+    global files_
     global args_
-    metadata = get_metadata( direc )
-    print("| Processing %s" % direc)
-    print(".. Timestamp (YY-DD-MM), Time: %s" % metadata['timestamp'])
-    for f in files_[direc]:
-        data = np.genfromtxt(f,delimiter=',')
-        if data.shape[0] < 500:
-            print("... [FATAL] Only (%s) entries in file. Ignoring" % data.shape[0]
-                    )
-        else:
-            data_[f] = (data, metadata)
-            if args_.max != -1:
-                if len(data_) == int(args_.max):
-                    print("[INFO] Total %s trails" % len(data_))
-                    return
+    for direc in files_:
+        metadata = get_metadata( direc )
+        print("| Processing %s" % direc)
+        print(".. Timestamp (YY-DD-MM), Time: %s" % metadata['timestamp'])
+        for f in files_[direc]:
+            data = np.genfromtxt(f,delimiter=',')
+            if data.shape[0] < 500:
+                print("... [FATAL] Only (%s) entries in file. Ignoring" % data.shape[0]
+                        )
+            else:
+                data_[f] = (data, metadata)
+                if args_.max != -1:
+                    if len(data_) == int(args_.max):
+                        print("[INFO] Total %s trails" % len(data_))
+                        return
 
 def main(  ):
     global args_
@@ -159,7 +162,7 @@ def main(  ):
                 filepath = os.path.join(d, f)
                 files_[d].append( filepath )
 
-    [ collect_valid_data(d)  for d in files_ ]
+    collect_valid_data() 
     print("="*80)
     print("| Collected all valid data")
     print(". Total entries = %s" % len(data_))
