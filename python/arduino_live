@@ -48,7 +48,6 @@ finished_all_ = 0
 def trial_file_path( trialNum ):
     return os.path.join( config.save_dir_, 'Trial%s.csv' % trialNum )
 
-
 def cleanup():
     pass
 
@@ -96,7 +95,6 @@ def initialize_trial_file( trial_number ):
         f.write("# mouse id  : %s\n" % config.args_.name)
         f.write("# Session type : %s\n" % config.args_.session_type)
         f.write("# Session num : %s\n" % config.args_.session_num)
-
 
 def collect_data( lock ):
     global q_
