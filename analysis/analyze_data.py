@@ -24,12 +24,18 @@ from collections import defaultdict
 import logging
 logging.basicConfig( filename = '__analyze__.log'
         , level = logging.DEBUG
-        , filemode = 'w'
+        , filemode = 'a'
         )
 
 files_ = defaultdict(list)
 data_ = defaultdict(list)
 args_ = None
+
+def subdir( dirname ):
+    d, subdirname = os.path.split( dirname )
+    if not subdirname.strip():
+        return get_subdir_name( d )
+    return subdirname 
 
 def get_timestamp( date_string, tried = 0 ):
     if '_' in date_string:
@@ -117,7 +123,8 @@ def plot_raw_data( ):
     plt.ylabel( '# Trial')
 
     if not args_.outfile:
-        args_.outfile = '%s/%s.svg' % (args_.dir, args_.analysis)
+        filename = '%s_%s.svg' % ( subdir( args_.dir ), args_.analysis )
+        args_.outfile = os.path.join(args_.dir, filename )
 
     print("[INFO] Saving to %s" % args_.outfile)
     plt.savefig( '%s' % args_.outfile, transparent = True)
@@ -188,7 +195,8 @@ def plot_raster( ):
     plt.ylabel( '# Trial (CS+)')
 
     if not args_.outfile:
-        args_.outfile = '%s/%s.svg' % (args_.dir, args_.analysis)
+        filename = '%s_%s.svg' % ( subdir( args_.dir ), args_.analysis )
+        args_.outfile = os.path.join(args_.dir, filename )
 
     print("[INFO] Saving to %s" % args_.outfile)
     plt.savefig( '%s' % args_.outfile, transparent = True)
