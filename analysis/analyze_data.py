@@ -116,11 +116,11 @@ def plot_raw_data( ):
         plt.legend( frameon = False)
     plt.ylabel( '# Trial')
 
-    if args_.outfile:
-        print("[INFO] Saving to %s" % args_.outfile)
-        plt.savefig( '%s' % args_.outfile, transparent = True)
-    else:
-        plt.show()
+    if not args_.outfile:
+        args_.outfile = '%s/%s.svg' % (args_.dir, args_.analysis)
+
+    print("[INFO] Saving to %s" % args_.outfile)
+    plt.savefig( '%s' % args_.outfile, transparent = True)
 
 def plot_cs_summary( yvec, xvec = None, label = ' ', bin_size = 10):
     # If bin_size is more than one, use it to smooth the curse.
@@ -189,7 +189,6 @@ def plot_raster( ):
 
     if not args_.outfile:
         args_.outfile = '%s/%s.svg' % (args_.dir, args_.analysis)
-        plt.show()
 
     print("[INFO] Saving to %s" % args_.outfile)
     plt.savefig( '%s' % args_.outfile, transparent = True)
