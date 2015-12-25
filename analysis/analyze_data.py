@@ -18,9 +18,14 @@ import sys
 import numpy as np
 import dateutil
 import dateutil.parser
+import matplotlib
 import matplotlib.pyplot as plt
 from collections import defaultdict
 import logging
+logging.basicConfig( filename = '__analyze__.log'
+        , level = logging.DEBUG
+        , filemode = 'w'
+        )
 
 files_ = defaultdict(list)
 data_ = defaultdict(list)
@@ -77,60 +82,129 @@ def modify_canvas( ):
         pass
     else:
         plt.figure()
+    matplotlib.rcParams.update( {
+        'font.size' : 10
+        })
 
-def value_and_time( data ):
-    values, time = data[:,0], data[:,1]
+def data_components( data ):
+    # first column is values.
+    # Second column is time vector and third vector is cstype vector. Only one
+    # value from cstype vector is sufficient to indicate the type of vector.
+    if data.shape[1] != 3:
+        logging.warn("Seems like old data format with 2 columns. Not using it")
+        return None, None, None
+    values, time, cstype = data[:,0], data[:,1], data[:,2]
     time = get_linear_time_vec( time )
-    return values, time
-
+    cstype = cstype[0]
+    return values, time, cstype
 
 def plot_raw_data( ):
     global args_
     modify_canvas( )
+    plt.title('Raw plots of arduino values')
+    plt.xlabel('TIme (ms)')
     for i, trial in enumerate(data_):
         tid = os.path.split( trial )[-1]
         print("Processing %s" % trial)
         data, metadata = data_[trial]
-        values, time = value_and_time( data )
+        values, time, cstype = data_components( data )
+        if values is None:
+            continue
         if args_.subplots:
             ax = plt.subplot( len(data_), 1, i, frameon = False)
         plt.plot(values, label = '%s' % tid )
         plt.legend( frameon = False)
     plt.ylabel( '# Trial')
-    plt.xlabel('TIme (ms)')
-    plt.title('Raw plots of arduino values')
 
     if args_.outfile:
         print("[INFO] Saving to %s" % args_.outfile)
         plt.savefig( '%s' % args_.outfile, transparent = True)
     else:
         plt.show()
+
+def plot_cs_summary( yvec, xvec = None, label = ' ', bin_size = 10):
+    # If bin_size is more than one, use it to smooth the curse.
+    logging.info("Smoothing the curve using window size %s" % bin_size)
+    window = np.ones( bin_size ) / bin_size
+    yvec = np.convolve( yvec, window, 'same' )
+
+    if xvec is None:
+        plt.plot( yvec , label = label)
+    else:
+        plt.plot( xvec, yvec, label = label)
+    if label.strip():
+        plt.legend(loc='best', framealpha=0.4)
 
 def plot_raster( ):
     global args_
     global data_
     modify_canvas()
+    plt.xlabel('TIme (ms)')
     scale = 1.0
+    # One plot of cs+ and one for cs-
+    csPosPlots = []
+    csMinusPlots = []
+
+    maxTimeLen = 0
     for i, trial in enumerate(data_):
         data, metadata = data_[trial]
         # Threshold 
-        yvec, time = value_and_time( data )
-        yvec = np.where( yvec >= yvec.mean() + 2*yvec.std())
-        plt.vlines(yvec, scale*(i+0.5), scale*(i+1.5)
-                # , linestyle = 'dashed'
-                , color='blue'
-                )
-    plt.ylim(0, scale*len(data_)+scale)
-    plt.ylabel( '# Trial')
-    plt.xlabel('TIme (ms)')
-    plt.title('threshold = mean + 2 * std')
-    if args_.outfile:
-        print("[INFO] Saving to %s" % args_.outfile)
-        plt.savefig( '%s' % args_.outfile, transparent = True)
-    else:
+        yvec, time, cstype = data_components( data )
+        if len(time) > maxTimeLen:
+            maxTimeLen = len(time)
+        vlineVec = np.where( yvec >= yvec.mean() + 2*yvec.std())
+        if cstype == 0:
+            csMinusPlots.append((vlineVec, time))
+        else:
+            csPosPlots.append((vlineVec, time))
+
+    # Now compare both cs+ and cs- rasters.
+    csMinusCount = np.zeros( maxTimeLen )
+    for c, time in csMinusPlots:
+        count = np.zeros( maxTimeLen )
+        count[ c ] = 1
+        csMinusCount += count
+
+    csPosCount = np.zeros( maxTimeLen )
+    for c, time in csPosPlots:
+        count = np.zeros( maxTimeLen )
+        count[ c ] = 1
+        csPosCount += count 
+
+
+    plt.subplot(2, 1, 1)
+    for i, (yvec, time) in enumerate(csMinusPlots):
+        plt.vlines(yvec, scale*(i+0.5), scale*(i+1.5) , color='r')
+    plot_cs_summary( csMinusCount ) #, label = 'cs-')
+    plt.ylim(0, scale*len(csMinusPlots)+scale)
+    plt.title('%s\nThreshold = mean + 2 * std' % args_.dir, fontsize=10)
+    plt.ylabel( '# Trial (CS-)')
+
+    plt.subplot(2, 1, 2)
+    for i, (yvec, time) in enumerate(csPosPlots):
+        plt.vlines(yvec, scale*(i+0.5), scale*(i+1.5) , color='r')
+    plot_cs_summary( csPosCount) #, label = 'cs+')
+    plt.ylim(0, scale*len(csPosPlots)+scale)
+    plt.ylabel( '# Trial (CS+)')
+
+    if not args_.outfile:
+        args_.outfile = '%s/%s.svg' % (args_.dir, args_.analysis)
         plt.show()
 
+    print("[INFO] Saving to %s" % args_.outfile)
+    plt.savefig( '%s' % args_.outfile, transparent = True)
 
+def reformat_to_3cols( data ):
+    # First row has the cstype
+    trialNum, csType = data[0]
+    data = data[1:] 
+    newData = np.zeros( shape=(data.shape[0], 3) )
+    if int(csType) == 0:
+        newData = np.zeros( shape=(data.shape[0], 3) )
+    else:
+        newData = np.ones( shape=(data.shape[0], 3) )
+    newData[:,:2] = data
+    return newData
 
 def collect_valid_data(  ):
     global data_ 
@@ -141,16 +215,19 @@ def collect_valid_data(  ):
         print("| Processing %s" % direc)
         print(".. Timestamp (YY-DD-MM), Time: %s" % metadata['timestamp'])
         for f in files_[direc]:
+            logging.info("Processing %s" % f)
             data = np.genfromtxt(f,delimiter=',')
             if data.shape[0] < 500:
-                print("... [FATAL] Only (%s) entries in file. Ignoring" % data.shape[0]
-                        )
-            else:
-                data_[f] = (data, metadata)
-                if args_.max != -1:
-                    if len(data_) == int(args_.max):
-                        print("[INFO] Total %s trails" % len(data_))
-                        return
+                logging.warn(". (%s) entries in file. Ignoring" % data.shape[0])
+                continue
+            if data.shape[1] < 3:
+                logging.info("Less than 3 columns in data file. reformating ..")
+                data= reformat_to_3cols( data )
+            data_[f] = (data, metadata)
+            if args_.max != -1:
+                if len(data_) == int(args_.max):
+                    print("[INFO] Total %s trails" % len(data_))
+                    return
 
 def main(  ):
     global args_
@@ -201,8 +278,8 @@ if __name__ == '__main__':
         )
     parser.add_argument('--analysis', '-a'
         , required = False
-        , default = 'plot'
-        , help = 'plot|raster, default = plot'
+        , default = 'raster'
+        , help = 'plot|raster, default = raster'
         )
     class Args: pass 
     args_ = Args()
