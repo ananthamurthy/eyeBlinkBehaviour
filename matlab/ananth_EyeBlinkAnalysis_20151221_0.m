@@ -3,17 +3,17 @@
 % SPECIAL NOTE - This version of the code will work for data obtained till 20151221
 % This code additionall requires getInfo.m and blinkFilter.m to work.
 
-addpath('/Users/ananth/Documents/MATLAB/eyeBlinkBehaviourAnalysis_MATLAB')
-addpath('/Users/ananth/Documents/MATLAB/CustomFunctions_MATLAB')
+%addpath('/Users/ananth/Documents/MATLAB/eyeBlinkBehaviourAnalysis_MATLAB')
+%addpath('/Users/ananth/Documents/MATLAB/CustomFunctions_MATLAB')
 
 %Please work with the data from all sessions of an animal, before proceeding to the next animal
 
 clear all
 close all
 
-saveDirec = ('/Users/ananth/Desktop/Work/Analysis/eyeBlinkBehaviourAnalysis/');
+saveDirec = ('~/Desktop/Work/Analysis/eyeBlinkBehaviourAnalysis/');
+listPath=('~/Desktop/Work/Behaviour/folder_list.txt'); %Check path ID
 
-listPath=('/Users/ananth/Desktop/Work/Behaviour/folder_list.txt'); %Check path ID
 fid=fopen(listPath);
 
 %Protocol Information
