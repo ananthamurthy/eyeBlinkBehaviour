@@ -26,7 +26,7 @@
 
 #define DEBUG  1
 
-#define ENABLE_LCD
+// #define ENABLE_LCD
 
 // Define command characters.
 

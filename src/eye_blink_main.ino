@@ -18,6 +18,7 @@
 #include <avr/io.h>
 #include <avr/wdt.h>
 #include <HardwareSerial.h>
+#include "LCDRelated.h"
 
 // this can be used to turn profiling on and off
 #define PROFILING 0
