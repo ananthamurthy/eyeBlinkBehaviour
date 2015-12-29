@@ -1,6 +1,5 @@
 #!/bin/bash
-set -x
-
+set -e
 if [ $# -lt 1 ]; then
     echo "USAGE: $0 data_dir"
     exit

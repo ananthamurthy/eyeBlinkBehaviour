@@ -34,7 +34,7 @@ args_ = None
 def subdir( dirname ):
     d, subdirname = os.path.split( dirname )
     if not subdirname.strip():
-        return get_subdir_name( d )
+        return subdir( d )
     return subdirname 
 
 def get_timestamp( date_string, tried = 0 ):
@@ -159,7 +159,7 @@ def plot_raster( ):
         yvec, time, cstype = data_components( data )
         if len(time) > maxTimeLen:
             maxTimeLen = len(time)
-        vlineVec = np.where( yvec >= yvec.mean() + 2*yvec.std())
+        vlineVec = np.where( yvec >= yvec.mean() + 2*yvec.std())[0]
         if cstype == 0:
             csMinusPlots.append((vlineVec, time))
         else:
@@ -223,7 +223,7 @@ def collect_valid_data(  ):
         print(".. Timestamp (YY-DD-MM), Time: %s" % metadata['timestamp'])
         for f in files_[direc]:
             logging.info("Processing %s" % f)
-            data = np.genfromtxt(f,delimiter=',')
+            data = np.genfromtxt(f, delimiter=',', comments='#')
             if data.shape[0] < 500:
                 logging.warn(". (%s) entries in file. Ignoring" % data.shape[0])
                 continue
