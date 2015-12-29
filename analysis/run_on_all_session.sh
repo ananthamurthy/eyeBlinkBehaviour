@@ -15,3 +15,4 @@ for d in $DIRS; do
     find $d -type f -name "*.png" -or -name "*.svg" | xargs -I file cp file $RESDIR
 done
 echo "All results files are also copied to $RESDIR"
+
