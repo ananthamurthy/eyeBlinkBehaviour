@@ -89,13 +89,15 @@ def print_line( line, lock ):
 
 def initialize_trial_file( trial_number ):
     trialFile = trial_file_path( trial_number )
-    print('[INFO] Initializing a new trial file')
+    print('[INFO] Initializing a new trial file', end='')
     with open( trialFile, "w") as f:
         f.write("# Written on: %s\n" % datetime.datetime.now().isoformat())
         f.write("# mouse id  : %s\n" % config.args_.name)
         f.write("# Session type : %s\n" % config.args_.session_type)
         f.write("# Session num : %s\n" % config.args_.session_num)
+    print(".... Done")
 
+    
 def collect_data( lock ):
     global q_
     global running_data_line_
