@@ -207,18 +207,18 @@ void initialize()
     if (sessionType_ind == 2)
     {
         traceTime = 0; //in ms
-        totalTrials = 100;
+        totalTrials = 101;
     }
     else
     {
         traceTime = 250; //in ms
         if (sessionType_ind == 0)
         {
-            totalTrials = 30;
+            totalTrials = 31;
         }
         else
         {
-            totalTrials = 100; 
+            totalTrials = 101; 
         }
     }
 }
