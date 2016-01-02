@@ -160,7 +160,7 @@ def collect_data( lock ):
             # Also initialize the new trial file.
             initialize_trial_file( trialNum )
             runningTrial = trialNum
-        if runningTrial > totalTrials:
+        if runningTrial == totalTrials:
             # Exit
             cleanup()
 
