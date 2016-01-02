@@ -49,7 +49,11 @@ def trial_file_path( trialNum ):
     return os.path.join( config.save_dir_, 'Trial%s.csv' % trialNum )
 
 def cleanup():
-    pass
+    global finished_all_
+    finished_all_ = 1
+    config.serial_port_.write_msg( 'rr' )
+    print("+++++++++++++++++++++++++++++ All over")
+    quit()
 
 def init_serial( baudRate = 38400):
     if config.args_.port is None:
@@ -156,6 +160,9 @@ def collect_data( lock ):
             # Also initialize the new trial file.
             initialize_trial_file( trialNum )
             runningTrial = trialNum
+        if runningTrial > totalTrials:
+            # Exit
+            cleanup()
 
 def line_to_data( line ):
     if not line.strip():
