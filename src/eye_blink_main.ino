@@ -58,7 +58,7 @@ const int puff_do              = 11;
 const int tonePin              = 2;         // changed this on 20150807
 
 int blinkCount                 = 0;         // Code
-int nextProbeIn;
+int nextProbeIn                = 10;
 unsigned long startT;
 String mouseName               = String(1); // Please enter the name of the mouse
 int sessionType_ind            = 1;         // Please specify the Session Type (0: Control, 1: Trace, 2: Delay)
