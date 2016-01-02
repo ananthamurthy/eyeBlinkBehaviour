@@ -1,4 +1,3 @@
-//
 // eye-Blink_Conditioning
 //
 // Trace Eye Blink Conditioning with a simple solenoid driver
@@ -242,7 +241,7 @@ void loop()
                            {
                                playPuff(puff_do, HIGH);
                                changePhase( 4, START_US );    // US: Air-puff
-                           
+                           }
                            else
                            {
                                playPuff(puff_do, LOW);
@@ -371,5 +370,5 @@ void loop()
         }       
 
     }          
-}
+
 }             
