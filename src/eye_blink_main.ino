@@ -238,15 +238,15 @@ void loop()
                     {
                         if (CS_plus == 1)
                         {
-                           if nextProbeIn != 0;
+                           if (nextProbeIn != 0)
                            {
                                playPuff(puff_do, HIGH);
-                               nextProbeIn = 10;
                                changePhase( 4, START_US );    // US: Air-puff
-                           }
+                           
                            else
                            {
                                playPuff(puff_do, LOW);
+                               nextProbeIn = 10;
                                changePhase(5, START_US_NO_PUFF);
                            }
                         }
@@ -330,7 +330,7 @@ void loop()
                                 CS_plus = 1;                       // play CS+
                             else
                                 CS_plus = 0;                       // play CS-
-
+                        
 #ifdef ENABLE_LCD
                             printStatus(START_PRE, trialNum);
 #endif
@@ -371,5 +371,5 @@ void loop()
         }       
 
     }          
-
+}
 }             
