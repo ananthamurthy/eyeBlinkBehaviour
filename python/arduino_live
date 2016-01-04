@@ -38,7 +38,7 @@ _logger = logging.getLogger('')
 running_data_line_ = 0
 total_trials_ = 0
 cs_type_ = None
-next_probe_in_ = None
+next_probe_in_ = -1
 
 select_sent_ = False
 
@@ -172,12 +172,14 @@ def collect_data( lock ):
 
 def line_to_data( line ):
     if not line.strip():
-        data = [None]*5
+        data = [None]*6
     try:
         data = [ int(x) for x in line.split(',') ]
     except Exception as e:
-        data = [None]*5
-    assert len(data) == 5
+        data = [None]*6
+    if len(data) != 6:
+        _logger.debug("Invalid line: %s" % line)
+        data = [None]*6
     return data
 
 def init_gui():
@@ -203,7 +205,7 @@ def plot_data( lock ):
             d = q_.get()
             config.ybuff_.append( int(d[0]) )
         
-        title = '%s %2.2f, Mouse: %s, Trial: %2d/%3d, CS: %d, next probe in: %d' % ( 
+        title = '%s %2.2f, Mouse: %s, Trial: %2d/%3d, CS: %s, next probe in: %s' % ( 
                 config.args_.port
                 , time.time() - ptstart 
                 , config.args_.name

@@ -131,7 +131,7 @@ void setup()
 #endif
 
     //For randomizations
-    randomSeed( analogRead(3) ); // 0 -> use system clock to generate random seed the CS type for trials
+    randomSeed( analogRead( blink_ai ) ); // 0 -> use system clock to generate random seed the CS type for trials
     
     nextProbeIn = (int) random(8,13); //NOTE: the "(int)" only truncates
 }
