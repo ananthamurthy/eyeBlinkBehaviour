@@ -6,6 +6,8 @@ bool reboot_ = false;
 // to be 0.5).
 bool CS_plus = 0;
 int trialNum = 0;
+int prevTwoTrials[2] = { 0, 0 };
+int nextProbeIn = 0;
 
 String status = "000";
 
@@ -20,6 +22,15 @@ void reset_watchdog( )
 void write_data_line( int data, unsigned long timestamp )
 {
     char msg[40];
+
+    prevTwoTrials[0] = prevTwoTrials[1];
+    prevTwoTrials[1] = trialNum;
+    
+    // If a new trial starts and CS_plus is true, then reduce the nextProbeIn by
+    // 1.
+    if( prevTwoTrials[1] > prevTwoTrials[0] && CS_plus )
+        nextProbeIn -= 1;
+
     sprintf(msg, "%6lu,%5d,%3d,%3d,%2d,%2d", timestamp, data, trialNum
             , totalTrials , CS_plus, nextProbeIn
             );

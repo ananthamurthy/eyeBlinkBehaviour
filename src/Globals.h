@@ -56,6 +56,7 @@ extern unsigned short sampleInterval;
 extern int shutterDelay;
 extern int totalTrials;
 extern int trialNum;
+
 extern const int puffTime;
 extern const int CSTime;
 extern const int CS_PLUS_ToneFreq;
@@ -75,5 +76,6 @@ void write_data_line( int analog_read, unsigned long timestamp );
 bool is_command_read( char* command , bool consume = false);
 
 extern int nextProbeIn;
+extern int prevTwoTrials[2];
 
 #endif

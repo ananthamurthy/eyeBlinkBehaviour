@@ -92,8 +92,6 @@ unsigned int interTrialTime    = 0;
 boolean start                  = 0;
 boolean trialState             = 0;
 
-int nextProbeIn;          // To estimate which CS+ trial will be a probe (no puff) 
-
 void setup()
 {
     //Profiling related
@@ -328,10 +326,7 @@ void loop()
                         else
                         {
                             if (random(10) >= 5)
-                            {
                                 CS_plus = 1;                       // play CS+
-                                nextProbeIn = nextProbeIn-1;
-                            }
                             else
                                 CS_plus = 0;                       // play CS-
                         
