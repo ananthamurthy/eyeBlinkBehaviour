@@ -37,6 +37,8 @@ _logger = logging.getLogger('')
 
 running_data_line_ = 0
 total_trials_ = 0
+cs_type_ = None
+next_probe_in_ = None
 
 select_sent_ = False
 
@@ -53,7 +55,7 @@ def cleanup():
     finished_all_ = 1
     config.serial_port_.write_msg( 'rr' )
     print("+++++++++++++++++++++++++++++ All over")
-    quit()
+    raise KeyboardInterrupt("Finished all")
 
 def init_serial( baudRate = 38400):
     if config.args_.port is None:
@@ -62,9 +64,9 @@ def init_serial( baudRate = 38400):
     config.serial_port_ = arduino.ArduinoPort( config.args_.port, baudRate )
     config.serial_port_.open( wait = True )
 
-def append_trial_data( outfile, value, time, trialNum, cs ):
+def append_trial_data( outfile, value, time, trialNum, cs, nextProbeIn ):
     with open(outfile, 'a') as f:
-        f.write('%s,%s,%s\n' % (value, time, cs))
+        f.write('%s,%s,%s,%s\n' % (value, time, cs, nextProbeIn))
 
 def send_press_select( reftime, interval ):
     if time.time() - reftime < interval:
@@ -107,12 +109,14 @@ def collect_data( lock ):
     global running_data_line_
     global total_trials_
     global running_trial_
+    global cs_type_ 
+    global next_probe_in_
     tstart = time.time()
     runningTrial = 0
     while True:
         running_data_line_ += 1
         line = config.serial_port_.read_line( )
-        x, y, trialNum, totalTrials, cs = line_to_data( line )
+        x, y, trialNum, totalTrials, cs, next_probe_in_ = line_to_data( line )
         total_trials_ = totalTrials
         if (x and y) is None:
             continue
@@ -145,18 +149,20 @@ def collect_data( lock ):
         running_data_line_ += 1
         running_trial_ = runningTrial
         line = config.serial_port_.read_line()
-        x, y, trialNum, totalTrials, cs = line_to_data(line)
+        x, y, trialNum, totalTrials, cs_type_, next_probe_in_ = line_to_data(line)
         if (x and y) is None:
             continue
         q_.put((y,x))
         trialFile = trial_file_path( trialNum )
-        append_trial_data(trialFile, y, x, trialNum, cs)
+        append_trial_data(trialFile, y, x, trialNum, cs_type_, next_probe_in_)
         total_trials_ = totalTrials
         print_line( line, lock )
         if trialNum > runningTrial:
             outfile = trial_file_path( runningTrial )
             _logger.info("|| Wrote previous trial to %s" % outfile)
-            _logger.info('== New Trial: :%s/%s, cs: %s' % (trialNum, totalTrials, cs))
+            _logger.info('== New Trial: :%s/%s, cs: %s' % (trialNum,
+                totalTrials, cs_type_)
+                )
             # Also initialize the new trial file.
             initialize_trial_file( trialNum )
             runningTrial = trialNum
@@ -182,6 +188,7 @@ def plot_data( lock ):
     global q_
     global running_trial_
     global total_trials_
+    global cs_type_, next_probe_in_
     ptstart = time.time()
     while True:
         if finished_all_ == 1:
@@ -196,11 +203,14 @@ def plot_data( lock ):
             d = q_.get()
             config.ybuff_.append( int(d[0]) )
         
-        title = '%s %2.2f, Mouse: %s, Trial: %2d/%3d' % (  config.args_.port
+        title = '%s %2.2f, Mouse: %s, Trial: %2d/%3d, CS: %d, next probe in: %d' % ( 
+                config.args_.port
                 , time.time() - ptstart 
                 , config.args_.name
                 , running_trial_
                 , total_trials_
+                , cs_type_
+                , next_probe_in_
                 )
 
         gp.plot( np.asarray(config.ybuff_[-2000:]) 

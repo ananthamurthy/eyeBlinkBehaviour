@@ -74,4 +74,6 @@ void write_data_line( int analog_read, unsigned long timestamp );
 
 bool is_command_read( char* command , bool consume = false);
 
+extern int nextProbeIn;
+
 #endif

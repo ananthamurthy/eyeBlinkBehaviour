@@ -1,4 +1,4 @@
-j// eye-Blink_Conditioning
+// eye-Blink_Conditioning
 //
 // Trace Eye Blink Conditioning with a simple solenoid driver
 // Developed with [embedXcode](http://embedXcode.weebly.com)
@@ -92,7 +92,7 @@ unsigned int interTrialTime    = 0;
 boolean start                  = 0;
 boolean trialState             = 0;
 
-int nextProbeIn;                            // To estimate which CS+ trial will be a probe (no puff) 
+int nextProbeIn;          // To estimate which CS+ trial will be a probe (no puff) 
 
 void setup()
 {
@@ -131,7 +131,7 @@ void setup()
 #endif
 
     //For randomizations
-    randomSeed(0); // 0 -> use system clock to generate random seed the CS type for trials
+    randomSeed( analogRead(3) ); // 0 -> use system clock to generate random seed the CS type for trials
     
     nextProbeIn = (int) random(8,13); //NOTE: the "(int)" only truncates
 }
@@ -198,7 +198,6 @@ void loop()
                     if (CS_plus == 1)
                     {
                         tone( tonePin, CS_PLUS_ToneFreq);
-                        nextProbeIn = nextProbeIn-1;
                         changePhase( 1, START_CS_PLUS );           // CS+
                     }
                     else
@@ -329,7 +328,10 @@ void loop()
                         else
                         {
                             if (random(10) >= 5)
+                            {
                                 CS_plus = 1;                       // play CS+
+                                nextProbeIn = nextProbeIn-1;
+                            }
                             else
                                 CS_plus = 0;                       // play CS-
                         
