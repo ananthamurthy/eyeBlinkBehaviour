@@ -1,4 +1,4 @@
-// eye-Blink_Conditioning
+j// eye-Blink_Conditioning
 //
 // Trace Eye Blink Conditioning with a simple solenoid driver
 // Developed with [embedXcode](http://embedXcode.weebly.com)
@@ -57,7 +57,6 @@ const int puff_do              = 11;
 const int tonePin              = 2;         // changed this on 20150807
 
 int blinkCount                 = 0;         // Code
-int nextProbeIn                = 10;
 unsigned long startT;
 String mouseName               = String(1); // Please enter the name of the mouse
 int sessionType_ind            = 1;         // Please specify the Session Type (0: Control, 1: Trace, 2: Delay)
@@ -80,7 +79,7 @@ const int randITI              = 5000;      // in ms
 const int CS_PLUS_ToneFreq     = 2000;
 const int CS_MINUS_ToneFreq    = 7000;      // change made on 20151214
 
-// Miscellaneous Initializations
+// Miscellaneous Initialisations
 int condition                  = 0;
 boolean pause                  = 0 ;
 unsigned long startPhaseTime;
@@ -92,6 +91,8 @@ unsigned int interTrialTime    = 0;
 
 boolean start                  = 0;
 boolean trialState             = 0;
+
+int nextProbeIn;                            // To estimate which CS+ trial will be a probe (no puff) 
 
 void setup()
 {
@@ -130,7 +131,9 @@ void setup()
 #endif
 
     //For randomizations
-    randomSeed(0); // 0 -> use system clock to generate random seed
+    randomSeed(0); // 0 -> use system clock to generate random seed the CS type for trials
+    
+    nextProbeIn = (int) random(8,13); //NOTE: the "(int)" only truncates
 }
 
 void loop()
@@ -245,7 +248,7 @@ void loop()
                            else
                            {
                                playPuff(puff_do, LOW);
-                               nextProbeIn = 10;
+                               nextProbeIn = (int) random(8,13); //NOTE: the "(int)" only truncates
                                changePhase(5, START_US_NO_PUFF);
                            }
                         }
