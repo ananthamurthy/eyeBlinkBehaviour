@@ -89,6 +89,7 @@ while 1
     blinkData_csMinus = [];
     blinkData_csPlus_fullFiltered = [];
     blinkData_csMinus_fullFiltered = [];
+    probeTrials = [];
     
     %Preallocation for speed
     csType = nan(totalTrials, 1);
@@ -96,14 +97,9 @@ while 1
     for trialNum = 1:totalTrials
         filename = [direc, 'Trial', num2str(trialNum), '.csv'];
         csType(trialNum)= csvread(filename, 4, 2, [ 4 2 4 2] ); %reads only row 5, column 3
-        if csvread(filename, 4, 3, [ 4 3 4 3] ) == 0   %reads only row 5, column 4
-            probeTrials(trialNum) = 1;
-        else
-            probeTrials(trialNum) = 0;
-        end
         rawData = csvread(filename, 4, 0); %starts reading only from row 5; skips till row 4
         blinkData(trialNum,1:min(rawData_size))= rawData(1:min(rawData_size),1); %has only blinkValues
-        
+
         if doBaselineCorrection == 1
             blinkData_baselines(trialNum) = prctile(blinkData(trialNum,:), 50, 2); %50th percentile - median
             for sample = 1: size(blinkData,2)
@@ -111,7 +107,6 @@ while 1
             end
             clear sample
         end
-        
         
         % Filtering
         myData = blinkData(trialNum,:);
@@ -143,6 +138,12 @@ while 1
         if csType(trialNum) == 1
             blinkData_csPlus = [blinkData_csPlus; blinkData(trialNum,:)];
             blinkData_csPlus_fullFiltered = [blinkData_csPlus_fullFiltered; blinkData_fullFiltered(trialNum,:)];
+            if csvread(filename, 4, 3, [ 4 3 4 3] ) == 0   %reads only row 5, column 4
+                probeTrials = [probeTrials size(blinkData_csPlus_fullFiltered,1)];
+                probeTrials_actualIndices(trialNum) = 1;
+            else
+                probeTrials_actualIndices(trialNum) = 0;
+            end
         elseif csType(trialNum) == 0
             blinkData_csMinus = [blinkData_csMinus; blinkData(trialNum,:)];
             blinkData_csMinus_fullFiltered = [blinkData_csMinus_fullFiltered; blinkData_fullFiltered(trialNum,:)];
@@ -247,6 +248,7 @@ while 1
         csvwrite(([saveFolder, dataset, '_csType.csv']), csType); %".csv"
         % Probe (no puff) trials for the session
         csvwrite(([saveFolder, dataset, '_probeTrials.csv']), probeTrials); %".csv"
+        csvwrite(([saveFolder, dataset, '_probeTrials_actual.csv']), probeTrials_actualIndices); %".csv"
         
         if findSignificantBlinks == 1
             %scores
@@ -285,6 +287,7 @@ while 1
         save(([saveFolder dataset '_csType']), 'csType'); %".mat"
         % Probe (no puff) trials for the session
         save(([saveFolder, dataset, '_probeTrials']), 'probeTrials'); %".mat"
+        save(([saveFolder, dataset, '_probeTrials_actual']), 'probeTrials_actualIndices'); %".mat"
         
         if findSignificantBlinks == 1
             %scores
