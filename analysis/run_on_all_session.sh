@@ -5,7 +5,6 @@ if [ $# -lt 1 ]; then
     exit
 fi
 
-mkdir -p $RESDIR
 DIRS=`find $1 -type d -name "*SessionType*Session*"`
 for d in $DIRS; do
     echo "Processing $d"

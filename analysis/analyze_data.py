@@ -168,7 +168,7 @@ def plot_heatmap( ):
     fig.suptitle( '%s' % args_.dir, fontsize = 8 )
     plt.legend(loc='best', framealpha=0.4)
     plt.xlabel( ' # Time (x10 ms)' )
-    outfile =  '%s/blink_result.png' % args_.result_dir
+    outfile =  '%s_blink_result.png' % args_.result_dir
     print('[INFO] Saved figure to %s' % outfile)
     plt.savefig( outfile )
 
