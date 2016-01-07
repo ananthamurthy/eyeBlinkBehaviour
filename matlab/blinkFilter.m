@@ -2,17 +2,17 @@
 % Author: Kambadur Ananthamurthy
 % Created: 20151128
 
-function [onlyButterworth, fullFiltered] = blinkFilter(myData, samplingRate, lowFreq, highFreq, filterOrder, offset, gain, phaseOffsetFactor, nbins)
+function [onlyButterworth, fullFiltered] = blinkFilter(myData, samplingRate, lowPassCutoffFreq, highPassCutoffFreq, filterOrder, offset, gain, phaseOffsetFactor, nbins)
 
 nyquistsamplingRate = samplingRate/2;
 
 %Butterworth
 %low pass
-lowWn =lowFreq/nyquistsamplingRate;
+lowWn =lowPassCutoffFreq/nyquistsamplingRate;
 [b,a]=butter(filterOrder, lowWn, 'low'); %weirdly sets up a bandstop.. NOTE: we have adjusted this in Wn
 y=filtfilt(b,a,myData);
 %high pass
-highWn =highFreq/nyquistsamplingRate;
+highWn =highPassCutoffFreq/nyquistsamplingRate;
 [b,a]=butter(filterOrder, highWn, 'high'); %weirdly sets up a bandstop.. NOTE: we have adjusted this in Wn
 onlyButterworth=filtfilt(b,a,y);
 
