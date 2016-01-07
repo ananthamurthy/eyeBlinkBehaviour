@@ -236,7 +236,11 @@ def main(  ):
 
     if args_.analysis == 'heatmap':
         print('[INFO] Plotting heatmap')
-        plot_heatmap( )
+        try:
+            plot_heatmap( )
+        except Exception as e:
+            print('[ERR] Failed to plot heatmap')
+            print('\t|- Error was %s' % e )
     else:
         print('[WARN] Unknown analysis %s' % args_.analysis)
         print("[WARN] Currently 'plot' and 'heatmap' supported")
