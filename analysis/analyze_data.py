@@ -94,7 +94,7 @@ def data_components( data ):
     # first column is values.
     # Second column is time vector and third vector is cstype vector. Only one
     # value from cstype vector is sufficient to indicate the type of vector.
-    if data.shape[1] != 3:
+    if data.shape[1] < 3:
         print("[WARN] Seems like old data format with 2 columns. Not using it")
         return None, None, None
     values, time, cstype = data[:,0], data[:,1], data[:,2]
