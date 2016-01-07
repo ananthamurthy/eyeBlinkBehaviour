@@ -83,11 +83,9 @@ def modify_canvas( ):
     if args_.analysis == 'plot':
         if args_.subplots:
             plt.figure( figsize = (20, 1.5*len(data_)), frameon=False)
-    elif args_.analysis == 'raster':
-        # plt.figure( figsize = (20, 0.1*len(data_)), frameon=False)
-        pass
     else:
         plt.figure()
+
     matplotlib.rcParams.update( {
         'font.size' : 10
         })
@@ -142,64 +140,71 @@ def plot_cs_summary( yvec, xvec = None, label = ' ', bin_size = 10):
     if label.strip():
         plt.legend(loc='best', framealpha=0.4)
 
-def plot_raster( ):
-    global args_
-    global data_
-    modify_canvas()
-    plt.xlabel('TIme (ms)')
-    scale = 1.0
-    # One plot of cs+ and one for cs-
-    csPosPlots = []
-    csMinusPlots = []
+def threshold( vec ):
+    # Compute the threshold of the vector
+    result = np.zeros( shape = vec.shape )
+    result[ vec > vec.mean() + 2 * vec.std() ] = 1
+    return result
 
+def partition_data( ):
+    """ get csplus and csminus vectors along with max length of time in any of
+    these trials.
+    """
+    global data_, args_
+    print('[INFO] Partitioning data into CS+ and CS-')
+    cspos = []
+    csminus = []
+    times = []
     maxTimeLen = 0
     for i, trial in enumerate(data_):
         data, metadata = data_[trial]
         # Threshold 
         yvec, time, cstype = data_components( data )
-        if len(time) > maxTimeLen:
-            maxTimeLen = len(time)
-        vlineVec = np.where( yvec >= yvec.mean() + 2*yvec.std())[0]
+        if time.shape[0] > maxTimeLen:
+            maxTimeLen = time.shape[0]
+        res = threshold( yvec )
         if cstype == 0:
-            csMinusPlots.append((vlineVec, time))
+            csminus.append(res)
+            times.append(time)
         else:
-            csPosPlots.append((vlineVec, time))
+            cspos.append((res, time))
+            times.append(time)
+    # Some rows have n elements while other n-1. Use reshape function to sort it
+    # out.
+    for i, x in enumerate(cspos):
+        cspos[i] = np.resize( cspos[i], maxTimeLen )
+    for i, x in enumerate(csminus):
+        csminus[i] = np.resize(csminus[i], maxTimeLen)
+    for i, x in enumerate(times):
+        times[i] = np.resize(times[i], maxTimeLen)
+    return cspos, csminus, times
 
-    # Now compare both cs+ and cs- rasters.
-    csMinusCount = np.zeros( maxTimeLen )
-    for c, time in csMinusPlots:
-        count = np.zeros( maxTimeLen )
-        count[ c ] = 1
-        csMinusCount += count
-
-    csPosCount = np.zeros( maxTimeLen )
-    for c, time in csPosPlots:
-        count = np.zeros( maxTimeLen )
-        count[ c ] = 1
-        csPosCount += count 
-
-
-    plt.subplot(2, 1, 1)
-    for i, (yvec, time) in enumerate(csMinusPlots):
-        plt.vlines(yvec, scale*(i+0.5), scale*(i+1.5) , color='r')
-    plot_cs_summary( csMinusCount ) #, label = 'cs-')
-    plt.ylim(0, scale*len(csMinusPlots)+scale)
-    plt.title('%s\nThreshold = mean + 2 * std' % args_.dir, fontsize=10)
-    plt.ylabel( '# Trial (CS-)')
-
-    plt.subplot(2, 1, 2)
-    for i, (yvec, time) in enumerate(csPosPlots):
-        plt.vlines(yvec, scale*(i+0.5), scale*(i+1.5) , color='r')
-    plot_cs_summary( csPosCount) #, label = 'cs+')
-    plt.ylim(0, scale*len(csPosPlots)+scale)
-    plt.ylabel( '# Trial (CS+)')
-
-    if not args_.outfile:
-        filename = '%s_%s.svg' % ( subdir( args_.dir ), args_.analysis )
-        args_.outfile = os.path.join(args_.dir, filename )
-
-    print("[INFO] Saving to %s" % args_.outfile)
-    plt.savefig( '%s' % args_.outfile, transparent = True)
+def plot_heatmap( ):
+    global args_
+    global data_
+    csPosPlots, csMinusPlots, times = partition_data( )
+    csposfile = '%s_cspos.csv' % (args_.outfile or args_.dir )
+    csminusfile = '%s_csminus.csv' % (args_.outfile or args_.dir )
+    timefile = '%s_time.csv' % (args_.outfile or args_.dir )
+    np.savetxt(csposfile, csPosPlots)
+    np.savetxt(csminusfile, csMinusPlots)
+    np.savetxt(timefile, times)
+    print('[INFO] Data files are writtent to %s, %s, and %s' % ( 
+        csposfile, csminusfile, timefile
+        ))
+    fig, axes = plt.subplots(4, 1, sharex=True)
+    axes[0].imshow( np.vstack(csMinusPlots), aspect = 'auto' )
+    axes[0].set_title( 'CS- Trials' )
+    axes[1].plot(  np.sum(csMinusPlots, axis = 0), label = 'Total binks' )
+    axes[2].imshow( csPosPlots, aspect = 'auto' )
+    axes[2].set_title( 'CS+ Trials' )
+    axes[3].plot(  np.sum(csPosPlots, axis = 0), label = 'Total binks'  )
+    plt.xlim( [0, csMinusPlots[0].shape[0] ] )
+    fig.suptitle( '%s' % args_.dir )
+    plt.legend(loc='best', framealpha=0.4)
+    outfile = args_.outfile or '%s/blink_result.png' % args_.dir
+    print('[INFO] Saved figures to %s' % outfile)
+    plt.savefig( outfile )
 
 def reformat_to_3cols( data ):
     # First row has the cstype
@@ -253,12 +258,12 @@ def main(  ):
 
     if args_.analysis == 'plot':
         plot_raw_data( )
-    elif args_.analysis == 'raster':
-        print("[INFO] Plotting raster plots")
-        plot_raster( )
+    elif args_.analysis == 'heatmap':
+        print('[INFO] Plotting heatmap')
+        plot_heatmap( )
     else:
         print('[WARN] Unknown analysis %s' % args_.analysis)
-        print("[WARN] Currently 'plot' and 'raster' supported")
+        print("[WARN] Currently 'plot' and 'heatmap' supported")
         quit()
 
 if __name__ == '__main__':
@@ -285,8 +290,8 @@ if __name__ == '__main__':
         )
     parser.add_argument('--analysis', '-a'
         , required = False
-        , default = 'raster'
-        , help = 'plot|raster, default = raster'
+        , default = 'heatmap'
+        , help = 'plot|heatmap, default = heatmap'
         )
     class Args: pass 
     args_ = Args()
