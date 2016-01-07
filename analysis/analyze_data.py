@@ -95,47 +95,12 @@ def data_components( data ):
     # Second column is time vector and third vector is cstype vector. Only one
     # value from cstype vector is sufficient to indicate the type of vector.
     if data.shape[1] != 3:
-        logging.warn("Seems like old data format with 2 columns. Not using it")
+        print("[WARN] Seems like old data format with 2 columns. Not using it")
         return None, None, None
     values, time, cstype = data[:,0], data[:,1], data[:,2]
     time = get_linear_time_vec( time )
     cstype = cstype[0]
     return values, time, cstype
-
-def plot_raw_data( ):
-    global args_
-    modify_canvas( )
-    plt.title('Raw plots of arduino values')
-    plt.xlabel('TIme (ms)')
-    for i, trial in enumerate(data_):
-        tid = os.path.split( trial )[-1]
-        print("Processing %s" % trial)
-        data, metadata = data_[trial]
-        values, time, cstype = data_components( data )
-        if values is None:
-            continue
-        if args_.subplots:
-            ax = plt.subplot( len(data_), 1, i, frameon = False)
-        plt.plot(values, label = '%s' % tid )
-        plt.legend( frameon = False)
-    plt.ylabel( '# Trial')
-
-    args_.outfile = '%s_%s.svg' % ( args_.result_dir,  args_.analysis )
-    print("[INFO] Saving raw plots to  %s" % args_.outfile)
-    plt.savefig( '%s' % args_.outfile, transparent = True)
-
-def plot_cs_summary( yvec, xvec = None, label = ' ', bin_size = 10):
-    # If bin_size is more than one, use it to smooth the curse.
-    logging.info("Smoothing the curve using window size %s" % bin_size)
-    window = np.ones( bin_size ) / bin_size
-    yvec = np.convolve( yvec, window, 'same' )
-
-    if xvec is None:
-        plt.plot( yvec , label = label)
-    else:
-        plt.plot( xvec, yvec, label = label)
-    if label.strip():
-        plt.legend(loc='best', framealpha=0.4)
 
 def threshold( vec ):
     # Compute the threshold of the vector
@@ -152,28 +117,32 @@ def partition_data( ):
     cspos = []
     csminus = []
     times = []
-    maxTimeLen = 0
+    lengthOfTime = 10**6
     for i, trial in enumerate(data_):
         data, metadata = data_[trial]
         # Threshold 
         yvec, time, cstype = data_components( data )
-        if time.shape[0] > maxTimeLen:
-            maxTimeLen = time.shape[0]
+        if time is None:
+            continue
+        if lengthOfTime > time.shape[0]:
+            lengthOfTile = time.shape[0]
         res = threshold( yvec )
         if cstype == 0:
             csminus.append(res)
             times.append(time)
         else:
-            cspos.append((res, time))
+            cspos.append(res)
             times.append(time)
-    # Some rows have n elements while other n-1. Use reshape function to sort it
-    # out.
+    # Some rows have n elements while other n-1. Use reshape function to make
+    # each row n-1.
+    print('[INFO] Resizing trial data to remove length mismatch')
+    print('\t|- Using minimum of any time vector')
     for i, x in enumerate(cspos):
-        cspos[i] = np.resize( cspos[i], maxTimeLen )
+        cspos[i] = np.resize( cspos[i], lengthOfTile )
     for i, x in enumerate(csminus):
-        csminus[i] = np.resize(csminus[i], maxTimeLen)
+        csminus[i] = np.resize(csminus[i], lengthOfTile)
     for i, x in enumerate(times):
-        times[i] = np.resize(times[i], maxTimeLen)
+        times[i] = np.resize(times[i], lengthOfTile)
     return cspos, csminus, times
 
 def plot_heatmap( ):
@@ -196,8 +165,9 @@ def plot_heatmap( ):
     axes[2].set_title( 'CS+ Trials' )
     axes[3].plot(  np.sum(csPosPlots, axis = 0), label = 'Total binks'  )
     plt.xlim( [0, csMinusPlots[0].shape[0] ] )
-    fig.suptitle( '%s' % args_.dir )
+    fig.suptitle( '%s' % args_.dir, fontsize = 8 )
     plt.legend(loc='best', framealpha=0.4)
+    plt.xlabel( ' # Time (x10 ms)' )
     outfile =  '%s/blink_result.png' % args_.result_dir
     print('[INFO] Saved figure to %s' % outfile)
     plt.savefig( outfile )
@@ -248,7 +218,7 @@ def main(  ):
     init( )
     for d, sd, fs in os.walk( args_.dir ):
         for f in fs:
-            if 'Trial0.csv' in f:
+            if 'Trial0.csv' in f or 'Trial101.csv' in f:
                 continue
             if '.csv' in f:
                 filepath = os.path.join(d, f)
@@ -264,10 +234,7 @@ def main(  ):
         print('\t|- Error was %s' % e)
         quit()
 
-    if args_.analysis == 'plot':
-        print('[INFO] Plotting raw plots')
-        plot_raw_data( )
-    elif args_.analysis == 'heatmap':
+    if args_.analysis == 'heatmap':
         print('[INFO] Plotting heatmap')
         plot_heatmap( )
     else:
@@ -295,13 +262,13 @@ if __name__ == '__main__':
         )
     parser.add_argument('--result_dir', '-o'
         , required = False
-        , default = '.'
+        , default = os.getcwd()
         , help = 'Directory to save restults.'
         )
     parser.add_argument('--analysis', '-a'
         , required = False
         , default = 'heatmap'
-        , help = 'plot|heatmap, default = heatmap'
+        , help = 'heatmap, default = heatmap'
         )
     class Args: pass 
     args_ = Args()
