@@ -120,11 +120,8 @@ def plot_raw_data( ):
         plt.legend( frameon = False)
     plt.ylabel( '# Trial')
 
-    if not args_.outfile:
-        filename = '%s_%s.svg' % ( subdir( args_.dir ), args_.analysis )
-        args_.outfile = os.path.join(args_.dir, filename )
-
-    print("[INFO] Saving to %s" % args_.outfile)
+    args_.outfile = '%s_%s.svg' % ( args_.result_dir,  args_.analysis )
+    print("[INFO] Saving raw plots to  %s" % args_.outfile)
     plt.savefig( '%s' % args_.outfile, transparent = True)
 
 def plot_cs_summary( yvec, xvec = None, label = ' ', bin_size = 10):
@@ -183,15 +180,14 @@ def plot_heatmap( ):
     global args_
     global data_
     csPosPlots, csMinusPlots, times = partition_data( )
-    csposfile = '%s_cspos.csv' % (args_.outfile or args_.dir )
-    csminusfile = '%s_csminus.csv' % (args_.outfile or args_.dir )
-    timefile = '%s_time.csv' % (args_.outfile or args_.dir )
+    csposfile = '%s_cspos.csv' % args_.result_dir
+    csminusfile = '%s_csminus.csv' % args_.result_dir
+    timefile = '%s_time.csv' % args_.result_dir
     np.savetxt(csposfile, csPosPlots)
     np.savetxt(csminusfile, csMinusPlots)
     np.savetxt(timefile, times)
-    print('[INFO] Data files are writtent to %s, %s, and %s' % ( 
-        csposfile, csminusfile, timefile
-        ))
+    print('[INFO] Wrote {0}'.format("\n\t".join([csposfile, csminusfile,
+        timefile])))
     fig, axes = plt.subplots(4, 1, sharex=True)
     axes[0].imshow( np.vstack(csMinusPlots), aspect = 'auto' )
     axes[0].set_title( 'CS- Trials' )
@@ -202,8 +198,8 @@ def plot_heatmap( ):
     plt.xlim( [0, csMinusPlots[0].shape[0] ] )
     fig.suptitle( '%s' % args_.dir )
     plt.legend(loc='best', framealpha=0.4)
-    outfile = args_.outfile or '%s/blink_result.png' % args_.dir
-    print('[INFO] Saved figures to %s' % outfile)
+    outfile =  '%s/blink_result.png' % args_.result_dir
+    print('[INFO] Saved figure to %s' % outfile)
     plt.savefig( outfile )
 
 def reformat_to_3cols( data ):
@@ -229,6 +225,7 @@ def collect_valid_data(  ):
         for f in files_[direc]:
             logging.info("Processing %s" % f)
             data = np.genfromtxt(f, delimiter=',', comments='#')
+            assert data.shape > (0, 0), "Empty/corrupted file"
             if data.shape[0] < 500:
                 logging.warn(". (%s) entries in file. Ignoring" % data.shape[0])
                 continue
@@ -241,8 +238,14 @@ def collect_valid_data(  ):
                     print("[INFO] Total %s trails" % len(data_))
                     return
 
+def init( ):
+    global args_ 
+    if not os.path.isdir( args_.result_dir ):
+        os.makedirs( args_.result_dir )
+
 def main(  ):
     global args_
+    init( )
     for d, sd, fs in os.walk( args_.dir ):
         for f in fs:
             if 'Trial0.csv' in f:
@@ -251,12 +254,18 @@ def main(  ):
                 filepath = os.path.join(d, f)
                 files_[d].append( filepath )
 
-    collect_valid_data() 
-    print("="*80)
-    print("| Collected all valid data")
-    print(". Total entries = %s" % len(data_))
+    try:
+        collect_valid_data() 
+        print("="*80)
+        print("| Collected all valid data")
+        print(". Total entries = %s" % len(data_))
+    except Exception as e:
+        print('[ERR] Could not collect data from %s' % args_.dir )
+        print('\t|- Error was %s' % e)
+        quit()
 
     if args_.analysis == 'plot':
+        print('[INFO] Plotting raw plots')
         plot_raw_data( )
     elif args_.analysis == 'heatmap':
         print('[INFO] Plotting heatmap')
@@ -284,9 +293,10 @@ if __name__ == '__main__':
         , action = 'store_true'
         , help = 'Each trial in subplot.'
         )
-    parser.add_argument('--outfile', '-o'
+    parser.add_argument('--result_dir', '-o'
         , required = False
-        , help = 'File to store you plot.'
+        , default = '.'
+        , help = 'Directory to save restults.'
         )
     parser.add_argument('--analysis', '-a'
         , required = False
