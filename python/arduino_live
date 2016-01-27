@@ -221,7 +221,7 @@ def plot_data( lock ):
                 , yrange = '200:800'
                 )
 
-def answer_three_questions( ):
+def answer_four_questions( ):
     # All great UI has three questions. Yes we have to, they all starts with
     # Please.
     questionsAnswered = [ ]
@@ -245,6 +245,12 @@ def answer_three_questions( ):
             time.sleep(0.5)
             if l not in questionsAnswered:
                 questionsAnswered.append(l)
+        elif 'Do you want to flip' in l:
+            _logger.info('[ANSW] %s = %s' % (l, config.args_.flipped))
+            config.serial_port_.write_msg('%s\r' % config.args_.flipped)
+            time.sleep( 0.5 )
+            if l not in questionsAnswered:
+                questionsAnswered.append( l )
         else:
                 pass
 
@@ -268,7 +274,7 @@ def init( ):
             l = config.serial_port_.read_line( )
         if 'Please enter' in l:
             # mere sawalo ka jawav do... do naa!
-            answer_three_questions( )
+            answer_four_questions( )
             break
         # If valid data is found in lines (trial is more than 1) then don't ask
         # questions and quit immediately
@@ -381,6 +387,12 @@ if __name__ == '__main__':
         , default = 60000000.0
         , type = float
         , help = 'Press SELECT after time. Default 600 sec.'
+        )
+    parser.add_argument('--flipped', '-f'
+        , required = False
+        , default = 0
+        , type = int
+        , help = 'Wheather CS+/CS- are to be flipped (0/1 (False,True)'
         )
     parser.parse_args( namespace = config.args_ )
     init_serial()

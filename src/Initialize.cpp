@@ -132,6 +132,28 @@ void initialize()
         }
     }
 
+    while(true)
+    {
+        reset_watchdog();
+        Serial.println("?? Do you want to flip CS+/CS- (0/1) ?");
+        if( wait_for_read( 1000 ) )
+        {
+            String answer = Serial.readString();
+            if( answer.toInt() == 0)
+            {
+                flipped_ = false;
+                Serial.println("-> Got flipped = false");
+            }
+            else
+            {
+                flipped_ = true;
+                Serial.println("-> Got flipped = true");
+            }
+            break;
+        }
+    }
+
+
     Serial.println("|| Please press the SELECT button to begin!");
     startT = millis();
 
