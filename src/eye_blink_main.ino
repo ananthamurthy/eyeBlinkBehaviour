@@ -201,7 +201,7 @@ void loop()
                     }
                     else
                     {
-                        if (sessionType_ind == 5)
+                        if (sessionType_ind == 4)
                         {
                             digitalWrite(ledPin, HIGH);
                         }
@@ -233,7 +233,7 @@ void loop()
                 
                 if (currentPhaseTime >= CSTime)
                 {
-                    if (sessionType_ind == 5)
+                    if (sessionType_ind == 4)
                     {
                         digitalWrite(ledPin, LOW);
                     }
