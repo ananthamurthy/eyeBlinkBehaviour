@@ -172,6 +172,10 @@ void loop()
         }
         else
         {
+            // Lookout for the pause button.
+            if( ! paused_ )
+                check_for_pause( );
+
             // has to be calculated for every loop
             currentPhaseTime = millis() - startPhaseTime;
             // has to be calculated for every loop; not being used anywhere
@@ -330,7 +334,7 @@ void loop()
             case 7:
                 // Inter trial interval
                 PF((condition+1));
-                if (pause == 1)
+                if (paused_)
                 {
                     changePhase( 9, PAUSE );
                     break;
@@ -377,9 +381,9 @@ void loop()
                 while(1);                                          
                 break;
 
+            case 9:                                              
 #ifdef ENABLE_LCD
             //PAUSE
-            case 9:                                              
                 int unpause_key = read_lcd_button();
                 if (unpause_key == btnLEFT)
                 {
@@ -387,8 +391,15 @@ void loop()
                     changePhase( 7, PAUSE );                   
                     break;                                        
                 }
-                break;                                             
+#else
+                if( is_command_read( ">>", true) )
+                {
+                    paused_ = false;
+                    Serial.println("COMMAND: Unpause");
+                    changePhase( 7, START_ITI );
+                }
 #endif
+                break;
             }                                                      
 
         }       

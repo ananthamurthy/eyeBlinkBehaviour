@@ -64,6 +64,7 @@ extern const int CS_MINUS_ToneFreq;
 
 // reset the arduino within 1 seconds.
 extern bool reboot_;
+extern bool paused_;
 extern bool CS_plus;
 
 // A two character status of arduino board.
@@ -74,6 +75,9 @@ void reset_watchdog( );
 void write_data_line( int analog_read, unsigned long timestamp );
 
 bool is_command_read( char* command , bool consume = false);
+
+// Check for the pause
+void check_for_pause( );
 
 extern int nextProbeIn;
 extern int prevTwoTrials[2];

@@ -2,6 +2,7 @@
 #include <avr/wdt.h>
 
 bool reboot_ = false;
+bool paused_ = false;
 // This must be default to 0. It is set to 1 with some probablity (most likely
 // to be 0.5).
 bool CS_plus = 0;
@@ -55,14 +56,26 @@ bool is_command_read( char* command, bool consume )
 
     if( firstChar == Serial.peek( ) )
     {
-        // If character exists, the find the whole command.
+        // If character exists, then find the whole command.
         if( Serial.find( command ) )
             return true;
     }
     
     // consume the character. We must consume the character when there is no
-    // optional parsing.
+    // alternate rule matching.
     if(consume)
         Serial.read();
     return false;
+}
+
+/**
+ * @brief Check if the pause is recieved.
+ */
+void check_for_pause( void )
+{
+    if ( is_command_read( "!!", true ) )
+    {
+        paused_ = true;
+        Serial.println("COMMAND: Pause");
+    }
 }
