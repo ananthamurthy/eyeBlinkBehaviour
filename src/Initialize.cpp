@@ -209,6 +209,11 @@ void initialize()
         traceTime = 0; //in ms
         totalTrials = 101;
     }
+    else if (sessionType_ind == 3)
+    {
+        traceTime = 500; //in ms
+        totalTrials = 101;
+    }
     else
     {
         traceTime = 250; //in ms

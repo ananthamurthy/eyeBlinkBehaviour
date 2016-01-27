@@ -55,6 +55,7 @@ const int blink_ai             = A5;        // pin that reads the blinks
 const int imagingTrigger_do    = 13;        // pin that triggers imaging
 const int puff_do              = 11;
 const int tonePin              = 2;         // changed this on 20150807
+const int ledPin               = 3;         // added on 20160127
 
 int blinkCount                 = 0;         // Code
 unsigned long startT;
@@ -196,38 +197,56 @@ void loop()
                     if (CS_plus == 1)
                     {
                         tone( tonePin, CS_PLUS_ToneFreq);
-                        changePhase( 1, START_CS_PLUS );           // CS+
+                        changePhase( 1, START_CS_PLUS );
                     }
                     else
                     {
-                        tone( tonePin, CS_MINUS_ToneFreq );
-                        changePhase( 2, START_CS_MINUS );          // CS-
+                        if (sessionType_ind == 5)
+                        {
+                            digitalWrite(ledPin, HIGH);
+                        }
+                        else
+                        {
+                            tone( tonePin, CS_MINUS_ToneFreq );
+                        }
+                        changePhase( 2, START_CS_MINUS );
                     }
                 }
                 break;
-
-            case 1:                                                // CS+
+            
+            //CS+
+            case 1:
                 PF((condition+1));
                 detectBlinks();
                 if (currentPhaseTime >= CSTime)
                 {
                     // start the next phase
                     noTone(tonePin);
-                    changePhase( 3, START_TRACE );                 // Trace
+                    changePhase( 3, START_TRACE );
                 }
                 break;
 
-            case 2:                                                // CS-
+            //CS-
+            case 2:
                 PF((condition+1));
                 detectBlinks();
+                
                 if (currentPhaseTime >= CSTime)
                 {
-                    noTone(tonePin);
-                    changePhase( 3, START_TRACE );                 // Trace
+                    if (sessionType_ind == 5)
+                    {
+                        digitalWrite(ledPin, LOW);
+                    }
+                    else
+                    {
+                        noTone(tonePin);
+                    }
+                    changePhase( 3, START_TRACE );
                 }
                 break;
-
-            case 3:                                                // trace
+            
+            //Trace
+            case 3:
                 PF((condition+1));
                 detectBlinks();
                 if (currentPhaseTime >= traceTime)
@@ -265,8 +284,9 @@ void loop()
                     }
                 }
                 break;
-
-            case 4:                                                // Puff (US)
+            
+            //Puff
+            case 4:
                 PF((condition+1));
                 detectBlinks();
                 if (currentPhaseTime >= puffTime)
@@ -278,7 +298,8 @@ void loop()
                 }
                 break;
 
-            case 5:                                                // No-Puff
+            //No-Puff
+            case 5:
                 PF((condition+1));
                 detectBlinks();
                 if (currentPhaseTime >= puffTime)
@@ -290,6 +311,7 @@ void loop()
                 }
                 break;
 
+            //Post-Stim
             case 6:
                 // Post Pairing/Stimuli
                 PF((condition+1));
@@ -297,19 +319,20 @@ void loop()
                 if (currentPhaseTime >= postTime)
                 {
                     interTrialTime = minITI + random( randITI );
-                    changePhase( 7, START_ITI );                   // ITI
+                    changePhase( 7, START_ITI );
 
                     // Switch OFF the imaging trigger
                     triggerImaging(imagingTrigger_do, LOW);
                 }
                 break;
-
+            
+            //ITI
             case 7:
                 // Inter trial interval
                 PF((condition+1));
                 if (pause == 1)
                 {
-                    changePhase( 9, PAUSE );                       // PAUSE
+                    changePhase( 9, PAUSE );
                     break;
                 }
                 else
@@ -355,6 +378,7 @@ void loop()
                 break;
 
 #ifdef ENABLE_LCD
+            //PAUSE
             case 9:                                              
                 int unpause_key = read_lcd_button();
                 if (unpause_key == btnLEFT)
