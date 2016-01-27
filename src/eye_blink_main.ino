@@ -392,7 +392,7 @@ void loop()
                     break;                                        
                 }
 #else
-                if( is_command_read( ">>", true) )
+                if( is_command_read( "uu", true) )
                 {
                     paused_ = false;
                     Serial.println("COMMAND: Unpause");
