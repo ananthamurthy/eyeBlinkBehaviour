@@ -3,6 +3,8 @@
 
 bool reboot_ = false;
 bool paused_ = false;
+bool flipped_ = false;
+
 // This must be default to 0. It is set to 1 with some probablity (most likely
 // to be 0.5).
 bool CS_plus = 0;
@@ -79,3 +81,11 @@ void check_for_pause( void )
         Serial.println("COMMAND: Pause");
     }
 }
+
+void shutoff_cs( unsigned tonePin, unsigned ledPin )
+{
+    // start the next phase
+    noTone(tonePin);
+    digitalWrite( ledPin, LOW);
+}
+

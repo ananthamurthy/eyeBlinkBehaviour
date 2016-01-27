@@ -77,8 +77,8 @@ const int minITI               = 15000;     // in ms
 const int randITI              = 5000;      // in ms
 
 // CS+/- frequencies
-const int CS_PLUS_ToneFreq     = 2000;
-const int CS_MINUS_ToneFreq    = 7000;      // change made on 20151214
+const int CS_TONE_1     = 2000;
+const int CS_TONE_2     = 7000;      // change made on 20151214
 
 // Miscellaneous Initialisations
 int condition                  = 0;
@@ -197,23 +197,44 @@ void loop()
                 detectBlinks();
                 if (currentPhaseTime >= preTime)
                 {
-                    // start the next phase
-                    if (CS_plus == 1)
+                    // If sessionType_ind is 4
+                    if( sessionType_ind == 4 )
                     {
-                        tone( tonePin, CS_PLUS_ToneFreq);
-                        changePhase( 1, START_CS_PLUS );
+                        if( true == CS_plus )
+                        {
+                            if(flipped_)
+                                digitalWrite( ledPin, HIGH);
+                            else
+                                tone( tonePin, CS_TONE_1 );
+                            changePhase( 1, START_CS_PLUS );
+                        }
+                        else // CS_minus 
+                        {
+                            if( flipped_ )
+                                tone( tonePin, CS_TONE_1);
+                            else
+                                digitalWrite( ledPin, HIGH);
+                            changePhase(2, START_CS_MINUS);
+                        }
                     }
-                    else
+                    else // sessionType_ind is not 4
                     {
-                        if (sessionType_ind == 4)
+                        if (CS_plus == 1 )
                         {
-                            digitalWrite(ledPin, HIGH);
+                            if( flipped_ )
+                                tone( tonePin, CS_TONE_2);
+                            else
+                                tone( tonePin, CS_TONE_1);
+                            changePhase( 1, START_CS_PLUS );
                         }
-                        else
+                        else // CS_plus is not 1
                         {
-                            tone( tonePin, CS_MINUS_ToneFreq );
+                            if( flipped_ )
+                                tone( tonePin, CS_TONE_1);
+                            else
+                                tone( tonePin, CS_TONE_2);
+                            changePhase(2, START_CS_MINUS);
                         }
-                        changePhase( 2, START_CS_MINUS );
                     }
                 }
                 break;
@@ -222,10 +243,10 @@ void loop()
             case 1:
                 PF((condition+1));
                 detectBlinks();
+
                 if (currentPhaseTime >= CSTime)
                 {
-                    // start the next phase
-                    noTone(tonePin);
+                    shutoff_cs( tonePin, ledPin );
                     changePhase( 3, START_TRACE );
                 }
                 break;
@@ -237,14 +258,7 @@ void loop()
                 
                 if (currentPhaseTime >= CSTime)
                 {
-                    if (sessionType_ind == 4)
-                    {
-                        digitalWrite(ledPin, LOW);
-                    }
-                    else
-                    {
-                        noTone(tonePin);
-                    }
+                    shutoff_cs( tonePin, ledPin );
                     changePhase( 3, START_TRACE );
                 }
                 break;

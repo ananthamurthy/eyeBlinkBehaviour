@@ -59,12 +59,18 @@ extern int trialNum;
 
 extern const int puffTime;
 extern const int CSTime;
-extern const int CS_PLUS_ToneFreq;
-extern const int CS_MINUS_ToneFreq;
+extern const int CS_TONE_1;
+extern const int CS_TONE_2;
 
 // reset the arduino within 1 seconds.
 extern bool reboot_;
 extern bool paused_;
+
+/**
+ * @brief If true, the CS_plus and CS_minus are flipped.
+ */
+extern bool flipped_;
+
 extern bool CS_plus;
 
 // A two character status of arduino board.
@@ -75,6 +81,8 @@ void reset_watchdog( );
 void write_data_line( int analog_read, unsigned long timestamp );
 
 bool is_command_read( char* command , bool consume = false);
+
+void shutoff_cs( unsigned tonePin, unsigned ledPin );
 
 // Check for the pause
 void check_for_pause( );

@@ -154,17 +154,17 @@ void initialize()
             startT = millis();
         }
         // Read the character and decide what to do.
-        if( is_command_read( "++" , false) )
+        if( is_command_read( "11" , false) )
         {
-            Serial.println("COMMAND: Play CS Plus");
-            tone( tonePin, CS_PLUS_ToneFreq);
+            Serial.println("COMMAND: Play CS Tone 1");
+            tone( tonePin, CS_TONE_1);
             delay( CSTime );
             noTone( tonePin );
         }
-        else if( is_command_read( "--", false) )
+        else if( is_command_read( "22", false) )
         {
-            Serial.println("COMMAND: Play CS Minus");
-            tone( tonePin, CS_MINUS_ToneFreq);
+            Serial.println("COMMAND: Play CS Tone 2");
+            tone( tonePin, CS_TONE_2);
             delay( CSTime );
             noTone( tonePin );
         }
