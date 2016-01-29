@@ -113,6 +113,7 @@ def collect_data( lock ):
     global running_trial_
     global cs_type_ 
     global next_probe_in_
+    global select_sent_ 
     tstart = time.time()
     runningTrial = 0
     while True:
@@ -307,20 +308,20 @@ def send_command( ):
     global select_sent_
     global finished_all_
     command = ""
-    validCommands = [ "11", "22", "pp", "ss", "rr", "ww", "cc" ]
+    legalCommandsBeforeStart = [ "11", "22", "pp", "ss" ]
+    legalCommandsAfterStart = [ "rr", "ww", "cc" ]
+    validCommands = legalCommandsAfterStart + legalCommandsBeforeStart 
     validStartChars = ''.join([ x[0] for x in validCommands ])
     while True:
         k = readchar.readkey()
         if k in validStartChars:
             command += k
-            legalCommandsBeforeStart = validCommands
-            legalCommandsAfterStart = [ "rr", "ww", "cc" ]
             if command in legalCommandsBeforeStart and not select_sent_:
                 _logger.info("[COMMAND] Sending command: %s" % command)
                 config.serial_port_.write_msg( command )
                 command = ""
             # Last two commands needs to be handled separately.
-            elif command == 'ss' and not select_sent_:
+            elif command == 'ss' and (not select_sent_):
                 select_sent_ = True
                 config.serial_port_.write_msg( command )
             elif command == 'rr':
@@ -330,12 +331,15 @@ def send_command( ):
                 finished_all_ = 1
                 cleanup()
                 return None
-            elif select_sent_ and command in legalCommandsAfterStart:
-                _logger.info("[COMMAND] Sending command: %s" % command)
+            elif (command in legalCommandsAfterStart) and select_sent_:
+                _logger.info("[COMMAND] Sending command (after start): %s" % command)
                 config.serial_port_.write_msg( command )
                 command = ""
             else:
-                pass
+                if(len(command) == 2):
+                    _logger.info("Did not send :%s, select_sent_ %s" % (
+                        command, select_sent_)
+                        )
             if len(command) == 2:
                 command = ""
         elif k in [ '\x03', '\x04', '\x1a' ]:
