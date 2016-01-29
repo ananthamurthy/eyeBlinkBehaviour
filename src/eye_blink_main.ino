@@ -155,6 +155,16 @@ void loop()
             Serial.println("And there is nothing you can do. Ha Ha!");
         }
 
+        // Lookout for the pause button.
+        if( ! paused_ )
+        {
+            if( is_command_read( PAUSE_COMMAND, true))
+            {
+                Serial.println("COMMAND: Pause");
+                paused_ = true;
+            }
+        }
+
         if (trialNum == 0)
         {
             startPhaseTime = millis();
@@ -168,9 +178,6 @@ void loop()
         }
         else
         {
-            // Lookout for the pause button.
-            if( ! paused_ )
-                check_for_pause( );
 
             // has to be calculated for every loop
             currentPhaseTime = millis() - startPhaseTime;
