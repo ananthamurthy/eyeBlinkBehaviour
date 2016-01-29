@@ -56,6 +56,8 @@ bool is_command_read( char* command, bool consume )
     if( ! Serial.available() )
         return false;
 
+    // Serial.println( "Expected " + String( firstChar ));
+    // Serial.println( "Got " + String(Serial.peek()) );
     if( firstChar == Serial.peek( ) )
     {
         // If character exists, then find the whole command.
@@ -75,10 +77,10 @@ bool is_command_read( char* command, bool consume )
  */
 void check_for_pause( void )
 {
-    if ( is_command_read( "!!", true ) )
+    if ( is_command_read( PAUSE_COMMAND, true ) )
     {
-        paused_ = true;
         Serial.println("COMMAND: Pause");
+        paused_ = true;
     }
 }
 

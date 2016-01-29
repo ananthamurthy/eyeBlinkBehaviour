@@ -307,15 +307,15 @@ def send_command( ):
     global select_sent_
     global finished_all_
     command = ""
-    validCommands = [ "++", "--", "pp", "ss", "rr" ]
+    validCommands = [ "11", "22", "pp", "ss", "rr", "ww", "cc" ]
     validStartChars = ''.join([ x[0] for x in validCommands ])
     while True:
-        # Do not send any command if select button is send or we are in second
-        # loop.
         k = readchar.readkey()
         if k in validStartChars:
             command += k
-            if command in validCommands[0:-2] and not select_sent_:
+            legalCommandsBeforeStart = validCommands
+            legalCommandsAfterStart = [ "rr", "ww", "cc" ]
+            if command in legalCommandsBeforeStart and not select_sent_:
                 _logger.info("[COMMAND] Sending command: %s" % command)
                 config.serial_port_.write_msg( command )
                 command = ""
@@ -325,12 +325,15 @@ def send_command( ):
                 config.serial_port_.write_msg( command )
             elif command == 'rr':
                 # reboot. 
-                _logger.warn("Reboot in 2 seconds. You have to relaunch the")
-                _logger.warn("       app")
+                _logger.warn("Reboot in 2 seconds. You have to relaunch the app")
                 config.serial_port_.write_msg( command )
                 finished_all_ = 1
                 cleanup()
                 return None
+            elif select_sent_ and command in legalCommandsAfterStart:
+                _logger.info("[COMMAND] Sending command: %s" % command)
+                config.serial_port_.write_msg( command )
+                command = ""
             else:
                 pass
             if len(command) == 2:

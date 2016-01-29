@@ -32,9 +32,11 @@
 
 #define RESET_COMMAND       "rr"
 #define SELECT_COMMAND      "ss"
-#define CS_PLUS_COMMAND     "++"
-#define CS_MINUS_COMMAND    "--"
+#define CS_PLUS_COMMAND     "11"
+#define CS_MINUS_COMMAND    "22"
 #define PUFF_COMMAND        "pp"
+#define PAUSE_COMMAND       "ww"
+#define UNPAUSE_COMMAND     "cc"
 
 #define DATA_BEGIN_MARKER "["
 #define DATA_END_MARKER "]"
@@ -49,6 +51,7 @@ extern const int blink_ai;    // pin that reads the blinks
 extern int blinkCount;
 extern const int puff_do; // pin that drives the eye-puff solenoid
 extern const int tonePin;
+extern const int ledPin;
 extern unsigned long startT;
 extern unsigned long currentPhaseTime;
 extern unsigned long lastTime;
@@ -59,8 +62,9 @@ extern int trialNum;
 
 extern const int puffTime;
 extern const int CSTime;
-extern const int CS_TONE_1;
-extern const int CS_TONE_2;
+
+#define CS_TONE_1       2000
+#define CS_TONE_2       7000
 
 // reset the arduino within 1 seconds.
 extern bool reboot_;

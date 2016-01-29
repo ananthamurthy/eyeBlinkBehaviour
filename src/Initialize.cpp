@@ -176,28 +176,37 @@ void initialize()
             startT = millis();
         }
         // Read the character and decide what to do.
-        if( is_command_read( "11" , false) )
+        if( is_command_read( CS_PLUS_COMMAND , false) )
         {
             Serial.println("COMMAND: Play CS Tone 1");
             tone( tonePin, CS_TONE_1);
             delay( CSTime );
             noTone( tonePin );
         }
-        else if( is_command_read( "22", false) )
+        else if( is_command_read( CS_MINUS_COMMAND, false) )
         {
             Serial.println("COMMAND: Play CS Tone 2");
-            tone( tonePin, CS_TONE_2);
-            delay( CSTime );
-            noTone( tonePin );
+            if( ! sessionType_ind == 4 )
+            {
+                tone( tonePin, CS_TONE_2);
+                delay( CSTime );
+                noTone( tonePin );
+            }
+            else
+            {
+                digitalWrite( ledPin, HIGH);
+                delay( CSTime );
+                digitalWrite( ledPin, LOW );
+            }
         }
-        else if( is_command_read( "pp", false ) ) // Puff
+        else if( is_command_read( PUFF_COMMAND, false ) ) // Puff
         {
             Serial.println("COMMAND: Play puff");
             playPuff(puff_do, HIGH);
             delay(puffTime);
             playPuff(puff_do, LOW);
         }
-        else if( is_command_read( "ss", true ) )
+        else if( is_command_read( SELECT_COMMAND, true ) )
         {
             Serial.println("COMMAND: SELECT");
             break;

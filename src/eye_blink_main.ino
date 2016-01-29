@@ -76,10 +76,6 @@ const int postTime             = 5000;      // in ms
 const int minITI               = 15000;     // in ms
 const int randITI              = 5000;      // in ms
 
-// CS+/- frequencies
-const int CS_TONE_1     = 2000;
-const int CS_TONE_2     = 7000;      // change made on 20151214
-
 // Miscellaneous Initialisations
 int condition                  = 0;
 boolean pause                  = 0 ;
@@ -406,7 +402,7 @@ void loop()
                     break;                                        
                 }
 #else
-                if( is_command_read( "uu", true) )
+                if( is_command_read( UNPAUSE_COMMAND, true) )
                 {
                     paused_ = false;
                     Serial.println("COMMAND: Unpause");
