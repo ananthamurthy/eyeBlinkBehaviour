@@ -39,6 +39,7 @@ running_data_line_ = 0
 total_trials_ = 0
 cs_type_ = None
 next_probe_in_ = -1
+flipped_ = 0
 
 select_sent_ = False
 
@@ -101,6 +102,7 @@ def initialize_trial_file( trial_number ):
         f.write("# mouse id  : %s\n" % config.args_.name)
         f.write("# Session type : %s\n" % config.args_.session_type)
         f.write("# Session num : %s\n" % config.args_.session_num)
+        f.write("# flipped : %s\n" % flipped_)
     print(".... Done")
 
     
@@ -249,6 +251,7 @@ def answer_questions( numbers = 4):
             _logger.info('[ANSW] %s = %s' % (l, config.args_.flipped))
             config.serial_port_.write_msg('%s\r' % config.args_.flipped)
             time.sleep(0.5)
+            flipped_ = 1
             if l not in questionsAnswered:
                 questionsAnswered.append( l )
         else:
