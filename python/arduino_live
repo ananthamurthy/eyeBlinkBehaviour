@@ -266,13 +266,13 @@ def init( ):
     probably answered.
     """
 
-    # Get 4 from arduino, and check if arduino is sending legal data or
+    # Get 4 lines from arduino, and check if arduino is sending legal data or
     # just waiting for questions to be answered.
     for i in range(4):
         l = config.serial_port_.read_line( )
         while not l:
             l = config.serial_port_.read_line( )
-        if 'Please enter' in l:
+        if 'please' in l.lower():
             # mere sawalo ka jawav do... do naa!
             answer_questions( 4 )
             break
