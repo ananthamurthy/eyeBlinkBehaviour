@@ -178,25 +178,25 @@ void initialize()
         // Read the character and decide what to do.
         if( is_command_read( CS_PLUS_COMMAND , false) )
         {
-            Serial.println("COMMAND: Play CS Tone 1");
+            Serial.println("COMMAND: Play CS1");
             tone( tonePin, CS_TONE_1);
             delay( CSTime );
             noTone( tonePin );
         }
         else if( is_command_read( CS_MINUS_COMMAND, false) )
         {
-            Serial.println("COMMAND: Play CS Tone 2");
-            if( ! sessionType_ind == 4 )
-            {
-                tone( tonePin, CS_TONE_2);
-                delay( CSTime );
-                noTone( tonePin );
-            }
-            else
+            Serial.println("COMMAND: Play CS2");
+            if( sessionType_ind == 4 )
             {
                 digitalWrite( ledPin, HIGH);
                 delay( CSTime );
                 digitalWrite( ledPin, LOW );
+            }
+            else
+            {
+                tone( tonePin, CS_TONE_2);
+                delay( CSTime );
+                noTone( tonePin );
             }
         }
         else if( is_command_read( PUFF_COMMAND, false ) ) // Puff
