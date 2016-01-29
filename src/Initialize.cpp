@@ -211,6 +211,7 @@ void initialize()
             Serial.println("COMMAND: SELECT");
             break;
         }
+
     }
 
     // From here, the Arduino will start running the behaviour
