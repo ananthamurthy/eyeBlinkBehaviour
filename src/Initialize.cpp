@@ -135,7 +135,7 @@ void initialize()
     while(true)
     {
         reset_watchdog();
-        Serial.println("?? Do you want to flip CS+/CS- (0/1) ?");
+        Serial.println("?? Please specify if you want to flip CS+/CS- (0/1) ?");
         if( wait_for_read( 1000 ) )
         {
             String answer = Serial.readString();

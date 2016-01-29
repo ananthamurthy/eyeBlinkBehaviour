@@ -222,11 +222,11 @@ def plot_data( lock ):
                 )
 
 def answer_questions( numbers = 4):
-    # All great UI has three questions. Yes we have to, they all starts with
-    # Please.
+    # All great UI have four questions. Yes we have to, they all starts with
+    # Please. Not three. Four. Sorry.
     questionsAnswered = [ ]
     for i in range( 20 ):
-        l = arduino.read_until('?? Please enter', timeout = 1)
+        l = arduino.read_until('?? Please', timeout = 1)
         if 'mouse ID number' in l:
             _logger.info('[ANSW] %s = %s' % (l, config.args_.name))
             config.serial_port_.write_msg('%s\r' % config.args_.name )
@@ -245,10 +245,10 @@ def answer_questions( numbers = 4):
             time.sleep(0.5)
             if l not in questionsAnswered:
                 questionsAnswered.append(l)
-        elif 'Do you want to flip' in l:
+        elif  'want to flip' in l:
             _logger.info('[ANSW] %s = %s' % (l, config.args_.flipped))
             config.serial_port_.write_msg('%s\r' % config.args_.flipped)
-            time.sleep( 0.5 )
+            time.sleep(0.5)
             if l not in questionsAnswered:
                 questionsAnswered.append( l )
         else:
@@ -261,14 +261,14 @@ def answer_questions( numbers = 4):
 
 def init( ):
     """
-    Wait for first three questions to appear which requires writing to serial
+    Wait for first four questions to appear which requires writing to serial
     port. If serial port is sending legal data then continue, questions are
     probably answered.
     """
 
-    # Get 3 from arduino, and check if arduino is sending legal data or
+    # Get 4 from arduino, and check if arduino is sending legal data or
     # just waiting for questions to be answered.
-    for i in range(3):
+    for i in range(4):
         l = config.serial_port_.read_line( )
         while not l:
             l = config.serial_port_.read_line( )
@@ -406,3 +406,4 @@ if __name__ == '__main__':
         _logger.warn("Interrupt from keyboard.... Quitting after cleanup.")
         cleanup()
         quit()
+
