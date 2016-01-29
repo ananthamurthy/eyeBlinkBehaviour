@@ -236,26 +236,31 @@ void initialize()
 #endif
 
     // Get totalTrials and traceTime based on the Session Type
-    if (sessionType_ind == 2)
+    
+    if (sessionType_ind == 0 || sessionType_ind == 1 || sessionType == 2 || sessionType == 3 || sessionType_ind == 4 || sessionType_ind == 5) //control (no-puff)
     {
-        traceTime = 0; //in ms
-        totalTrials = 101;
-    }
-    else if (sessionType_ind == 3)
-    {
-        traceTime = 500; //in ms
-        totalTrials = 101;
+        totalTrials = 31;
+        if (sessionType_ind == 0 || sessionType_ind == 1)
+            traceTime = 0;
+        else if (sessionType_ind == 2 || sessionType_ind == 3)
+            traceTime = 250;
+        else
+            traceTime = 500;
     }
     else
     {
-        traceTime = 250; //in ms
-        if (sessionType_ind == 0)
+        totalTrials = 101;
+        if (sessionType_ind == 6 || sessionType_ind == 7 ) //delay
         {
-            totalTrials = 31;
+            traceTime = 0; //in ms
         }
-        else
+        else if (sessionType_ind == 8 || sessionType_ind == 9) //trace = 500 ms
         {
-            totalTrials = 101; 
+            traceTime = 250; //in ms
+        }   
+        else //(sessionType_ind == 10 || sessionType_ind == 11) //trace = 500 ms
+        {
+            traceTime = 500; //in ms
         }
-    }
+    }   
 }

@@ -193,8 +193,8 @@ void loop()
                 detectBlinks();
                 if (currentPhaseTime >= preTime)
                 {
-                    // If sessionType_ind is 4
-                    if( sessionType_ind == 4 )
+                    // If sessionType_ind involves LED
+                    if (sessionType_ind == 1 || sessionType_ind == 3 || sessionType_ind == 5 || sessionType_ind == 7 || sessionType_ind == 9 || sessionType_ind == 11)
                     {
                         if( true == CS_plus )
                         {
@@ -213,7 +213,7 @@ void loop()
                             changePhase(2, START_CS_MINUS);
                         }
                     }
-                    else // sessionType_ind is not 4
+                    else // sessionType_ind does not involve LED
                     {
                         if (CS_plus == 1 )
                         {
