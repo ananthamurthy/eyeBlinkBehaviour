@@ -369,7 +369,7 @@ void loop()
                         }
                         else
                         {
-                            if (random(10) >= 5)
+                            if (random(10) >= 0)
                                 CS_plus = 1;                       // play CS+
                             else
                                 CS_plus = 0;                       // play CS-

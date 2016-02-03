@@ -237,7 +237,7 @@ void initialize()
 
     // Get totalTrials and traceTime based on the Session Type
     
-    if (sessionType_ind == 0 || sessionType_ind == 1 || sessionType == 2 || sessionType == 3 || sessionType_ind == 4 || sessionType_ind == 5) //control (no-puff)
+    if (sessionType_ind == 0 || sessionType_ind == 1 || sessionType_ind == 2 || sessionType_ind == 3 || sessionType_ind == 4 || sessionType_ind == 5) //control (no-puff)
     {
         totalTrials = 31;
         if (sessionType_ind == 0 || sessionType_ind == 1)
