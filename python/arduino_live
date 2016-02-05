@@ -380,7 +380,7 @@ if __name__ == '__main__':
     parser.add_argument('--session-type', '-st'
         , required = True
         , type = int
-        , help = 'Seession Type [0,1,2,3,4]'
+        , help = 'Seession Type [0 to 11]'
         )
     parser.add_argument('--session-num', '-sn'
         , required = True
