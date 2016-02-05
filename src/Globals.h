@@ -63,8 +63,8 @@ extern int trialNum;
 extern const int puffTime;
 extern const int CSTime;
 
-#define CS_TONE_1       2000
-#define CS_TONE_2       7000
+#define CS_TONE_1       4500
+#define CS_TONE_2       11000
 
 // reset the arduino within 1 seconds.
 extern bool reboot_;
