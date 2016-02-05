@@ -201,7 +201,8 @@ void loop()
                 if (currentPhaseTime >= preTime)
                 {
                     // If sessionType_ind involves LED
-                    if ((sessionType_ind == 1) || (sessionType_ind == 3) || (sessionType_ind == 5) || (sessionType_ind == 7) || (sessionType_ind == 9) || (sessionType_ind == 11))
+                    //if ((sessionType_ind == 1) || (sessionType_ind == 3) || (sessionType_ind == 5) || (sessionType_ind == 7) || (sessionType_ind == 9) || (sessionType_ind == 11))
+                    if (sessionType_ind % 2)
                     {
                         if( true == CS_plus )
                         {
