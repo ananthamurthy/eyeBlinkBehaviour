@@ -240,7 +240,7 @@ void initialize()
    // if ((sessionType_ind == 0) || (sessionType_ind == 1) || (sessionType == 2) || (sessionType == 3) || (sessionType_ind == 4) || (sessionType_ind == 5)) //control (no-puff)
     if (sessionType_ind <= 5)
     {
-        totalTrials = 51;
+        totalTrials = 41;
         if ((sessionType_ind == 0) || (sessionType_ind == 1))
             traceTime = 0;
         else if ((sessionType_ind == 2) || (sessionType_ind == 3))
