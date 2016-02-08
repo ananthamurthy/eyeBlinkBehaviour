@@ -224,7 +224,7 @@ def plot_data( lock ):
                 , yrange = '200:800'
                 )
 
-def answer_questions( numbers = 4):
+def answer_questions( numbers = 5):
     # All great UI have four questions. Yes we have to, they all starts with
     # Please. Not three. Four. Sorry.
     questionsAnswered = [ ]
@@ -253,6 +253,12 @@ def answer_questions( numbers = 4):
             config.serial_port_.write_msg('%s\r' % config.args_.flipped)
             time.sleep(0.5)
             flipped_ = 1
+            if l not in questionsAnswered:
+                questionsAnswered.append( l )
+        elif 'CS Fraction' in l:
+            _logger.info("[ANSW] %s = %s " % (l, config.args_.cs_fraction))
+            config.serial_port_.write_msg( '%s\r' % config.args_.cs_fraction)
+            time.sleep( 0.5 )
             if l not in questionsAnswered:
                 questionsAnswered.append( l )
         else:
@@ -403,6 +409,12 @@ if __name__ == '__main__':
         , default = 0
         , type = int
         , help = 'Wheather CS+/CS- are to be flipped (0/1 (False,True)'
+        )
+    parser.add_argument('--cs_fraction', '-cf'
+        , required = False
+        , default = 5
+        , type = int
+        , help = 'CS fraction'
         )
     parser.parse_args( namespace = config.args_ )
     init_serial()

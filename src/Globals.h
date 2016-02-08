@@ -63,6 +63,11 @@ extern int trialNum;
 extern const int puffTime;
 extern const int CSTime;
 
+/**
+ * @brief What fraction of all CS is CS+. Value between 0 and 10.
+ */
+extern unsigned int CS_fraction;
+
 #define CS_TONE_1       4500
 #define CS_TONE_2       11000
 

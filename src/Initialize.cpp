@@ -135,7 +135,7 @@ void initialize()
     while(true)
     {
         reset_watchdog();
-        Serial.println("?? Please specify if you want to flip CS+/CS- (0/1) ?");
+        Serial.println("?? Please specify if you want to flip CS+/CS- (0/1): ");
         if( wait_for_read( 1000 ) )
         {
             String answer = Serial.readString();
@@ -153,6 +153,17 @@ void initialize()
         }
     }
 
+    while(true)
+    {
+        reset_watchdog();
+        Serial.println("?? Please specify CS Fraction (0, 10): ");
+        if( wait_for_read( 1000 ) )
+        {
+            CS_fraction = Serial.readString().toInt();
+            Serial.println("-> CS Fraction = " + String(CS_fraction) );
+        }
+        break;
+    }
 
     Serial.println("|| Please press the SELECT button to begin!");
     startT = millis();
