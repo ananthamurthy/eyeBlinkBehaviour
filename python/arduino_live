@@ -284,7 +284,7 @@ def init( ):
             l = config.serial_port_.read_line( )
         if 'please' in l.lower():
             # mere sawalo ka jawav do... do naa!
-            answer_questions( 4 )
+            answer_questions(  )
             break
         # If valid data is found in lines (trial is more than 1) then don't ask
         # questions and quit immediately
