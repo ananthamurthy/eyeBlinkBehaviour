@@ -265,18 +265,12 @@ int initialize()
         totalTrials = 101;
        // if ((sessionType_ind == 6) || (sessionType_ind == 7) ) //delay
         if (sessionType_ind <=7)
-        {
             traceTime = 0; //in ms
-        }
         //else if ((sessionType_ind == 8) || (sessionType_ind == 9)) //trace = 350 ms
-        else if (sessionType_ind >7 && sessionType_ind <=8)
-        {
+        else if (sessionType_ind >7 && sessionType_ind <=9)
             traceTime = 250; //in ms
-        }   
-        else //(sessionType_ind>8 && sessionType_ind<=11) //trace = 500 ms
-        {
+        else //(sessionType_ind>9 && sessionType_ind<=11) //trace = 350 ms
             traceTime = 350; //in ms
-        }
     }
     return sessionType_ind;
     return traceTime;
