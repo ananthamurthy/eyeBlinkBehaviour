@@ -25,11 +25,12 @@
 
 
 extern String mouseName;
-extern int sessionType_ind;
 extern int session;
 extern boolean start;
-extern int traceTime;
 extern int totalTrials;
+
+int traceTime;
+int sessionType_ind;
 
 /**
  * @brief Wait for delay milliseconds for read. If no data appears in this time,
@@ -73,7 +74,7 @@ ISR(WDT_vect)
     // Nothing to handle.
 }
 
-void initialize()
+int initialize()
 {
     reboot_ = false;
 
@@ -197,17 +198,17 @@ void initialize()
         else if( is_command_read( CS_MINUS_COMMAND, false) )
         {
             Serial.println("COMMAND: Play CS2");
-            if( sessionType_ind == 4 )
+            if( sessionType_ind % 2 == 0 )
             {
-                digitalWrite( ledPin, HIGH);
-                delay( CSTime );
-                digitalWrite( ledPin, LOW );
-            }
-            else
-            {
-                tone( tonePin, CS_TONE_2);
+		tone( tonePin, CS_TONE_2);
                 delay( CSTime );
                 noTone( tonePin );
+ 	    }
+            else
+            {
+		digitalWrite( ledPin, HIGH);
+                delay( CSTime );
+                digitalWrite( ledPin, LOW );                
             }
         }
         else if( is_command_read( PUFF_COMMAND, false ) ) // Puff
@@ -276,5 +277,7 @@ void initialize()
         {
             traceTime = 350; //in ms
         }
-    }   
+    }
+    return sessionType_ind;
+    return traceTime;
 }

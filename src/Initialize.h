@@ -30,7 +30,7 @@
  @description Read details passed as inputs over the serial communication and use this to set protocol parameters, LCD update, etc.
  */
 
-void initialize();
+int initialize();
 
 void watchdog_setup( );
 

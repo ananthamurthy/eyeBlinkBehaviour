@@ -60,9 +60,9 @@ const int ledPin               = 3;         // added on 20160127
 int blinkCount                 = 0;         // Code
 unsigned long startT;
 String mouseName               = String(1); // Please enter the name of the mouse
-int sessionType_ind            = 1;         // Please specify the Session Type (0: Control, 1: Trace, 2: Delay)
+extern int sessionType_ind;                 // Please specify the Session Type (0: Control, 1: Trace, 2: Delay)
 int session                    = 1;
-int traceTime                  = 250;       // in ms
+extern int traceTime;                              // in ms
 int totalTrials                = 100;  
 int shutterDelay               = 60;        // in ms
 
@@ -204,26 +204,6 @@ void loop()
                     //if ((sessionType_ind == 1) || (sessionType_ind == 3) || (sessionType_ind == 5) || (sessionType_ind == 7) || (sessionType_ind == 9) || (sessionType_ind == 11))
                     if (sessionType_ind % 2 == 0)
                     {
-			if( true == CS_plus )
-                        {
-                            if(flipped_)
-                                digitalWrite( ledPin, HIGH);
-                            else
-                                tone( tonePin, CS_TONE_1 );
-                            changePhase( 1, START_CS_PLUS );
-                        }
-                        else // CS_minus 
-                        {
-                            if( flipped_ )
-                                tone( tonePin, CS_TONE_1);
-                            else
-                                digitalWrite( ledPin, HIGH);
-                            changePhase(2, START_CS_MINUS);
-                        }       
-			
-                    }
-                    else // sessionType_ind does not invovle LED
-                    {
 			if (CS_plus == 1 )
                         {
                             if( flipped_ )
@@ -241,6 +221,26 @@ void loop()
                             changePhase(2, START_CS_MINUS);
                         }            
                     }
+                    else // sessionType_ind invovles LED
+                    {
+			
+			if( true == CS_plus )
+                        {
+                            if(flipped_)
+                                digitalWrite( ledPin, HIGH);
+                            else
+                                tone( tonePin, CS_TONE_1 );
+                            changePhase( 1, START_CS_PLUS );
+                        }
+                        else // CS_minus 
+                        {
+                            if( flipped_ )
+                                tone( tonePin, CS_TONE_1);
+                            else
+                                digitalWrite( ledPin, HIGH);
+                            changePhase(2, START_CS_MINUS);
+                        }
+		    }       
                 }
                 break;
             

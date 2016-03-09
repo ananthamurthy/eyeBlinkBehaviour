@@ -60,8 +60,11 @@ extern int shutterDelay;
 extern int totalTrials;
 extern int trialNum;
 
+extern int sessionType_ind;
+
 extern const int puffTime;
 extern const int CSTime;
+extern int traceTime;
 
 /**
  * @brief What fraction of all CS is CS+. Value between 0 and 10.
