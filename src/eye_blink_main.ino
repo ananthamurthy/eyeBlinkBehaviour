@@ -202,27 +202,7 @@ void loop()
                 {
                     // If sessionType_ind involves LED
                     //if ((sessionType_ind == 1) || (sessionType_ind == 3) || (sessionType_ind == 5) || (sessionType_ind == 7) || (sessionType_ind == 9) || (sessionType_ind == 11))
-                    if (sessionType_ind % 2)
-                    {
-			if (CS_plus == 1 )
-                        {
-                            if( flipped_ )
-                                tone( tonePin, CS_TONE_2);
-                            else
-                                tone( tonePin, CS_TONE_1);
-                            changePhase( 1, START_CS_PLUS );
-                        }
-                        else // CS_plus is not 1
-                        {
-                            if( flipped_ )
-                                tone( tonePin, CS_TONE_1);
-                            else
-                                tone( tonePin, CS_TONE_2);
-                            changePhase(2, START_CS_MINUS);
-                        }
-                        
-                    }
-                    else // sessionType_ind invovles LED
+                    if (sessionType_ind % 2 == 0)
                     {
 			if( true == CS_plus )
                         {
@@ -239,7 +219,27 @@ void loop()
                             else
                                 digitalWrite( ledPin, HIGH);
                             changePhase(2, START_CS_MINUS);
-                        }                        
+                        }       
+			
+                    }
+                    else // sessionType_ind does not invovle LED
+                    {
+			if (CS_plus == 1 )
+                        {
+                            if( flipped_ )
+                                tone( tonePin, CS_TONE_2);
+                            else
+                                tone( tonePin, CS_TONE_1);
+                            changePhase( 1, START_CS_PLUS );
+                        }
+                        else // CS_plus is not 1
+                        {
+                            if( flipped_ )
+                                tone( tonePin, CS_TONE_1);
+                            else
+                                tone( tonePin, CS_TONE_2);
+                            changePhase(2, START_CS_MINUS);
+                        }            
                     }
                 }
                 break;
