@@ -204,26 +204,7 @@ void loop()
                     //if ((sessionType_ind == 1) || (sessionType_ind == 3) || (sessionType_ind == 5) || (sessionType_ind == 7) || (sessionType_ind == 9) || (sessionType_ind == 11))
                     if (sessionType_ind % 2)
                     {
-                        if( true == CS_plus )
-                        {
-                            if(flipped_)
-                                digitalWrite( ledPin, HIGH);
-                            else
-                                tone( tonePin, CS_TONE_1 );
-                            changePhase( 1, START_CS_PLUS );
-                        }
-                        else // CS_minus 
-                        {
-                            if( flipped_ )
-                                tone( tonePin, CS_TONE_1);
-                            else
-                                digitalWrite( ledPin, HIGH);
-                            changePhase(2, START_CS_MINUS);
-                        }
-                    }
-                    else // sessionType_ind does not involve LED
-                    {
-                        if (CS_plus == 1 )
+			if (CS_plus == 1 )
                         {
                             if( flipped_ )
                                 tone( tonePin, CS_TONE_2);
@@ -239,6 +220,26 @@ void loop()
                                 tone( tonePin, CS_TONE_2);
                             changePhase(2, START_CS_MINUS);
                         }
+                        
+                    }
+                    else // sessionType_ind invovles LED
+                    {
+			if( true == CS_plus )
+                        {
+                            if(flipped_)
+                                digitalWrite( ledPin, HIGH);
+                            else
+                                tone( tonePin, CS_TONE_1 );
+                            changePhase( 1, START_CS_PLUS );
+                        }
+                        else // CS_minus 
+                        {
+                            if( flipped_ )
+                                tone( tonePin, CS_TONE_1);
+                            else
+                                digitalWrite( ledPin, HIGH);
+                            changePhase(2, START_CS_MINUS);
+                        }                        
                     }
                 }
                 break;
