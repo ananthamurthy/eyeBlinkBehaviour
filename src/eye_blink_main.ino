@@ -275,7 +275,7 @@ void loop()
                 if (currentPhaseTime >= traceTime)
                 {
                     // start the next phase
-                    if (sessionType_ind != 0)
+                    if (sessionType_ind >= 5)
                     {
                         if (CS_plus == 1)
                         {
