@@ -118,12 +118,19 @@ def main( args ):
         plt.ylabel( 'Sensor readout' )
 
         plt.subplot(3, 1, 3)
-        yval = sensor[:baselineN]
-        plt.hist( yval, bins = int(max(yval) - min(yval))/10, alpha = 0.8, lw = 0
-                , label = 'baseline')
-        yval = sensor[baselineN:]
-        plt.hist( yval, bins = int(max(yval)-min(yval))/10, alpha = 0.5, lw = 0
-                , label = 'post-baseline'
+        baselines = np.concatenate(( sensor[:aN], sensor[ bN: ]))
+        plt.hist( baselines, bins = int(max(baselines) - min(baselines))/10
+                # , histtype = 'step'
+                # , lw = 2
+                , alpha = 0.7, normed = True
+                , label = 'baseline (pre+post)')
+        yval = sensor[aN:bN]
+        plt.hist( yval, bins = int(max(yval)-min(yval))/10
+                , alpha = 1
+                # , lw = 2
+                # , histtype = 'step'
+                , label = 'ROI'
+                , normed = True
                 )
         plt.title('Histogram of sensor readout')
         plt.legend(loc='best', framealpha=0.4)
