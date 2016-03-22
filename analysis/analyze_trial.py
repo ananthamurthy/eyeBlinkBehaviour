@@ -72,15 +72,19 @@ def main( args ):
         plt.ylim( (0, 2 * sensor.mean() ) )
         plt.legend( framealpha=0.4)
         ax.add_patch( mpatch.Rectangle( 
-            (time[toneBeginN], min(sensor)+30), 350, 50, lw=0)
+            (time[toneBeginN], min(400,sensor.mean()-200)), 350, 50, lw=0)
             )
-        ax.annotate('Tone', xy=(time[toneEndN], min(sensor))
-                , xytext=(time[toneBeginN], min(sensor)-20)
+        ax.annotate('Tone', xy=(time[toneEndN], sensor.mean() )
+                , xytext=(time[toneBeginN], min(300,sensor.mean()-300))
                 )
         if cstype > 0:
-            ax.add_patch( mpatch.Rectangle( (time[puffBeginN], min(sensor)+30), 50, 50,lw=0))
-            ax.annotate('Puff', xy=(time[puffBeginN], min(sensor)), xytext=(time[puffBeginN],
-                min(sensor)-20))
+            ax.add_patch( 
+                    mpatch.Rectangle( (time[puffBeginN],
+                        min(400,sensor.mean()-200))
+                        , 50, 50,lw=0)
+                    )
+            ax.annotate('Puff', xy=(time[puffBeginN], sensor.mean())
+                    , xytext=(time[puffBeginN], min(300,sensor.mean()-300)))
         plt.xlabel( 'Time (ms)' )
         plt.ylabel( 'Sensor readout' )
 
@@ -90,6 +94,9 @@ def main( args ):
     for i, x in enumerate(bins[1:]):
         areaUnderCurve.append( np.sum(sensor[bins[i]:x]) )
 
+    ######
+    # In this subplot, we scale down the pre and post baseline by a factor of
+    # 10. The newTime vector is transformation of time vector to achive this.
     ax = plt.subplot(3, 1, 2)
     scaleT = 0.1
     time0A = time[:aN] * scaleT 
@@ -103,29 +110,32 @@ def main( args ):
         plt.xticks( [0, newTime[aN], newTime[bN], max(newTime) ]
                 , [0, aN*10, bN*10, int(max(time)) ] 
                 )
-        plt.xlim(( 0, max(newTime) ))
+        ax.set_xlim(( 0, max(newTime) ))
+        ax.set_ylim(( max(0,min(sensor)-200) , max(sensor)+100))
         ax.add_patch( mpatch.Rectangle( 
-            (newTime[toneBeginN], min(sensor)+30), 350, 50, lw=0)
+            (newTime[toneBeginN], sensor.min()-100), 350, 50, lw=0)
             )
-        plt.annotate('Tone', xy=(newTime[toneEndN], min(sensor))
-                , xytext=(newTime[toneBeginN], min(sensor)-20)
+        plt.annotate('Tone', xy=(newTime[toneEndN], sensor.min())
+                , xytext=(newTime[toneBeginN], sensor.min()-150)
                 )
         if cstype > 0:
-            ax.add_patch( mpatch.Rectangle( (newTime[puffBeginN], min(sensor)+30), 50, 50,lw=0))
-            plt.annotate('Puff', xy=(newTime[puffBeginN], min(sensor)), xytext=(newTime[puffBeginN],
-                min(sensor)-20))
+            ax.add_patch( mpatch.Rectangle( 
+                (newTime[puffBeginN], min(sensor)-100), 50, 50,lw=0)
+                )
+            plt.annotate('Puff', xy=(newTime[puffBeginN], min(sensor))
+                    , xytext=(newTime[puffBeginN], min(sensor)-150))
         plt.xlabel( 'Time (ms)' )
         plt.ylabel( 'Sensor readout' )
 
         plt.subplot(3, 1, 3)
         baselines = np.concatenate(( sensor[:aN], sensor[ bN: ]))
-        plt.hist( baselines, bins = int(max(baselines) - min(baselines))/10
+        plt.hist( baselines, bins = int(max(baselines) - min(baselines))/5
                 # , histtype = 'step'
                 # , lw = 2
                 , alpha = 0.7, normed = True
                 , label = 'baseline (pre+post)')
         yval = sensor[aN:bN]
-        plt.hist( yval, bins = int(max(yval)-min(yval))/10
+        plt.hist( yval, bins = int(max(yval)-min(yval))/5
                 , alpha = 1
                 # , lw = 2
                 # , histtype = 'step'
