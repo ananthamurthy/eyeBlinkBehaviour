@@ -22,6 +22,8 @@ import matplotlib
 import matplotlib.pyplot as plt
 from collections import defaultdict
 import logging
+import analyze_trial as at
+
 logging.basicConfig( filename = '__analyze__.log'
         , level = logging.DEBUG
         , filemode = 'a'
