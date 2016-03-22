@@ -14,9 +14,11 @@ __status__           = "Development"
 import numpy as np
 import pylab
 import itertools
+import random 
 
-#pylab.style.use('ggplot')
-
+style = 'seaborn-darkgrid' # random.choice( pylab.style.available )
+pylab.style.use( style )
+pylab.rcParams.update({'font.size': 8})
 # These are the columns in CSV file and these are fixed.
 cols_ = [ 'sensor', 'time', 'cs_type', 'session_num' ]
 
@@ -59,7 +61,7 @@ def main( args ):
         ax.annotate('Puff', xy=(6000, 300), xytext=(6000, 150) ,
                 arrowprops=dict(facecolor='black', shrink=0.05))
     pylab.xlabel( 'Time (ms)' )
-    pylab.ylabel( 'Sensor reading' )
+    pylab.ylabel( 'Sensor readout' )
 
     pylab.subplot(3, 1, 2)
     binSize = 100
@@ -82,7 +84,7 @@ def main( args ):
     pylab.legend(loc='best', framealpha=0.4)
     pylab.suptitle( " ".join(metadata) + ' CS : %s' % cstype, fontsize = 8 )
     pylab.tight_layout()
-    outfile = '%s.png' % trialFile
+    outfile = '%s%s.png' % (trialFile, '')
     print('[INFO] Plotting trial to %s' % outfile )
     pylab.savefig( outfile )
     return { 'time' : time, 'sensor' : sensor, 'area' : (bins, areaUnderCurve) }
