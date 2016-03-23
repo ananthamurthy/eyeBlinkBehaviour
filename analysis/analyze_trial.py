@@ -147,7 +147,6 @@ def plot_histogram( ax ):
     plt.legend(loc='best', framealpha=0.4)
 
 def main( args ):
-    global args_
     global cstype, trialFile
     global data, sensor, time
     trialFile = args['input']
@@ -159,7 +158,7 @@ def main( args ):
     metadata = [ x[1:] for x in metadata ]
     # rest is data
     data = np.genfromtxt( trialFile, delimiter=',' )
-    print( '[DEBUG] Metadata :%s' % metadata )
+    # print( '[DEBUG] Metadata :%s' % metadata )
     time, sensor = data[:,1], data[:,0]
     cstype = int(data[1,2])
     time = straighten_time( time )
@@ -185,9 +184,10 @@ def main( args ):
 
     plt.suptitle( " ".join(metadata) + ' CS : %s' % cstype, fontsize = 8 )
     plt.tight_layout()
-    outfile = '%s%s.png' % (trialFile, style)
+    outfile = args['output'] or '%s%s.png' % (trialFile, '')
     print('[INFO] Plotting trial to %s' % outfile )
     plt.savefig( outfile )
+    plt.close()
 
     return { 'time' : time, 'sensor' : sensor
             , 'newtime' : newtime

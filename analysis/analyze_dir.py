@@ -25,6 +25,8 @@ import logging
 import re
 import analyze_trial as at
 
+matplotlib.rcParams.update( {'font.size' : 10} )
+
 args_ = None
 csplus = []
 csplusIdx, csminusIdx = [], []
@@ -33,6 +35,11 @@ aN, bN = at.aN, at.bN
 
 def main(  ):
     global args_
+    if not args_.output_dir:
+        args_.output_dir = os.path.join(args_.dir, '_plots')
+    if not os.path.isdir( args_.output_dir):
+        os.makedirs( args_.output_dir )
+
     files = {}
     for d, sd, fs in os.walk( args_.dir ):
         for f in fs:
@@ -41,13 +48,15 @@ def main(  ):
                 filepath = os.path.join(d, f)
                 trialIndex = re.search('Trial(?P<index>\d+)\.csv', filepath) 
                 index = int(trialIndex.groupdict()['index'])
-                files[index] = filepath
+                files[index] = (filepath, f)
     tVec = []
     # Sort the trials according to trial number
     fileIdx = sorted( files )
     for idx  in fileIdx:
-        f = files[idx]
-        result = at.main( { 'input' : f, 'result_dir' : args_.result_dir } )
+        f, fname = files[idx]
+        result = at.main( { 'input' : f
+            , 'output' : os.path.join(args_.output_dir, fname+'.png') } 
+            )
         tVec = result['time']
         row = result['sensor']
         if len(row) > 100:
@@ -66,33 +75,36 @@ def main(  ):
     except Exception as e:
         pass
     plt.subplot(2, 1, 1)
-    plt.imshow( csminusData, cmap = "jet", extent = [10*aN, 10*bN, 50, 0]  
+    plt.imshow( csminusData, cmap = "jet"
+            , extent = [10*aN, 10*bN, len(csminusIdx), 0]  
             , vmin = csplusData.min(), vmax = csplusData.max()
             , interpolation = 'none', aspect='auto' 
             )
     plt.xlabel( 'Time (ms)' )
     plt.ylabel( '# Trial ')
-    # lt.yticks( ( range(50), [ str(x) for x in csminusIdx] ) )
+    plt.yticks( range(0,len(csminusIdx),2), csminusIdx[::2], fontsize = 6 )
     plt.title( 'CS- Trials' )
     plt.legend( )
     plt.colorbar( )
     plt.subplot(2, 1, 2)
-    plt.imshow( csplusData, cmap = "jet", extent = [10*aN, 10*bN, 50, 0]  
+    plt.imshow( csplusData, cmap = "jet"
+            , extent = [10*aN, 10*bN, len(csplusIdx), 0]  
             , vmin = csplusData.min(), vmax = csplusData.max()
             , interpolation = 'none', aspect='auto' 
             )
+    plt.yticks( range(0,len(csplusIdx),2), csplusIdx[::2] , fontsize = 6)
     plt.xlabel( 'Time (ms)' )
     plt.ylabel( '# Trial' )
     plt.title( 'CS+ Trials' )
     plt.legend( )
     plt.colorbar( )
-    if not args_.result_dir:
-        args_.result_dir = args_.dir
 
-    outfile = '%s/summary.png' % args_.result_dir
+    outfile = '%s/summary.png' % args_.output_dir
     print('[INFO] Saving file to %s' % outfile )
     plt.tight_layout( )
-    plt.suptitle( args_.dir.split('/')[-1].replace('_', ', '), fontsize = 9 )
+    plt.suptitle( args_.dir.split('/')[-1].replace('_', ', ')
+            , horizontalalignment = 'left'
+            , fontsize = 9 )
     plt.savefig( outfile )
 
 if __name__ == '__main__':
@@ -113,10 +125,10 @@ if __name__ == '__main__':
         , action = 'store_true'
         , help = 'Each trial in subplot.'
         )
-    parser.add_argument('--result_dir', '-o'
+    parser.add_argument('--output_dir', '-o'
         , required = False
-        , default = False
-        , help = 'Directory to save restults.'
+        , default = ''
+        , help = 'Directory to save results.'
         )
     parser.add_argument('--analysis', '-a'
         , required = False
