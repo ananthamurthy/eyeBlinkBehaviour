@@ -158,6 +158,8 @@ def main( args ):
     metadata = [ x[1:] for x in metadata ]
     # rest is data
     data = np.genfromtxt( trialFile, delimiter=',' )
+    if len(data) < 5:
+        return {}
     # print( '[DEBUG] Metadata :%s' % metadata )
     time, sensor = data[:,1], data[:,0]
     cstype = int(data[1,2])

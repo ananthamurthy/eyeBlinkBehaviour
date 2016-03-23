@@ -57,6 +57,8 @@ def main(  ):
         result = at.main( { 'input' : f
             , 'output' : os.path.join(args_.output_dir, fname+'.png') } 
             )
+        if not result:
+            continue
         tVec = result['time']
         row = result['sensor']
         if len(row) > 100:
