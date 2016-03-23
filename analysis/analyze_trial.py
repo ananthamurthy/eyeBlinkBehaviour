@@ -189,7 +189,9 @@ def main( args ):
 
     return { 'time' : time, 'sensor' : sensor
             , 'newtime' : newtime
-            , 'area' : (bins, areaUnderCurve) }
+            , 'area' : (bins, areaUnderCurve) 
+            , 'cstype' : int(cstype)
+            }
 
 if __name__ == '__main__':
     import argparse
