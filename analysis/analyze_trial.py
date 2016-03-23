@@ -32,6 +32,13 @@ cols_ = [ 'sensor', 'time', 'cs_type', 'session_num' ]
 aN, bN = 450, 650
 toneBeginN, toneEndN = 500, 535
 puffBeginN, puffEndN = 570, 575
+data = None
+cstype = 0
+time = None
+newtime = None
+sensor = None
+trialFile = None
+args_ = None
 
 def straighten_time( time ):
     # if time is not in ascending order, straighten it.
@@ -45,7 +52,102 @@ def straighten_time( time ):
 def get_data_to_plot( mat ):
     return mat
 
+def plot_raw_trace( ax ):
+    global cstype, data, time, sensor
+    baselineN = 500
+    ax.plot(time, sensor)
+    ax.plot(time[aN], sensor[aN], color = 'b')
+    ax.plot(time[aN:bN], sensor[aN:bN], color = 'r')
+    ax.plot(time[bN:], sensor[bN:], color = 'b')
+    # ax.plot( time,  [np.median( sensor )] * len(time))
+    plt.xlim( (0, max(time)) )
+    plt.ylim( (0, 2 * sensor.mean() ) )
+    plt.legend( framealpha=0.4)
+    ax.add_patch( mpatch.Rectangle( 
+        (time[toneBeginN], min(400,sensor.mean()-200)), 350, 50, lw=0)
+        )
+    ax.annotate('Tone', xy=(time[toneEndN], sensor.mean() )
+            , xytext=(time[toneBeginN], min(300,sensor.mean()-300))
+            )
+    if cstype > 0:
+        ax.add_patch( 
+                mpatch.Rectangle( (time[puffBeginN],
+                    min(400,sensor.mean()-200))
+                    , 50, 50,lw=0)
+                )
+        ax.annotate('Puff', xy=(time[puffBeginN], sensor.mean())
+                , xytext=(time[puffBeginN], min(300,sensor.mean()-300)))
+    plt.xlabel( 'Time (ms)' )
+    plt.ylabel( 'Sensor readout' )
+
+def plot_zoomedin_raw_trace( ax ):
+    global time, newtime
+    global aN, bN
+    scaleT = 0.1
+    time0A = time[:aN] * scaleT 
+    timeAB = time[aN:bN] -  time[aN] + time[scaleT*aN]
+    timeBX = timeAB[-1] + (time[bN:] - time[bN]) * scaleT
+    newtime = np.concatenate( ( time0A, timeAB, timeBX ) )
+    plt.plot( newtime[:aN], sensor[:aN] , color = 'b')
+    plt.plot( newtime[aN-1:bN], sensor[aN-1:bN], color = 'r')
+    plt.plot( newtime[bN:], sensor[bN:] , color = 'b')
+    plt.xticks( [0, newtime[aN], newtime[bN], max(newtime) ]
+            , [0, aN*10, bN*10, int(max(time)) ] 
+            )
+    ax.set_xlim(( 0, max(newtime) ))
+    ax.set_ylim(( max(0,min(sensor)-200) , max(sensor)+100))
+    ax.add_patch( mpatch.Rectangle( 
+        (newtime[toneBeginN], sensor.min()-100), 350, 50, lw=0)
+        )
+    plt.annotate('Tone', xy=(newtime[toneEndN], sensor.min())
+            , xytext=(newtime[toneBeginN], sensor.min()-150)
+            )
+    if cstype > 0:
+        ax.add_patch( mpatch.Rectangle( 
+            (newtime[puffBeginN], min(sensor)-100), 50, 50,lw=0)
+            )
+        plt.annotate('Puff', xy=(newtime[puffBeginN], min(sensor))
+                , xytext=(newtime[puffBeginN], min(sensor)-150))
+    plt.xlabel( 'Time (ms)' )
+    plt.ylabel( 'Sensor readout' )
+
+
+def plot_histogram( ax ):
+    """Here we take the data from ROI (between aN and bN). A 100 ms window (size
+    = 10) slides over it. At each step, we get min and max of window, store
+    these values in a list. 
+
+    We plot histogram of the list
+    """
+    global newtime, time
+    roiData = sensor[aN:bN]
+    baselineData = np.concatenate( (sensor[:aN], sensor[bN:]) )
+    windowSize = 10
+    histdataRoi = []
+    for i in range( len(roiData) ):
+        window = roiData[i:i+windowSize]
+        histdataRoi.append( np.ptp( window ) ) # peak to peak
+
+    histdataBaseline = []
+    for i in range( len(baselineData) ):
+        window = baselineData[i:i+windowSize]
+        histdataBaseline.append( np.ptp( window ) )
+
+    plt.hist( histdataBaseline, bins = int(np.ptp( histdataBaseline) / 5.0)
+            , normed = True, label = 'baseline (peak to peak)'
+            , alpha = 0.5
+            )
+    plt.hist( histdataRoi, bins = int(np.ptp( histdataBaseline)/5.0)
+            , normed = True , label = 'ROI (peak to peak)'
+            , alpha = 0.8
+            )
+    # plt.title('Histogram of sensor readout')
+    plt.legend(loc='best', framealpha=0.4)
+
 def main( args ):
+    global args_
+    global cstype, trialFile
+    global data, sensor, time
     trialFile = args['input']
     plot = args.get('plot', True)
     print('[INFO] Processing file %s' % trialFile )
@@ -57,36 +159,12 @@ def main( args ):
     data = np.genfromtxt( trialFile, delimiter=',' )
     print( '[DEBUG] Metadata :%s' % metadata )
     time, sensor = data[:,1], data[:,0]
-    cstype = data[1,2]
+    cstype = int(data[1,2])
     time = straighten_time( time )
     assert (np.sort(time) == time).all(), "Time must be ascending order"
     if plot:
         ax = plt.subplot(3, 1, 1)
-        baselineN = 500
-        ax.plot(time, sensor)
-        ax.plot(time[aN], sensor[aN], color = 'b')
-        ax.plot(time[aN:bN], sensor[aN:bN], color = 'r')
-        ax.plot(time[bN:], sensor[bN:], color = 'b')
-        # ax.plot( time,  [np.median( sensor )] * len(time))
-        plt.xlim( (0, max(time)) )
-        plt.ylim( (0, 2 * sensor.mean() ) )
-        plt.legend( framealpha=0.4)
-        ax.add_patch( mpatch.Rectangle( 
-            (time[toneBeginN], min(400,sensor.mean()-200)), 350, 50, lw=0)
-            )
-        ax.annotate('Tone', xy=(time[toneEndN], sensor.mean() )
-                , xytext=(time[toneBeginN], min(300,sensor.mean()-300))
-                )
-        if cstype > 0:
-            ax.add_patch( 
-                    mpatch.Rectangle( (time[puffBeginN],
-                        min(400,sensor.mean()-200))
-                        , 50, 50,lw=0)
-                    )
-            ax.annotate('Puff', xy=(time[puffBeginN], sensor.mean())
-                    , xytext=(time[puffBeginN], min(300,sensor.mean()-300)))
-        plt.xlabel( 'Time (ms)' )
-        plt.ylabel( 'Sensor readout' )
+        plot_raw_trace( ax )
 
     binSize = 100
     areaUnderCurve = []
@@ -96,62 +174,21 @@ def main( args ):
 
     ######
     # In this subplot, we scale down the pre and post baseline by a factor of
-    # 10. The newTime vector is transformation of time vector to achive this.
-    ax = plt.subplot(3, 1, 2)
-    scaleT = 0.1
-    time0A = time[:aN] * scaleT 
-    timeAB = time[aN:bN] -  time[aN] + time[scaleT*aN]
-    timeBX = timeAB[-1] + (time[bN:] - time[bN]) * scaleT
-    newTime = np.concatenate( ( time0A, timeAB, timeBX ) )
+    # 10. The newtime vector is transformation of time vector to achive this.
     if plot:
-        plt.plot( newTime[:aN], sensor[:aN] , color = 'b')
-        plt.plot( newTime[aN-1:bN], sensor[aN-1:bN], color = 'r')
-        plt.plot( newTime[bN:], sensor[bN:] , color = 'b')
-        plt.xticks( [0, newTime[aN], newTime[bN], max(newTime) ]
-                , [0, aN*10, bN*10, int(max(time)) ] 
-                )
-        ax.set_xlim(( 0, max(newTime) ))
-        ax.set_ylim(( max(0,min(sensor)-200) , max(sensor)+100))
-        ax.add_patch( mpatch.Rectangle( 
-            (newTime[toneBeginN], sensor.min()-100), 350, 50, lw=0)
-            )
-        plt.annotate('Tone', xy=(newTime[toneEndN], sensor.min())
-                , xytext=(newTime[toneBeginN], sensor.min()-150)
-                )
-        if cstype > 0:
-            ax.add_patch( mpatch.Rectangle( 
-                (newTime[puffBeginN], min(sensor)-100), 50, 50,lw=0)
-                )
-            plt.annotate('Puff', xy=(newTime[puffBeginN], min(sensor))
-                    , xytext=(newTime[puffBeginN], min(sensor)-150))
-        plt.xlabel( 'Time (ms)' )
-        plt.ylabel( 'Sensor readout' )
+        ax = plt.subplot(3, 1, 2)
+        plot_zoomedin_raw_trace( ax )
+        ax = plt.subplot(3, 1, 3)
+        plot_histogram( ax )
 
-        plt.subplot(3, 1, 3)
-        baselines = np.concatenate(( sensor[:aN], sensor[ bN: ]))
-        plt.hist( baselines, bins = int(max(baselines) - min(baselines))/5
-                # , histtype = 'step'
-                # , lw = 2
-                , alpha = 0.7, normed = True
-                , label = 'baseline (pre+post)')
-        yval = sensor[aN:bN]
-        plt.hist( yval, bins = int(max(yval)-min(yval))/5
-                , alpha = 1
-                # , lw = 2
-                # , histtype = 'step'
-                , label = 'ROI'
-                , normed = True
-                )
-        plt.title('Histogram of sensor readout')
-        plt.legend(loc='best', framealpha=0.4)
-        plt.suptitle( " ".join(metadata) + ' CS : %s' % cstype, fontsize = 8 )
-        plt.tight_layout()
-        outfile = '%s%s.png' % (trialFile, style)
-        print('[INFO] Plotting trial to %s' % outfile )
-        plt.savefig( outfile )
+    plt.suptitle( " ".join(metadata) + ' CS : %s' % cstype, fontsize = 8 )
+    plt.tight_layout()
+    outfile = '%s%s.png' % (trialFile, style)
+    print('[INFO] Plotting trial to %s' % outfile )
+    plt.savefig( outfile )
 
     return { 'time' : time, 'sensor' : sensor
-            , 'newtime' : newTime
+            , 'newtime' : newtime
             , 'area' : (bins, areaUnderCurve) }
 
 if __name__ == '__main__':
