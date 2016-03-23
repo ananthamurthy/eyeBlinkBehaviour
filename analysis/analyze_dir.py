@@ -27,6 +27,7 @@ import analyze_trial as at
 
 args_ = None
 csplus = []
+csplusIdx, csminusIdx = [], []
 csminus = []
 aN, bN = at.aN, at.bN
 
@@ -46,15 +47,16 @@ def main(  ):
     fileIdx = sorted( files )
     for idx  in fileIdx:
         f = files[idx]
-        result = at.main( { 'input' : f } )
+        result = at.main( { 'input' : f, 'result_dir' : args_.result_dir } )
         tVec = result['time']
         row = result['sensor']
         if len(row) > 100:
-            if result['cstype'] == 0:
+            if result['cstype'] == 0: 
                 csminus.append( row[aN:bN] )
-            else:
+                csminusIdx.append( idx )
+            else: 
                 csplus.append( row[aN:bN] )
-        plt.close()
+                csplusIdx.append( idx )
 
     plt.figure()
     csplusData = np.vstack( csplus ) 
@@ -70,6 +72,7 @@ def main(  ):
             )
     plt.xlabel( 'Time (ms)' )
     plt.ylabel( '# Trial ')
+    # lt.yticks( ( range(50), [ str(x) for x in csminusIdx] ) )
     plt.title( 'CS- Trials' )
     plt.legend( )
     plt.colorbar( )
