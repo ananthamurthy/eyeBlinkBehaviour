@@ -61,7 +61,7 @@ def plot_raw_trace( ax ):
     ax.plot(time[bN:], sensor[bN:], color = 'b')
     # ax.plot( time,  [np.median( sensor )] * len(time))
     plt.xlim( (0, max(time)) )
-    plt.ylim( (0, 2 * sensor.mean() ) )
+    plt.ylim( (0, sensor.max() + 100 ) )
     plt.legend( framealpha=0.4)
     ax.add_patch( mpatch.Rectangle( 
         (time[toneBeginN], min(400,sensor.mean()-200)), 350, 50, lw=0)
@@ -133,13 +133,15 @@ def plot_histogram( ax ):
         window = baselineData[i:i+windowSize]
         histdataBaseline.append( np.ptp( window ) )
 
-    plt.hist( histdataBaseline, bins = int(np.ptp( histdataBaseline) / 5.0)
+    plt.hist( histdataBaseline
+            , bins = np.arange( min(histdataBaseline), max(histdataBaseline), 5)
             , normed = True, label = 'baseline (peak to peak)'
-            , alpha = 0.5
+            , alpha = 0.7
             )
-    plt.hist( histdataRoi, bins = int(np.ptp( histdataBaseline)/5.0)
+    plt.hist( histdataRoi
+            , bins = np.arange( min(histdataRoi), max(histdataRoi), 5)
             , normed = True , label = 'ROI (peak to peak)'
-            , alpha = 0.8
+            , alpha = 0.7
             )
     # plt.title('Histogram of sensor readout')
     plt.legend(loc='best', framealpha=0.4)

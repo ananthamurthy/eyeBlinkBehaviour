@@ -22,6 +22,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 from collections import defaultdict
 import logging
+import re
 import analyze_trial as at
 
 args_ = None
@@ -31,18 +32,20 @@ aN, bN = at.aN, at.bN
 
 def main(  ):
     global args_
-    files = []
+    files = {}
     for d, sd, fs in os.walk( args_.dir ):
         for f in fs:
-            if 'Trial0.csv' in f or 'Trial101.csv' in f:
-                continue
             ext = f.split('.')[-1]
             if ext == 'csv':
                 filepath = os.path.join(d, f)
-                files.append( filepath )
+                trialIndex = re.search('Trial(?P<index>\d+)\.csv', filepath) 
+                index = int(trialIndex.groupdict()['index'])
+                files[index] = filepath
     tVec = []
-    data = []
-    for f in files:
+    # Sort the trials according to trial number
+    fileIdx = sorted( files )
+    for idx  in fileIdx:
+        f = files[idx]
         result = at.main( { 'input' : f } )
         tVec = result['time']
         row = result['sensor']
@@ -56,23 +59,28 @@ def main(  ):
     plt.figure()
     csplusData = np.vstack( csplus ) 
     csminusData = np.vstack( csminus )
-    plt.style.use('classic')
+    try:
+        plt.style.use('classic')
+    except Exception as e:
+        pass
     plt.subplot(2, 1, 1)
-    plt.imshow( csminusData, cmap = "jet", extent = [10*aN, 10*bN, 0, 100]  
-            , vmin = 0, vmax = 1000
-            ,interpolation = 'none', aspect='auto' )
+    plt.imshow( csminusData, cmap = "jet", extent = [10*aN, 10*bN, 50, 0]  
+            , vmin = csplusData.min(), vmax = csplusData.max()
+            , interpolation = 'none', aspect='auto' 
+            )
     plt.xlabel( 'Time (ms)' )
     plt.ylabel( '# Trial ')
-    plt.title( 'CS-' )
+    plt.title( 'CS- Trials' )
     plt.legend( )
     plt.colorbar( )
     plt.subplot(2, 1, 2)
-    plt.imshow( csplusData, cmap = "jet", extent = [10*aN, 10*bN, 0, 100]  
-            , vmin = 0, vmax = 1000
-            ,interpolation = 'none', aspect='auto' )
+    plt.imshow( csplusData, cmap = "jet", extent = [10*aN, 10*bN, 50, 0]  
+            , vmin = csplusData.min(), vmax = csplusData.max()
+            , interpolation = 'none', aspect='auto' 
+            )
     plt.xlabel( 'Time (ms)' )
     plt.ylabel( '# Trial' )
-    plt.title( 'CS+' )
+    plt.title( 'CS+ Trials' )
     plt.legend( )
     plt.colorbar( )
     if not args_.result_dir:
@@ -81,6 +89,7 @@ def main(  ):
     outfile = '%s/summary.png' % args_.result_dir
     print('[INFO] Saving file to %s' % outfile )
     plt.tight_layout( )
+    plt.suptitle( args_.dir.split('/')[-1].replace('_', ', '), fontsize = 9 )
     plt.savefig( outfile )
 
 if __name__ == '__main__':
