@@ -6,9 +6,9 @@ addpath('/Users/ananth/Documents/MATLAB/CustomFunctions_MATLAB')
 clear all
 close all
 
-week = 2;
+week = 3;
 nAnimals = 3;
-nSessions = 7;
+nSessions = 12;
 sessionType = 10;
 multipleSets = 1;
 
@@ -29,7 +29,7 @@ saveDirec = ('/Users/ananth/Desktop/Work/Analysis/eyeBlinkBehaviourAnalysis/');
 
 fontSize = 12;
 
-for session = 2:nSessions
+for session = 8:nSessions
     close all
     for set = 1:nSets
         if set == 1
@@ -54,11 +54,11 @@ for session = 2:nSessions
             
             %session = 1;
             dataset = [mouse '_SessionType' num2str(sessionType) '_Session' num2str(session)];
-            saveFolder = [saveDirec, mouse '/' dataset '/'];
+            saveFolder = [saveDirec, 'Mouse' mouse '/' 'Mouse' dataset '/'];
             
-            blinkData_csPlus = csvread([saveFolder dataset '_csPlus.csv']);
-            blinkData_csMinus = csvread([saveFolder dataset '_csMinus.csv']);
-            probeTrials = csvread([saveFolder dataset '_probeTrials.csv']);
+            blinkData_csPlus = csvread([saveFolder 'Mouse' dataset '_csPlus.csv']);
+            blinkData_csMinus = csvread([saveFolder 'Mouse' dataset '_csMinus.csv']);
+            probeTrials = csvread([saveFolder 'Mouse' dataset '_probeTrials.csv']);
             
             a_plus = [a_plus; blinkData_csPlus(1:12,1:1000)];
             b_minus = [b_minus; blinkData_csMinus(1:12,1:1000)];
