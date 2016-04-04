@@ -6,7 +6,7 @@
 clear all
 close all
 
-week = 2;
+week = 3;
 nAnimals = 3;
 nSessions = 12;
 sessionType = 10;
@@ -29,7 +29,7 @@ saveDirec = ('/home/shriya/Work/Analysis/eyeBlinkBehaviourAnalysis/');
 
 fontSize = 12;
 
-for session = 2:nSessions
+for session = 8:nSessions
     close all
     for set = 1:nSets
         if set == 1
@@ -54,11 +54,11 @@ for session = 2:nSessions
             
             %session = 1;
             dataset = [mouse '_SessionType' num2str(sessionType) '_Session' num2str(session)];
-            saveFolder = [saveDirec, 'Mouse' mouse '/Mouse' dataset '/'];
+            saveFolder = [saveDirec, 'Mouse' mouse '/' 'Mouse' dataset '/'];
             
-            blinkData_csPlus = csvread([saveFolder '/Mouse' dataset '_csPlus.csv']);
-            blinkData_csMinus = csvread([saveFolder '/Mouse' dataset '_csMinus.csv']);
-            probeTrials = csvread([saveFolder '/Mouse' dataset '_probeTrials.csv']);
+            blinkData_csPlus = csvread([saveFolder 'Mouse' dataset '_csPlus.csv']);
+            blinkData_csMinus = csvread([saveFolder 'Mouse' dataset '_csMinus.csv']);
+            probeTrials = csvread([saveFolder 'Mouse' dataset '_probeTrials.csv']);
             
             a_plus = [a_plus; blinkData_csPlus(1:12,1:1000)];
             b_minus = [b_minus; blinkData_csMinus(1:12,1:1000)];
@@ -149,7 +149,7 @@ for session = 2:nSessions
     end
     
     figure(1);
-    print(['/home/shriya/Desktop/rawBlinks_SessionType' num2str(sessionType)...
+    print(['/Users/ananth/Desktop/rawBlinks_SessionType' num2str(sessionType)...
         '_Session' num2str(session) ...
         '_week' num2str(week)],...
         '-djpeg');
