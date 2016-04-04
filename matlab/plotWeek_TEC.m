@@ -1,16 +1,16 @@
 % AUTHOR - Kambadur Ananthamurthy
 % PURPOSE - Use this to plot the week's behaviour data
 
-addpath('/Users/ananth/Documents/MATLAB/CustomFunctions_MATLAB')
+%addpath('/home/shriya/Documents/MATLAB/CustomFunctions_MATLAB')
 
 clear all
 close all
 
 week = 2;
 nAnimals = 3;
-nSessions = 7;
+nSessions = 12;
 sessionType = 10;
-multipleSets = 1;
+multipleSets = 0;
 
 if multipleSets == 1
     nSets = 2;
@@ -25,7 +25,7 @@ else
     %probe = 0;
 end
 
-saveDirec = ('/Users/ananth/Desktop/Work/Analysis/eyeBlinkBehaviourAnalysis/');
+saveDirec = ('/home/shriya/Work/Analysis/eyeBlinkBehaviourAnalysis/');
 
 fontSize = 12;
 
@@ -42,7 +42,7 @@ for session = 2:nSessions
         for i = 1:nAnimals
             if set == 1
                 %mouse = ['MouseK' num2str(i+16)]; %edit
-                mouse = ['K' num2str(i+16)]; %edit
+                mouse = ['K' num2str(i+19)]; %edit
             else
                 %mouse = ['MouseK' num2str(i+22)]; %edit
                 mouse = ['K' num2str(i+22)]; %edit
@@ -54,11 +54,11 @@ for session = 2:nSessions
             
             %session = 1;
             dataset = [mouse '_SessionType' num2str(sessionType) '_Session' num2str(session)];
-            saveFolder = [saveDirec, mouse '/' dataset '/'];
+            saveFolder = [saveDirec, 'Mouse' mouse '/Mouse' dataset '/'];
             
-            blinkData_csPlus = csvread([saveFolder dataset '_csPlus.csv']);
-            blinkData_csMinus = csvread([saveFolder dataset '_csMinus.csv']);
-            probeTrials = csvread([saveFolder dataset '_probeTrials.csv']);
+            blinkData_csPlus = csvread([saveFolder '/Mouse' dataset '_csPlus.csv']);
+            blinkData_csMinus = csvread([saveFolder '/Mouse' dataset '_csMinus.csv']);
+            probeTrials = csvread([saveFolder '/Mouse' dataset '_probeTrials.csv']);
             
             a_plus = [a_plus; blinkData_csPlus(1:12,1:1000)];
             b_minus = [b_minus; blinkData_csMinus(1:12,1:1000)];
@@ -149,16 +149,12 @@ for session = 2:nSessions
     end
     
     figure(1);
-    print(['/Users/ananth/Desktop/' ...
-        %'rawBlinks_set' num2str(set) ...
-        '_SessionType' num2str(sessionType)...
+    print(['/home/shriya/Desktop/rawBlinks_SessionType' num2str(sessionType)...
         '_Session' num2str(session) ...
         '_week' num2str(week)],...
         '-djpeg');
     figure(2);
-    print(['/Users/ananth/Desktop/' ...
-        %'median_set' num2str(set) ...
-        '_SessionType_' num2str(sessionType)...
+    print(['/home/shriya/Desktop/median_SessionType_' num2str(sessionType)...
         '_Session' num2str(session) ...
         '_week' num2str(week)],...
         '-djpeg');
