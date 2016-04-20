@@ -14,6 +14,6 @@ echo "Using pattern: $PAT"
 DIRS=`find $1 -type d -name "${PAT}"`
 for d in $DIRS; do
     echo "Processing $d"
-    python ./analyze_data.py -d $d  -o `pwd`/_results/`basename $d` | tee ${d}/log.log
+    python ./analyze_dir.py -d $d  -o `pwd`/_results/`basename $d` | tee ${d}/log.log
 done
 

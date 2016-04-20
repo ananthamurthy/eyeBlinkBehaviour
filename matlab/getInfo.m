@@ -8,11 +8,11 @@
 function [mouse, sessionType, session] = getInfo(direc)
 
 slashi=strfind(direc, '/');
-dataset=direc(1,(slashi(1,(length(slashi)-1)))+1:(length(direc)-1)); % Dataset name, in the format of MouseNN_BlockX_sessionY
+dataset=direc(1,(slashi(1,length(slashi)-1))+1:(length(direc))); % Dataset name, in the format of MouseNN_BlockX_sessionY
 uscorei=strfind(dataset, '_');
 
 mouse = dataset(1:uscorei(1,1)-1);
-sessionType = dataset((uscorei(1,2)-1):uscorei(1,2)-1); %How does this work?:P
+sessionType = dataset((uscorei(1,1)+12):uscorei(1,2)-1); %How does this work?:P
 session = dataset((uscorei(1,2)+8):end);
 
 end
