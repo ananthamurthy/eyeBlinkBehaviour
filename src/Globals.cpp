@@ -11,7 +11,7 @@ bool CS_plus = 0;
 int trialNum = 0;
 int prevTwoTrials[2] = { 0, 0 };
 int nextProbeIn = 0;
-unsigned int CS_fraction = 5;
+unsigned int CS_fraction = 8;
 
 String status = "000";
 

@@ -116,6 +116,9 @@ void setup()
 
     //Set up the tone pin:
     pinMode(tonePin, OUTPUT);
+    
+    //Set up the LED pin:
+    pinMode(ledPin, OUTPUT);
 
 #ifdef ENABLE_LCD
     // Initialize LCD
