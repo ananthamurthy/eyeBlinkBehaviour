@@ -116,6 +116,9 @@ void setup()
 
     //Set up the tone pin:
     pinMode(tonePin, OUTPUT);
+    
+    //Set up the LED pin:
+    pinMode(ledPin, OUTPUT);
 
 #ifdef ENABLE_LCD
     // Initialize LCD
@@ -371,7 +374,7 @@ void loop()
                         }
                         else
                         {
-                            if (random(10) >= CS_fraction)
+                            if (random(10) <= CS_fraction)
                                 CS_plus = 1;                       // play CS+
                             else
                                 CS_plus = 0;                       // play CS-
