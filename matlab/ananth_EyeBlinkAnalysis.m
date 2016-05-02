@@ -3,7 +3,7 @@
 % SPECIAL NOTE - This version of the code will work for data obtained from 20151225
 % This code additionall requires getInfo.m and blinkFilter.m to work.
 
-addpath('/Users/ananth/Documents/MATLAB/CustomFunctions_MATLAB')
+%addpath('/home/shriya/Documents/MATLAB/CustomFunctions_MATLAB')
 
 %Please work with the data from all sessions of an animal, before proceeding to the next animal
 
@@ -19,9 +19,9 @@ splitCS = 1; % split CS+ and CS- trials
 calculatePerformance = 0;
 saveData = 1;
 
-saveDirec = ('/Users/ananth/Desktop/Work/Analysis/eyeBlinkBehaviourAnalysis/');
+saveDirec = ('/home/shriya/Work/Analysis/eyeBlinkBehaviourAnalysis/');
 
-listPath=('/Users/ananth/Desktop/Work/Behaviour/folder_list.txt'); %Check path ID
+listPath=('/home/shriya/Work/BehaviourData/folder_list.txt'); %Check path ID
 %Exception cases
 %listPath=('/Users/ananth/Desktop/Work/Behaviour/folder_list2.txt'); %Check path ID
 
