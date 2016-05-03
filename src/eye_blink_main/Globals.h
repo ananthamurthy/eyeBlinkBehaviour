@@ -66,6 +66,10 @@ extern const int puffTime;
 extern int CSTime;
 extern int traceTime;
 
+// Time of distractor / LED or tone.
+extern int distractorOnTime;
+extern int distractorOffTime;
+
 /**
  * @brief What fraction of all CS is CS+. Value between 0 and 10.
  */
