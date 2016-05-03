@@ -296,9 +296,9 @@ def init( ):
 
     now = datetime.datetime.now()
     timeStamp =  now.strftime('%Y-%m-%d_%H-%M-%S')
-    mouseName = 'MouseK%s' % config.args_.name
+    mouseName = 'MouseS%s' % config.args_.name
     outdir = os.path.join( mouseName
-            , 'MouseK%s_SessionType%s_Session%s' % ( 
+            , 'MouseS%s_SessionType%s_Session%s' % ( 
                 config.args_.name, config.args_.session_type, config.args_.session_num)
             )
 
