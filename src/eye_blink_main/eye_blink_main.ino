@@ -359,7 +359,7 @@ void loop()
                     //Serial.print("Trace=");                              //For verification
                     //Serial.println(traceTime);
                     // start the next phase
-                    if (sessionType_ind >= 6)
+                    if ((sessionType_ind >= 6) || (sessionType_ind != 12))
                     {
                         if ((CS_plus == 1) || (sessionType_ind == 16))
                         {
