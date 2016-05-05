@@ -78,7 +78,7 @@ const int minITI               = 15000;     // in ms
 const int randITI              = 5000;      // in ms
 
 // Time of distractor / LED or tone.
-int distractorOnTime     = 250;
+int distractorOnTime     = 100;
 int distractorOffTime    = 250;
 
 ////For session 12
