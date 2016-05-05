@@ -211,8 +211,6 @@ void loop()
 
             if (sessionType_ind >= 12 && sessionType_ind <= 16)
             {
-                CSTime = 100;
-                CS_TONE_2 = CS_TONE_1;
 
                 if (sessionType_ind >= 16 && trialNum > 20)   //
                 {

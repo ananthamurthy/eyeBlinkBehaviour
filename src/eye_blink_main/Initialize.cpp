@@ -78,6 +78,9 @@ int initialize()
 {
     reboot_ = false;
 
+    CSTime = 100;
+    CS_TONE_2 = CS_TONE_1;
+
     /*
      * Keep sending question onto serial port every second.
      */
