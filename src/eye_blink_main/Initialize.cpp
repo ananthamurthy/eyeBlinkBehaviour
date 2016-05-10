@@ -277,7 +277,7 @@ int initialize()
             traceTime = 250; //in ms
         else if (sessionType_ind>9 && sessionType_ind<=11) 
             traceTime = 500; //in ms
-        else if (sessionType_ind >= 12)
+        else if (sessionType_ind >= 13)
             traceTime = 350; //in ms   
         
     }

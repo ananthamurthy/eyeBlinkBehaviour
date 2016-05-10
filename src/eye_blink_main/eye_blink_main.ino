@@ -209,17 +209,24 @@ void loop()
             }
 #endif
 
-            if (sessionType_ind >= 12 && sessionType_ind <= 16)
+
+            // Shriya's session types.
+            if (sessionType_ind >= 12 && sessionType_ind <= 18) 
             {
 
-                if (sessionType_ind >= 16 && trialNum > 20)   //
+              //All the session types involving a distractor. 
+              //The first 20 trials are always CS+ to establish learning and baseline. From trial 21, it is randomized to play distractors in 80% of the trials.
+              
+                if (sessionType_ind >= 16 && trialNum > 20)   
                 {
-
                 }
                 else
                     CS_plus = 1;
 
-                if (trialNum > 20)
+              
+                //To expand or minimize the trace interval after the 20th trial.
+                
+                if (trialNum > 20)  
                 {
                     if (sessionType_ind == 14)
                         traceTime = 250;
@@ -229,40 +236,48 @@ void loop()
                 }
             }
 
-            if( (sessionType_ind == 17 || sessionType_ind == 18) && CS_plus == 1 )
-            {
-                if( ! flipped_ )
-                    switchOnDistractor( currentTime, ledPin  );
-                else
-                    switchOnDistractor( currentTime, tonePin );
-            }
-
             switch ( condition )
             {
             // PRE
             case 0:
                 PF((condition+1));
-
                 detectBlinks();
-                if (currentPhaseTime >= preTime)
-                {
-                    // Shriya.  Implements whether CS is tone of LED.
-                    // TODO: Need testing.
-                    if( sessionType_ind == 17 )
-                        digitalWrite( ledPin, HIGH );
-                    else if( sessionType_ind == 18 )
-                        tone( tonePin, CS_TONE_1 );
+                //Serial.println("StartPre");
 
-                    
-                    if (sessionType_ind % 2 == 0)
+
+                // The distractoor switched on in the Pre-tone Phase and remains on till Trace begins.
+                // Session Type 17 and 18 and Distractor sessions.
+                
+                if ((sessionType_ind == 17) && (CS_plus == 1))
+                  {
+                    switchOnDistractor( currentTime, tonePin );
+                  }
+
+                else if ((sessionType_ind == 18) && (CS_plus == 1))
+                  {
+                     switchOnDistractor( currentTime, ledPin  );
+                  }
+                            
+                if (currentPhaseTime >= preTime)
+                
+                {  //Serial.println("EndPre");
+
+                    if (sessionType_ind == 17)
+                    { digitalWrite(ledPin, HIGH);
+                    }
+                                       
+                    if (sessionType_ind % 2 == 0) 
                     {
                         if (CS_plus == 1 )
                         {
                             if( flipped_ )
                                 tone( tonePin, CS_TONE_2);
+                                
                             else
-                                tone( tonePin, CS_TONE_1);
-                            //Serial.println("even ST: CS+=Tone1");
+                               {tone( tonePin, CS_TONE_1);
+                                //digitalWrite(tonePin, HIGH);
+                               }
+                            
                             changePhase( 1, START_CS_PLUS );
                         }
                         else // CS_plus is not 1
@@ -272,6 +287,7 @@ void loop()
                             else 
                             {
                                 tone( tonePin, CS_TONE_2);
+                                //digitalWrite( tonePin, HIGH );
                                 //Serial.print("even ST: CS-=Tone1");
                             }
                             changePhase(2, START_CS_MINUS);
@@ -279,7 +295,7 @@ void loop()
 
 
                     }
-                    else // sessionType_ind invovles LED
+                    else // sessionType_ind involves LED
                     {
 
                         if( 1 == CS_plus )
@@ -288,8 +304,11 @@ void loop()
                             if(flipped_)
                                 digitalWrite( ledPin, HIGH);
                             else
+                            {
                                 tone( tonePin, CS_TONE_1 );
-                            //Serial.println("odd ST: CS+=Tone1");
+                                //digitalWrite( tonePin, HIGH );
+                                //Serial.println("odd ST: CS+=Tone1");
+                            }
                             changePhase( 1, START_CS_PLUS );
                         }
                         else // CS_minus
@@ -297,11 +316,12 @@ void loop()
                             if( flipped_ )
                             {
                                 tone( tonePin, CS_TONE_1);
-                                //Serial.println("CS-=Tone1");
+                                
                             }
                             else if (sessionType_ind >= 12)
                             {
                                 tone (tonePin, CS_TONE_1);
+                                //digitalWrite(tonePin, HIGH);
                                 //Serial.println("odd ST: CS-=Tone1");              //For verification
                             }
                             else
@@ -316,11 +336,15 @@ void loop()
             case 1:
                 PF((condition+1));
                 detectBlinks();
+                //Serial.println("StartCS+");
 
                 if (currentPhaseTime >= CSTime)
-                {
+                { //Serial.println("EndCS+");
                     shutoff_cs( tonePin, ledPin );
 
+                    
+                   //Session Type 16 is where CS and Distractor are both tones. Not using this right now.
+                   
                     if( sessionType_ind == 16 )
                     {
                         if (trialNum > 20)
@@ -341,9 +365,10 @@ void loop()
             case 2:
                 PF((condition+1));
                 detectBlinks();
+                //Serial.println("StartCS-");
 
                 if (currentPhaseTime >= CSTime)
-                {
+                { //Serial.println("EndCS-");
                     shutoff_cs( tonePin, ledPin );
                     changePhase( 3, START_TRACE );
                 }
@@ -354,19 +379,27 @@ void loop()
                 PF((condition+1));
                 detectBlinks();
 
+//                if ((sessionType_ind == 17) && (CS_plus == 1))
+//                  digitalWrite (ledPin, LOW);
+//                else if ((sessionType_ind == 18) && (CS_plus == 1))  
+//                  digitalWrite (ledPin, LOW);
+
+                  
+                //Serial.println("StartTrace");
+
                 if (currentPhaseTime >= traceTime)
-                {
+                {   //Serial.println("EndTrace");
                     //Serial.print("Trace=");                              //For verification
                     //Serial.println(traceTime);
                     // start the next phase
-                    if ((sessionType_ind >= 6) || (sessionType_ind != 12))
+                    if ((sessionType_ind >= 6) && (sessionType_ind != 12))
                     {
                         if ((CS_plus == 1) || (sessionType_ind == 16))
                         {
                             if (nextProbeIn != 0)
                             {
                                 playPuff(puff_do, HIGH);
-                                //Serial.println("Puff");
+                                //Serial.println("PuffON");
                                 changePhase( 4, START_US );    // US: Air-puff
                             }
                             else
@@ -387,6 +420,7 @@ void loop()
                     {
                         // control case (No-Puff)
                         playPuff(puff_do, LOW);
+                        //Serial.println("NoPuff");
                         // US: Air- no puff
                         changePhase( 5, START_US_NO_PUFF );
                     }
@@ -401,6 +435,7 @@ void loop()
                 {
                     // start the next phase
                     playPuff(puff_do, LOW);
+                    //Serial.println("PuffOFF");
                     // Post pairing/stimuli
                     changePhase( 6, START_POST );
                 }
@@ -411,7 +446,7 @@ void loop()
                 PF((condition+1));
                 detectBlinks();
                 if (currentPhaseTime >= puffTime)
-                {
+                {   //Serial.println("NONOPuff");
                     // start the next phase
                     playPuff(puff_do, LOW);
                     // Post pairing/stimuli
@@ -424,9 +459,11 @@ void loop()
                 // Post Pairing/Stimuli
                 PF((condition+1));
                 detectBlinks();
+                //Serial.println("StartPost");
                 if (currentPhaseTime >= postTime)
                 {
                     interTrialTime = minITI + random( randITI );
+                    //Serial.println("EndPost");
                     changePhase( 7, START_ITI );
 
                     // Switch OFF the imaging trigger
@@ -438,6 +475,7 @@ void loop()
             case 7:
                 // Inter trial interval
                 PF((condition+1));
+                //Serial.println("StartITI");
                 if (paused_)
                 {
                     changePhase( 9, PAUSE );
@@ -446,7 +484,7 @@ void loop()
                 else
                 {
                     if (currentPhaseTime >= interTrialTime)
-                    {
+                    {   //Serial.println("EndITI");
                         Serial.println(trialNum);
                         trialNum++;
                         blinkCount = 0;
