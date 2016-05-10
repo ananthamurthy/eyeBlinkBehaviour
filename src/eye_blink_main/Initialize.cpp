@@ -201,15 +201,15 @@ int initialize()
         else if( is_command_read( CS_MINUS_COMMAND, false) )
         {
             Serial.println("COMMAND: Play CS2");
-            if( sessionType_ind % 2 == 0 )
+            if( sessionType_ind % 2 == 0 && sessionType_ind != 18 )
             {
-		tone( tonePin, CS_TONE_2);
+		            tone( tonePin, CS_TONE_2);
                 delay( CSTime );
                 noTone( tonePin );
- 	    }
+ 	          }
             else
             {
-		digitalWrite( ledPin, HIGH);
+		            digitalWrite( ledPin, HIGH);
                 delay( CSTime );
                 digitalWrite( ledPin, LOW );                
             }
