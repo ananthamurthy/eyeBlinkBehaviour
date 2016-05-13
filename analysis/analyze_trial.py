@@ -28,11 +28,14 @@ except Exception as e:
 
 plt.rcParams.update({'font.size': 8})
 # These are the columns in CSV file and these are fixed.
-cols_ = [ 'sensor', 'time', 'cs_type', 'session_num' ]
+cols_ = [ 'sensor', 'time', 'cs_type', 'session_num', 'tone', 'puff', 'led' ]
 aN, bN = 450, 650
-toneBeginN, toneEndN = 500, 535
-puffBeginN, puffEndN = 570, 575
+toneBeginN, toneEndN = 0, 0
+puffBeginN, puffEndN = 0, 0
 data = None
+tone = None
+puff = None
+led = None
 cstype = 0
 time = None
 newtime = None
@@ -40,20 +43,54 @@ sensor = None
 trialFile = None
 args_ = None
 
+
 def straighten_time( time ):
     # if time is not in ascending order, straighten it.
     tDiff = np.diff( time )
     wherePastBegins = np.where(tDiff < 0)[0]
+    nTimesTimeWrapBack = 0
     for x in wherePastBegins:
+        nTimesTimeWrapBack += 1
         diff = time[x] - time[x+1]
         time[x+1:] += diff
-    return time
+    return time, nTimesTimeWrapBack
 
 def get_data_to_plot( mat ):
     return mat
 
+def add_patch( ax, time ):
+    global tone, puff, led
+    global toneBeginN, toneEndN
+    global puffBeginN, puffEndN
+    tonePeriod = list(np.where( tone >= 3.0 )[0])
+    print( '[INFO] Tone period %s' % tonePeriod )
+    print time[ tonePeriod ]
+    toneBeginN, toneEndN = tonePeriod[0], tonePeriod[ -1 ]
+    puffPeriod = list( np.where( puff >= 3.0 )[0])
+    print( '[INFO] Puff period %s' % puffPeriod )
+    print time[ puffPeriod ] 
+    puffBeginN, puffEndN = puffPeriod[0], puffPeriod[ -1 ]
+    toneW = time[ toneEndN ] - time[ toneBeginN ]
+    ax.add_patch( mpatch.Rectangle( 
+        (time[toneBeginN], min(400,sensor.mean()-200)), toneW, 50, lw=0)
+        )
+    ax.annotate('Tone', xy=(time[toneEndN], sensor.mean() )
+            , xytext=(time[toneBeginN], min(300,sensor.mean()-300))
+            )
+    if puff.max() > 1.0:
+        puffW = time[ puffEndN ] - time[ puffBeginN ]
+        ax.add_patch( 
+                mpatch.Rectangle( (time[puffBeginN],
+                    min(400,sensor.mean()-200))
+                    , puffW, 50,lw=0)
+                )
+        ax.annotate('Puff', xy=(time[puffBeginN], sensor.mean())
+                , xytext=(time[puffBeginN], min(300,sensor.mean()-300)))
+
 def plot_raw_trace( ax ):
     global cstype, data, time, sensor
+    global toneBeginN, toneEndN
+    global puffBeginN, puffEndN
     baselineN = 500
     ax.plot(time, sensor)
     ax.plot(time[aN], sensor[aN], color = 'b')
@@ -63,25 +100,15 @@ def plot_raw_trace( ax ):
     plt.xlim( (0, max(time)) )
     plt.ylim( (0, sensor.max() + 100 ) )
     plt.legend( framealpha=0.4)
-    ax.add_patch( mpatch.Rectangle( 
-        (time[toneBeginN], min(400,sensor.mean()-200)), 350, 50, lw=0)
-        )
-    ax.annotate('Tone', xy=(time[toneEndN], sensor.mean() )
-            , xytext=(time[toneBeginN], min(300,sensor.mean()-300))
-            )
-    if cstype > 0:
-        ax.add_patch( 
-                mpatch.Rectangle( (time[puffBeginN],
-                    min(400,sensor.mean()-200))
-                    , 50, 50,lw=0)
-                )
-        ax.annotate('Puff', xy=(time[puffBeginN], sensor.mean())
-                , xytext=(time[puffBeginN], min(300,sensor.mean()-300)))
+    add_patch( ax, time )
     plt.xlabel( 'Time (ms)' )
     plt.ylabel( 'Sensor readout' )
 
 def plot_zoomedin_raw_trace( ax ):
     global time, newtime
+    global puff, tone, led
+    global puffBeginN, puffEndN
+    global toneBeginN, toneEndN
     global aN, bN
     scaleT = 0.1
     time0A = time[:aN] * scaleT 
@@ -96,21 +123,9 @@ def plot_zoomedin_raw_trace( ax ):
             )
     ax.set_xlim(( 0, max(newtime) ))
     ax.set_ylim(( max(0,min(sensor)-200) , max(sensor)+100))
-    ax.add_patch( mpatch.Rectangle( 
-        (newtime[toneBeginN], sensor.min()-100), 350, 50, lw=0)
-        )
-    plt.annotate('Tone', xy=(newtime[toneEndN], sensor.min())
-            , xytext=(newtime[toneBeginN], sensor.min()-150)
-            )
-    if cstype > 0:
-        ax.add_patch( mpatch.Rectangle( 
-            (newtime[puffBeginN], min(sensor)-100), 50, 50,lw=0)
-            )
-        plt.annotate('Puff', xy=(newtime[puffBeginN], min(sensor))
-                , xytext=(newtime[puffBeginN], min(sensor)-150))
+    add_patch( ax, newtime)
     plt.xlabel( 'Time (ms)' )
     plt.ylabel( 'Sensor readout' )
-
 
 def plot_histogram( ax ):
     """Here we take the data from ROI (between aN and bN). A 100 ms window (size
@@ -148,6 +163,7 @@ def plot_histogram( ax ):
 
 def main( args ):
     global cstype, trialFile
+    global tone, puff, led
     global data, sensor, time
     trialFile = args['input']
     plot = args.get('plot', True)
@@ -157,13 +173,22 @@ def main( args ):
     metadata = itertools.takewhile( lambda x: '#' in x, lines)
     metadata = [ x[1:] for x in metadata ]
     # rest is data
-    data = np.genfromtxt( trialFile, delimiter=',' )
+    try:
+        data = np.genfromtxt( trialFile, delimiter=',' )
+    except Exception as e:
+        print('[WARN] Failed to read %s' % trialFile)
+        print('\t Error was %s' % e )
+        return {}
     if len(data) < 5:
         return {}
     # print( '[DEBUG] Metadata :%s' % metadata )
+    if data.shape[1] < len( cols_):
+        print('[INFO] This file does not have enough columns' )
+        return {} 
     time, sensor = data[:,1], data[:,0]
+    tone, puff, led = data[:,4], data[:,5], data[:,6]
     cstype = int(data[1,2])
-    time = straighten_time( time )
+    time, nTimeTimeWraps = straighten_time( time )
     assert (np.sort(time) == time).all(), "Time must be ascending order"
     if plot:
         ax = plt.subplot(3, 1, 1)

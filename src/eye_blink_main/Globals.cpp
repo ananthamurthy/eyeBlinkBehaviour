@@ -32,14 +32,18 @@ void write_data_line( int data, unsigned long timestamp )
 
     prevTwoTrials[0] = prevTwoTrials[1];
     prevTwoTrials[1] = trialNum;
+
+    int tone = analogRead( tonePin );
+    int puff = analogRead( puff_do );
+    int led = analogRead( ledPin );
     
     // If a new trial starts and CS_plus is true, then reduce the nextProbeIn by
     // 1.
     if( prevTwoTrials[1] > prevTwoTrials[0] && CS_plus )
         nextProbeIn -= 1;
 
-    sprintf(msg, "%6lu,%5d,%3d,%3d,%2d,%2d", timestamp, data, trialNum
-            , totalTrials , CS_plus, nextProbeIn
+    sprintf(msg, "%6lu,%5d,%3d,%3d,%2d,%2d,%1d,%1d,%1d", timestamp, data, trialNum
+            , totalTrials , CS_plus, nextProbeIn, tone, puff, tone
             );
     Serial.println(msg);
     //Serial.print(status + ":" + msg);
