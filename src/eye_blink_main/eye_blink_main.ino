@@ -217,7 +217,7 @@ void loop()
               //All the session types involving a distractor. 
               //The first 20 trials are always CS+ to establish learning and baseline. From trial 21, it is randomized to play distractors in 80% of the trials.
               
-                if (sessionType_ind >= 16 && trialNum > 20)   
+                if (sessionType_ind >= 16)   
                 {
                 }
                 else
@@ -345,14 +345,13 @@ void loop()
                     
                    //Session Type 16 is where CS and Distractor are both tones. Not using this right now.
                    
-                    if( sessionType_ind == 16 )
+                    if( sessionType_ind == 16 && CS_plus == 1)
                     {
-                        if (trialNum > 20)
-                        {
-                            delay (50);
-                            tone (tonePin, CS_TONE_1);
-                            //Serial.println("Distractor!");             //For verification
+                         {
                             delay (100);
+                            tone (tonePin, CS_TONE_1);
+                            Serial.println("Distractor!");             //For verification
+                            delay (CSTime);
                             shutoff_cs(tonePin, ledPin);
                         }
                     }
@@ -495,7 +494,7 @@ void loop()
                         }
                         else
                         {
-                            if (random(11) <= CS_fraction)         // function random is exclusive, meaning, to generate random numbers between 0 to 10, one should use random(11).
+                            if (random(11) < CS_fraction)         // function random is exclusive, meaning, to generate random numbers between 0 to 10, one should use random(11).
                                 CS_plus = 1;                       // play CS+
                             else
                                 CS_plus = 0;                       // play CS-

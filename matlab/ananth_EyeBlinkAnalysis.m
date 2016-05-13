@@ -29,7 +29,7 @@ fid=fopen(listPath);
 
 %Protocol Information
 preTime = 5000; %in ms
-csTime = 350; %in ms
+csTime = 100; %in ms
 traceTime = 250; %in ms
 puffTime = 100; %in ms
 postTime = 5000; %in ms
@@ -64,10 +64,10 @@ while 1
         disp(dataset);
     end
     
-    if str2num(sessionType) == 4
+    if str2num(sessionType) == 12
         traceTime = 350; %in ms
         totalTrials = 40;
-    elseif str2num(sessionType) == 10
+    elseif str2num(sessionType) == 13
         traceTime = 350; %in ms
         totalTrials = 100;
         %     elseif str2num(sessionType) == 2
