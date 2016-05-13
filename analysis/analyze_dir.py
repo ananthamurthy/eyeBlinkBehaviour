@@ -43,6 +43,7 @@ def main(  ):
         os.makedirs( args_.output_dir )
 
     files = {}
+    print( '[INFO] Searching in %s' % args_.dir )
     for d, sd, fs in os.walk( args_.dir ):
         for f in fs:
             ext = f.split('.')[-1]
@@ -51,9 +52,11 @@ def main(  ):
                 trialIndex = re.search('Trial(?P<index>\d+)\.csv', filepath) 
                 index = int(trialIndex.groupdict()['index'])
                 files[index] = (filepath, f)
-    tVec = []
     # Sort the trials according to trial number
     fileIdx = sorted( files )
+    if len(fileIdx) == 0:
+        print('[WARN] No files found' )
+        quit()
     for idx  in fileIdx:
         f, fname = files[idx]
         result = at.main( { 'input' : f
@@ -61,6 +64,7 @@ def main(  ):
             )
         if not result:
             continue
+
         tVec = result['time']
         row = result['sensor']
         if len(row) > 100:
