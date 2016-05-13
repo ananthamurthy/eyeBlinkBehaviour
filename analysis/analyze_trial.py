@@ -58,7 +58,7 @@ def straighten_time( time ):
 def get_data_to_plot( mat ):
     return mat
 
-def add_patch( ax, time ):
+def add_puff_and_tone_labels( ax, time ):
     global tone, puff, led
     global toneBeginN, toneEndN
     global puffBeginN, puffEndN
@@ -67,6 +67,8 @@ def add_patch( ax, time ):
     print time[ tonePeriod ]
     toneBeginN, toneEndN = tonePeriod[0], tonePeriod[ -1 ]
     puffPeriod = list( np.where( puff >= 3.0 )[0])
+    if not puffPeriod:
+	return None
     print( '[INFO] Puff period %s' % puffPeriod )
     print time[ puffPeriod ] 
     puffBeginN, puffEndN = puffPeriod[0], puffPeriod[ -1 ]
@@ -77,7 +79,7 @@ def add_patch( ax, time ):
     ax.annotate('Tone', xy=(time[toneEndN], sensor.mean() )
             , xytext=(time[toneBeginN], min(300,sensor.mean()-300))
             )
-    if puff.max() > 1.0:
+    if puff and puff.max() > 1.0:
         puffW = time[ puffEndN ] - time[ puffBeginN ]
         ax.add_patch( 
                 mpatch.Rectangle( (time[puffBeginN],
@@ -100,7 +102,7 @@ def plot_raw_trace( ax ):
     plt.xlim( (0, max(time)) )
     plt.ylim( (0, sensor.max() + 100 ) )
     plt.legend( framealpha=0.4)
-    add_patch( ax, time )
+    add_puff_and_tone_labels( ax, time )
     plt.xlabel( 'Time (ms)' )
     plt.ylabel( 'Sensor readout' )
 
@@ -123,7 +125,7 @@ def plot_zoomedin_raw_trace( ax ):
             )
     ax.set_xlim(( 0, max(newtime) ))
     ax.set_ylim(( max(0,min(sensor)-200) , max(sensor)+100))
-    add_patch( ax, newtime)
+    add_puff_and_tone_labels( ax, newtime)
     plt.xlabel( 'Time (ms)' )
     plt.ylabel( 'Sensor readout' )
 
