@@ -30,8 +30,8 @@ plt.rcParams.update({'font.size': 8})
 # These are the columns in CSV file and these are fixed.
 cols_ = [ 'sensor', 'time', 'cs_type', 'session_num' ]
 aN, bN = 450, 650
-toneBeginN, toneEndN = 500, 535
-puffBeginN, puffEndN = 570, 575
+toneBeginN, toneEndN = 500, 510
+puffBeginN, puffEndN = 545, 550
 data = None
 cstype = 0
 time = None
@@ -40,14 +40,35 @@ sensor = None
 trialFile = None
 args_ = None
 
+class TimeLine( ):
+    def __init__( **kwargs ):
+        self.start = kwargs.get('start', 0.0)
+        self.end = kwargs.get( 'end', 0.0)
+        self.tone1Start = kwargs.get( 'tone1Start', 500.0 )
+        self.tone1End = kwargs.get( 'tone1End', 510.0 )
+        self.tone2Start = kwargs.get( 'tone2Start', 0.0)
+        self.tone2End   = kwargs.get( 'tone2End', 0.0)
+        self.puffStart = kwargs.get( 'puffStart', 0.0 )
+        self.puffEnd = kwargs.get( 'puffEnd', 0.0 )
+
+defaultSessionTimelines_ = {
+        12 : TimeLine( )
+        , 13 : TimeLine( puffStart = 545.0, puffEnd = 595.0 )
+        }
+            
+        
+
+
 def straighten_time( time ):
     # if time is not in ascending order, straighten it.
     tDiff = np.diff( time )
     wherePastBegins = np.where(tDiff < 0)[0]
+    nTimesTimeWrapBack = 0
     for x in wherePastBegins:
+        nTimesTimeWrapBack += 1
         diff = time[x] - time[x+1]
         time[x+1:] += diff
-    return time
+    return time, nTimesTimeWrapBack
 
 def get_data_to_plot( mat ):
     return mat
@@ -157,13 +178,18 @@ def main( args ):
     metadata = itertools.takewhile( lambda x: '#' in x, lines)
     metadata = [ x[1:] for x in metadata ]
     # rest is data
-    data = np.genfromtxt( trialFile, delimiter=',' )
+    try:
+        data = np.genfromtxt( trialFile, delimiter=',' )
+    except Exception as e:
+        print('[WARN] Failed to read %s' % trialFile)
+        print('\t Error was %s' % e )
+        return {}
     if len(data) < 5:
         return {}
     # print( '[DEBUG] Metadata :%s' % metadata )
     time, sensor = data[:,1], data[:,0]
     cstype = int(data[1,2])
-    time = straighten_time( time )
+    time, nTimeTimeWraps = straighten_time( time )
     assert (np.sort(time) == time).all(), "Time must be ascending order"
     if plot:
         ax = plt.subplot(3, 1, 1)

@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """analyze_dir.py: 
 
 Analyze a given directory. All trials are accumulated and plotted.
@@ -71,24 +73,7 @@ def main(  ):
 
     plt.figure()
     csplusData = np.vstack( csplus ) 
-    csminusData = np.vstack( csminus )
-    try:
-        plt.style.use('classic')
-    except Exception as e:
-        pass
-    plt.subplot(2, 1, 1)
-    plt.imshow( csminusData, cmap = "jet"
-            , extent = [10*aN, 10*bN, len(csminusIdx), 0]  
-            , vmin = csplusData.min(), vmax = csplusData.max()
-            , interpolation = 'none', aspect='auto' 
-            )
-    plt.xlabel( 'Time (ms)' )
-    plt.ylabel( '# Trial ')
-    plt.yticks( range(0,len(csminusIdx),2), csminusIdx[::2], fontsize = 6 )
-    plt.title( 'CS- Trials' )
-    plt.legend( )
-    plt.colorbar( )
-    plt.subplot(2, 1, 2)
+    plt.subplot(1, 1, 1)
     plt.imshow( csplusData, cmap = "jet"
             , extent = [10*aN, 10*bN, len(csplusIdx), 0]  
             , vmin = csplusData.min(), vmax = csplusData.max()
