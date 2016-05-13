@@ -79,7 +79,7 @@ def add_puff_and_tone_labels( ax, time ):
     ax.annotate('Tone', xy=(time[toneEndN], sensor.mean() )
             , xytext=(time[toneBeginN], min(300,sensor.mean()-300))
             )
-    if puff and puff.max() > 1.0:
+    if puff.max() > 1.0:
         puffW = time[ puffEndN ] - time[ puffBeginN ]
         ax.add_patch( 
                 mpatch.Rectangle( (time[puffBeginN],
