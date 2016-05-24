@@ -293,7 +293,7 @@ void loop()
                          {
                             delay (100);
                             tone (tonePin, CS_TONE_1);
-                            
+                            status_="DIST";
                             //Serial.println("Distractor!");             //For verification
                             delay (CSTime);
                             shutoff_cs(tonePin, ledPin);
