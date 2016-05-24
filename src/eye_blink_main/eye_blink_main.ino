@@ -265,71 +265,14 @@ void loop()
                     if (sessionType_ind == 17)
                     { digitalWrite(ledPin, HIGH);
                     }
-                                       
-                    if (sessionType_ind % 2 == 0) 
+                    else if (sessionType_ind >= 12 && sessionType_ind <= 18) 
                     {
-                        if (CS_plus == 1 )
-                        {
-                            if( flipped_ )
-                                tone( tonePin, CS_TONE_2);
-                                
-                            else
-                               {tone( tonePin, CS_TONE_1);
-                                //digitalWrite(tonePin, HIGH);
-                               }
-                            
-                            changePhase( 1, START_CS_PLUS );
-                        }
-                        else // CS_plus is not 1
-                        {
-                            if( flipped_ )
-                                tone( tonePin, CS_TONE_1);
-                            else 
-                            {
-                                tone( tonePin, CS_TONE_2);
+                        tone( tonePin, CS_TONE_1);
                                 //digitalWrite( tonePin, HIGH );
                                 //Serial.print("even ST: CS-=Tone1");
-                            }
-                            changePhase(2, START_CS_MINUS);
-                        }
-
-
-                    }
-                    else // sessionType_ind involves LED
-                    {
-
-                        if( 1 == CS_plus )
-                        {
-
-                            if(flipped_)
-                                digitalWrite( ledPin, HIGH);
-                            else
-                            {
-                                tone( tonePin, CS_TONE_1 );
-                                //digitalWrite( tonePin, HIGH );
-                                //Serial.println("odd ST: CS+=Tone1");
-                            }
-                            changePhase( 1, START_CS_PLUS );
-                        }
-                        else // CS_minus
-                        {
-                            if( flipped_ )
-                            {
-                                tone( tonePin, CS_TONE_1);
-                                
-                            }
-                            else if (sessionType_ind >= 12)
-                            {
-                                tone (tonePin, CS_TONE_1);
-                                //digitalWrite(tonePin, HIGH);
-                                //Serial.println("odd ST: CS-=Tone1");              //For verification
-                            }
-                            else
-                                digitalWrite( ledPin, HIGH);
-                            changePhase(2, START_CS_MINUS);
-                        }
-                    }
-                }
+                     }
+                        changePhase(1, START_CS_PLUS);
+                 }
                 break;
 
             //CS+
@@ -350,7 +293,8 @@ void loop()
                          {
                             delay (100);
                             tone (tonePin, CS_TONE_1);
-                            Serial.println("Distractor!");             //For verification
+                            
+                            //Serial.println("Distractor!");             //For verification
                             delay (CSTime);
                             shutoff_cs(tonePin, ledPin);
                         }
@@ -494,7 +438,7 @@ void loop()
                         }
                         else
                         {
-                            if (random(11) < CS_fraction)         // function random is exclusive, meaning, to generate random numbers between 0 to 10, one should use random(11).
+                            if (random(10) <= CS_fraction)         // function random is exclusive, meaning, to generate random numbers between 0 to 10, one should use random(11).
                                 CS_plus = 1;                       // play CS+
                             else
                                 CS_plus = 0;                       // play CS-
