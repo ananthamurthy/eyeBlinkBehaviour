@@ -94,6 +94,7 @@ boolean pause                  = 0 ;
 unsigned long startPhaseTime;
 unsigned long startTrialTime;
 unsigned long currentPhaseTime = 0;
+unsigned long currentTime;
 unsigned long lastTime         = 0;
 unsigned short sampleInterval  = 10;        // Ten milliseconds for 100 Hz
 unsigned int interTrialTime    = 0;
@@ -198,9 +199,13 @@ void loop()
         {
             // has to be calculated for every loop
             currentPhaseTime = millis() - startPhaseTime;
+            
+            
             // has to be calculated for every loop; not being used anywhere
             unsigned long currentTime = millis() - startTrialTime;
-
+            
+            trialTime = millis() - startTrialTime;
+            
 #ifdef ENABLE_LCD
             int lcd_key = read_lcd_button();
             if (lcd_key == btnRIGHT)
@@ -243,6 +248,7 @@ void loop()
                 sprintf(status_, "PRE_");
                 PF((condition+1));
                 detectBlinks();
+                //startTrialTime = millis();
                 //Serial.println("StartPre");
 
 
@@ -438,7 +444,7 @@ void loop()
                     {   //Serial.println("EndITI");
                         Serial.println(trialNum);
                         trialNum++;
-                        trialTime = 0;
+                        startTrialTime = millis();
                         blinkCount = 0;
                         if (trialNum > totalTrials)
                         {

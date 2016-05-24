@@ -68,7 +68,7 @@ def init_serial( baudRate = 38400):
 def append_trial_data( outfile, data):
     with open(outfile, 'a') as f:
         msg = ",".join( [str(x) for x in data] )
-        print('Writing: %s' % msg )
+        #print('Writing: %s' % msg )
         f.write( msg + '\n' )
 
 def send_press_select( reftime, interval ):
@@ -155,7 +155,7 @@ def collect_data( lock ):
         if finished_all_ == 1:
             return None
         running_data_line_ += 1
-        running_trial_ = runningTrial
+        trialNum = data[2]
         line = config.serial_port_.read_line()
         data = line_to_data(line)
         if (data[0] and data[1]) is None:
@@ -165,16 +165,16 @@ def collect_data( lock ):
         append_trial_data(trialFile, data)
         total_trials_ = totalTrials
         print_line( line, lock )
-        if trialNum > runningTrial:
-            outfile = trial_file_path( runningTrial )
+        if trialNum > running_trial_:
+            outfile = trial_file_path( running_trial_ )
             _logger.info("|| Wrote previous trial to %s" % outfile)
             _logger.info('== New Trial: :%s/%s, cs: %s' % (trialNum,
                 totalTrials, cs_type_)
                 )
             # Also initialize the new trial file.
             initialize_trial_file( trialNum )
-            runningTrial = trialNum
-        if runningTrial == totalTrials:
+            running_trial_ = trialNum
+        if running_trial_ == totalTrials:
             # Exit
             cleanup()
 
