@@ -23,7 +23,6 @@
 
 #ifndef Globals_h
 #define Globals_h
-
 #define DEBUG  1
 
 // #define ENABLE_LCD
@@ -59,6 +58,7 @@ extern unsigned short sampleInterval;
 extern int shutterDelay;
 extern int totalTrials;
 extern int trialNum;
+extern long int trialTime;
 
 extern int sessionType_ind;
 
@@ -106,4 +106,8 @@ void check_for_pause( );
 extern int nextProbeIn;
 extern int prevTwoTrials[2];
 
+/**
+ * @brief Status of the experiment: PRE_, TONE, TRAC, DIST, POST etc.
+ */
+extern char status_[5];
 #endif

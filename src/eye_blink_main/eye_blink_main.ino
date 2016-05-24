@@ -240,6 +240,7 @@ void loop()
             {
             // PRE
             case 0:
+                sprintf(status_, "PRE_");
                 PF((condition+1));
                 detectBlinks();
                 //Serial.println("StartPre");
@@ -334,6 +335,7 @@ void loop()
 
             //CS+
             case 1:
+                sprintf(status_, "CS_P")
                 PF((condition+1));
                 detectBlinks();
                 //Serial.println("StartCS+");
@@ -362,6 +364,7 @@ void loop()
 
             //CS-
             case 2:
+                sprintf(status_,  "CS_M");
                 PF((condition+1));
                 detectBlinks();
                 //Serial.println("StartCS-");
@@ -375,6 +378,7 @@ void loop()
 
             //Trace
             case 3:
+                sprintf(status_, "TRAC");
                 PF((condition+1));
                 detectBlinks();
 
@@ -428,6 +432,7 @@ void loop()
 
             //Puff
             case 4:
+                sprintf( status_, "PUFF" );
                 PF((condition+1));
                 detectBlinks();
                 if (currentPhaseTime >= puffTime)
@@ -442,6 +447,7 @@ void loop()
 
             //No-Puff
             case 5:
+                sprintf(status_, "NPUF");
                 PF((condition+1));
                 detectBlinks();
                 if (currentPhaseTime >= puffTime)
@@ -455,6 +461,7 @@ void loop()
 
             //Post-Stim
             case 6:
+                sprintf(status_, "POST");
                 // Post Pairing/Stimuli
                 PF((condition+1));
                 detectBlinks();
@@ -473,6 +480,7 @@ void loop()
             //ITI
             case 7:
                 // Inter trial interval
+                sprintf(status_, "ITI_");
                 PF((condition+1));
                 //Serial.println("StartITI");
                 if (paused_)
@@ -486,6 +494,7 @@ void loop()
                     {   //Serial.println("EndITI");
                         Serial.println(trialNum);
                         trialNum++;
+                        trialTime = 0;
                         blinkCount = 0;
                         if (trialNum > totalTrials)
                         {
@@ -515,6 +524,7 @@ void loop()
 
             // End of session
             case 8:
+                sprintf(status_, "EOS_");
                 if (profilingDataDump == 1)
                 {
                     profilingDataDump = 0;

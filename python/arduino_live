@@ -65,9 +65,11 @@ def init_serial( baudRate = 38400):
     config.serial_port_ = arduino.ArduinoPort( config.args_.port, baudRate )
     config.serial_port_.open( wait = True )
 
-def append_trial_data( outfile, value, time, trialNum, cs, nextProbeIn ):
+def append_trial_data( outfile, data):
     with open(outfile, 'a') as f:
-        f.write('%s,%s,%s,%s\n' % (value, time, cs, nextProbeIn))
+        msg = ",".join( [str(x) for x in data] )
+        print('Writing: %s' % msg )
+        f.write( msg + '\n' )
 
 def send_press_select( reftime, interval ):
     if time.time() - reftime < interval:
@@ -119,13 +121,16 @@ def collect_data( lock ):
     while True:
         running_data_line_ += 1
         line = config.serial_port_.read_line( )
-        x, y, trialNum, totalTrials, cs, next_probe_in_ = line_to_data( line )
-        total_trials_ = totalTrials
-        if (x and y) is None:
-            continue
+        data = line_to_data( line )
+        total_trials_ = totalTrials = data[3]
+        trialNum = data[2]
+        totalTrials = data[3]
+        cs_type_ = data[4]
 
+        if data[1] is None:
+            continue
         try:
-            x, y = int(x), int(y)
+            x, y = data[0], data[1]
             q_.put((y,x))
             config.trial_dict_[runningTrial].append((y,x))
         except Exception as e:
@@ -152,12 +157,12 @@ def collect_data( lock ):
         running_data_line_ += 1
         running_trial_ = runningTrial
         line = config.serial_port_.read_line()
-        x, y, trialNum, totalTrials, cs_type_, next_probe_in_ = line_to_data(line)
-        if (x and y) is None:
+        data = line_to_data(line)
+        if (data[0] and data[1]) is None:
             continue
-        q_.put((y,x))
+        q_.put((data[0],data[1]))
         trialFile = trial_file_path( trialNum )
-        append_trial_data(trialFile, y, x, trialNum, cs_type_, next_probe_in_)
+        append_trial_data(trialFile, data)
         total_trials_ = totalTrials
         print_line( line, lock )
         if trialNum > runningTrial:
@@ -174,15 +179,17 @@ def collect_data( lock ):
             cleanup()
 
 def line_to_data( line ):
-    if not line.strip():
-        data = [None]*6
-    try:
-        data = [ int(x) for x in line.split(',') ]
-    except Exception as e:
-        data = [None]*6
-    if len(data) != 6:
-        _logger.debug("Invalid line: %s" % line)
-        data = [None]*6
+    sizeOfData = 10
+    data = [None]*sizeOfData
+
+    if len( line.split(',')) != sizeOfData:
+        return data;
+
+    for i, x in enumerate(line.split(',')):
+        try:
+            data[i] = int(x.strip())
+        except Exception as e:
+            data[i] = x.strip()
     return data
 
 def init_gui():
@@ -206,7 +213,7 @@ def plot_data( lock ):
         # Get some elements from queue and plot them.
         for i in range(10):
             d = q_.get()
-            config.ybuff_.append( int(d[0]) )
+            config.ybuff_.append( int(d[1]) )
         
         title = '%s %2.2f, Mouse: %s, Trial: %2d/%3d, CS: %s, next probe in: %s' % ( 
                 config.args_.port
@@ -354,7 +361,7 @@ def send_command( ):
 
 def main( ):
     init( )
-
+    print( '[INFO] Init is done' )
     # Lock so that only one process prints to console at a time.
     l = Lock( ) 
 
