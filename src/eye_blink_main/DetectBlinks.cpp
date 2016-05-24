@@ -22,11 +22,11 @@
 
 void detectBlinks() //(unsigned long currentTime)
 {
-
     if ( currentPhaseTime - lastTime > sampleInterval )
     {
         blink = analogRead(blink_ai);
-        write_data_line( blink, currentPhaseTime % 10000 );
+        write_data_line( blink, trialTime );
         lastTime += sampleInterval;
+        trialTime += sampleInterval;
     }
 }
