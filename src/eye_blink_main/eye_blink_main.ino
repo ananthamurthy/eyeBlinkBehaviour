@@ -284,13 +284,13 @@ void loop()
 
             //CS+
             case 1:
-                sprintf(status_, "CS_P")
                 PF((condition+1));
                 detectBlinks();
                 //Serial.println("StartCS+");
 
                 if (currentPhaseTime >= CSTime)
-                { //Serial.println("EndCS+");
+                { 
+                    //Serial.println("EndCS+");
                     shutoff_cs( tonePin, ledPin );
 
                     
@@ -307,6 +307,8 @@ void loop()
                             shutoff_cs(tonePin, ledPin);
                         }
                     }
+                    else
+                        sprintf(status_, "CS_P");
 
                     changePhase( 3, START_TRACE );
                 }
@@ -465,8 +467,6 @@ void loop()
 
                             // Switch ON the imaging trigger
                             triggerImaging(imagingTrigger_do, HIGH);
-
-                            startTrialTime = millis();
                         }
                     }
                     break;
