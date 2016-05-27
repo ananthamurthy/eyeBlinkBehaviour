@@ -63,14 +63,15 @@ static const char* sessionType[] = {"Cntrl", "Trace", "Delay"};
 // Use these variables with the function "printStatus(value)" to
 const int START_PRE = 0;
 const int START_CS_PLUS = 1; // paired CS
-const int START_CS_MINUS = 2;
+const int START_DISTRACTOR = 2;
 const int START_TRACE = 3;
 const int START_US = 4; //puff is on
 const int START_US_NO_PUFF = 5; //puff is off
 const int START_POST = 6;
-const int START_ITI = 7;
-const int END = 8;
-const int PAUSE = 9;
+const int GAP = 7;
+const int START_ITI = 8;
+const int END = 9;
+const int PAUSE = 10;
 
 // all values should have 7 letters/spaces between quotes
 static const char* printStr[] = {

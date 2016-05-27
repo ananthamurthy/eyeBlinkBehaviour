@@ -275,9 +275,7 @@ void loop()
                     else if (sessionType_ind >= 12 && sessionType_ind <= 18) 
                     {
                         tone( tonePin, CS_TONE_1);
-                                //digitalWrite( tonePin, HIGH );
-                                //Serial.print("even ST: CS-=Tone1");
-                     }
+                    }
                         changePhase(1, START_CS_PLUS);
                  }
                 break;
@@ -286,6 +284,7 @@ void loop()
             case 1:
                 PF((condition+1));
                 detectBlinks();
+                sprintf(status_, "CS_P");
                 //Serial.println("StartCS+");
 
                 if (currentPhaseTime >= CSTime)
@@ -297,32 +296,25 @@ void loop()
                    //Session Type 16 is where CS and Distractor are both tones. Not using this right now.
                    
                     if( sessionType_ind == 16 && CS_plus == 1)
-                    {
-                         {
-                            delay (100);
-                            tone (tonePin, CS_TONE_1);
-                            sprintf(status_, "DIST" );
-                            //Serial.println("Distractor!");             //For verification
-                            delay (CSTime);
-                            shutoff_cs(tonePin, ledPin);
-                        }
-                    }
+                     {                   
+                      changePhase( 7, GAP );
+                     }
+                        
                     else
-                        sprintf(status_, "CS_P");
-
-                    changePhase( 3, START_TRACE );
+                      changePhase( 3, START_TRACE );
                 }
                 break;
 
-            //CS-
+            //Distractor
             case 2:
-                sprintf(status_,  "CS_M");
                 PF((condition+1));
                 detectBlinks();
-                //Serial.println("StartCS-");
+                sprintf(status_,  "DIST");
+                //Serial.println("Distractor!");             //For verification
 
+                
                 if (currentPhaseTime >= CSTime)
-                { //Serial.println("EndCS-");
+                {  //Serial.println("EndCS-");
                     shutoff_cs( tonePin, ledPin );
                     changePhase( 3, START_TRACE );
                 }
@@ -422,22 +414,35 @@ void loop()
                 {
                     interTrialTime = minITI + random( randITI );
                     //Serial.println("EndPost");
-                    changePhase( 7, START_ITI );
+                    changePhase( 8, START_ITI );
 
                     // Switch OFF the imaging trigger
                     triggerImaging(imagingTrigger_do, LOW);
                 }
                 break;
 
-            //ITI
+           // Gap between Cs and Distractor 
             case 7:
+                sprintf(status_, "____");
+                PF((condition+1));
+                detectBlinks();
+
+                if (currentPhaseTime >= CSTime)
+                { tone (tonePin, CS_TONE_1);
+                  changePhase( 2, START_DISTRACTOR );
+                             
+                }
+                break;
+            
+            //ITI
+            case 8:
                 // Inter trial interval
                 sprintf(status_, "ITI_");
                 PF((condition+1));
                 //Serial.println("StartITI");
                 if (paused_)
                 {
-                    changePhase( 9, PAUSE );
+                    changePhase( 10, PAUSE );
                     break;
                 }
                 else
@@ -450,7 +455,7 @@ void loop()
                         blinkCount = 0;
                         if (trialNum > totalTrials)
                         {
-                            changePhase( 8, END );                 // END of session
+                            changePhase( 9, END );                 // END of session
                             break;
                         }
                         else
@@ -473,7 +478,7 @@ void loop()
                 }
 
             // End of session
-            case 8:
+            case 9:
                 sprintf(status_, "EOS_");
                 if (profilingDataDump == 1)
                 {
@@ -483,14 +488,14 @@ void loop()
                 while(1);
                 break;
 
-            case 9:
+            case 10:
 #ifdef ENABLE_LCD
                 //PAUSE
                 int unpause_key = read_lcd_button();
                 if (unpause_key == btnLEFT)
                 {
                     pause = 0;
-                    changePhase( 7, PAUSE );
+                    changePhase( 8, PAUSE );
                     break;
                 }
 #else
@@ -498,7 +503,7 @@ void loop()
                 {
                     paused_ = false;
                     Serial.println("COMMAND: Unpause");
-                    changePhase( 7, START_ITI );
+                    changePhase( 8, START_ITI );
                 }
 #endif
                 break;
