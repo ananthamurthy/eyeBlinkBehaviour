@@ -187,8 +187,8 @@ int initialize()
             blink = analogRead(blink_ai);
             // Since this is not timestamped data, send 0 as timestamp.
             // NOTE: Can't use -1 since it is unsigned long.
-            write_data_line( blink, 0 );
             startT = millis();
+            write_data_line( blink, 0 );
         }
         // Read the character and decide what to do.
         if( is_command_read( CS_PLUS_COMMAND , false) )

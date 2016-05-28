@@ -130,9 +130,8 @@ def collect_data( lock ):
         if data[1] is None:
             continue
         try:
-            x, y = data[0], data[1]
-            q_.put((y,x))
-            config.trial_dict_[runningTrial].append((y,x))
+            t, v = data[0], data[1]
+            q_.put((t,v))
         except Exception as e:
             pass
 
@@ -212,8 +211,8 @@ def plot_data( lock ):
             continue
         # Get some elements from queue and plot them.
         for i in range(10):
-            d = q_.get()
-            config.ybuff_.append( int(d[1]) )
+            t, v = q_.get()
+            config.ybuff_.append( int(v) )
         
         title = '%s %2.2f, Mouse: %s, Trial: %2d/%3d, CS: %s, next probe in: %s' % ( 
                 config.args_.port
