@@ -29,13 +29,14 @@ except Exception as e:
 plt.rcParams.update({'font.size': 8})
 # These are the columns in CSV file and these are fixed.
 cols_ = [ 'sensor', 'time', 'cs_type', 'session_num', 'tone', 'puff', 'led' ]
-aN, bN = 450, 650
+aN, bN = 0, 0
 toneBeginN, toneEndN = 0, 0
 puffBeginN, puffEndN = 0, 0
 data = None
 tone = None
 puff = None
 led = None
+status = None
 cstype = 0
 time = None
 newtime = None
@@ -62,38 +63,36 @@ def add_puff_and_tone_labels( ax, time ):
     global tone, puff, led
     global toneBeginN, toneEndN
     global puffBeginN, puffEndN
-    tonePeriod = list(np.where( tone >= 3.0 )[0])
-    print( '[INFO] Tone period %s' % tonePeriod )
-    print time[ tonePeriod ]
-    toneBeginN, toneEndN = tonePeriod[0], tonePeriod[ -1 ]
-    puffPeriod = list( np.where( puff >= 3.0 )[0])
-    if not puffPeriod:
-	return None
-    print( '[INFO] Puff period %s' % puffPeriod )
-    print time[ puffPeriod ] 
-    puffBeginN, puffEndN = puffPeriod[0], puffPeriod[ -1 ]
+    toneN = get_status_ids( 'CS_P' )
+    toneBeginN, toneEndN = toneN[0], toneN[-1]
     toneW = time[ toneEndN ] - time[ toneBeginN ]
+    puffN = get_status_ids( 'PUFF' )
+    puffBeginN, puffEndN = puffN[0], puffN[-1]
     ax.add_patch( mpatch.Rectangle( 
         (time[toneBeginN], min(400,sensor.mean()-200)), toneW, 50, lw=0)
         )
     ax.annotate('Tone', xy=(time[toneEndN], sensor.mean() )
             , xytext=(time[toneBeginN], min(300,sensor.mean()-300))
             )
-    if puff.max() > 1.0:
-        puffW = time[ puffEndN ] - time[ puffBeginN ]
-        ax.add_patch( 
-                mpatch.Rectangle( (time[puffBeginN],
-                    min(400,sensor.mean()-200))
-                    , puffW, 50,lw=0)
-                )
-        ax.annotate('Puff', xy=(time[puffBeginN], sensor.mean())
-                , xytext=(time[puffBeginN], min(300,sensor.mean()-300)))
+    puffW = time[ puffEndN ] - time[ puffBeginN ]
+    ax.add_patch( 
+            mpatch.Rectangle( (time[puffBeginN],
+                min(400,sensor.mean()-200))
+                , puffW, 50,lw=0)
+            )
+    ax.annotate('Puff', xy=(time[puffBeginN], sensor.mean())
+            , xytext=(time[puffBeginN], min(300,sensor.mean()-300)))
+
+def get_status_ids( status_id ):
+    global status
+    return [i for i,x in enumerate( status ) if x == status_id ]
 
 def plot_raw_trace( ax ):
     global cstype, data, time, sensor
-    global toneBeginN, toneEndN
-    global puffBeginN, puffEndN
-    baselineN = 500
+    global status
+    global aN, bN
+    aN = get_status_ids('CS_P' )[0]
+    bN = get_status_ids('PUFF')[-1] + 10
     ax.plot(time, sensor)
     ax.plot(time[aN], sensor[aN], color = 'b')
     ax.plot(time[aN:bN], sensor[aN:bN], color = 'r')
@@ -114,14 +113,14 @@ def plot_zoomedin_raw_trace( ax ):
     global aN, bN
     scaleT = 0.1
     time0A = time[:aN] * scaleT 
-    timeAB = time[aN:bN] -  time[aN] + time[scaleT*aN]
+    timeAB = time[aN:bN] -  time[aN] + time[int(scaleT*aN)]
     timeBX = timeAB[-1] + (time[bN:] - time[bN]) * scaleT
     newtime = np.concatenate( ( time0A, timeAB, timeBX ) )
     plt.plot( newtime[:aN], sensor[:aN] , color = 'b')
     plt.plot( newtime[aN-1:bN], sensor[aN-1:bN], color = 'r')
     plt.plot( newtime[bN:], sensor[bN:] , color = 'b')
     plt.xticks( [0, newtime[aN], newtime[bN], max(newtime) ]
-            , [0, aN*10, bN*10, int(max(time)) ] 
+            , [0, time[aN], time[bN], int(max(time)) ] 
             )
     ax.set_xlim(( 0, max(newtime) ))
     ax.set_ylim(( max(0,min(sensor)-200) , max(sensor)+100))
@@ -163,35 +162,50 @@ def plot_histogram( ax ):
     # plt.title('Histogram of sensor readout')
     plt.legend(loc='best', framealpha=0.4)
 
+def parse_csv_file( filename ):
+    with open( filename, 'r' ) as f:
+        lines = f.read().split( '\n' )
+    metadata, data = [], []
+    for l in lines:
+        if not l:
+            continue
+        if '#' == l[0]:
+            metadata.append( l )
+            continue
+        dd = []
+        l = l.split(',')
+        for x in l:
+            try:
+                dd.append( float( x.strip() ) )
+            except Exception as e:
+                dd.append( x.strip() )
+        data.append( dd )
+    return metadata, data
+
+def get_colums( data, n ):
+    column = []
+    for d in data:
+        column.append( d[n] )
+    try:
+        column = np.array( column )
+    except Exception as e:
+        pass
+    return column
+
 def main( args ):
     global cstype, trialFile
     global tone, puff, led
     global data, sensor, time
+    global status
     trialFile = args['input']
     plot = args.get('plot', True)
     print('[INFO] Processing file %s' % trialFile )
-    with open( trialFile, 'r') as f:
-        lines = f.read().split('\n')
-    metadata = itertools.takewhile( lambda x: '#' in x, lines)
-    metadata = [ x[1:] for x in metadata ]
-    # rest is data
-    try:
-        data = np.genfromtxt( trialFile, delimiter=',' )
-    except Exception as e:
-        print('[WARN] Failed to read %s' % trialFile)
-        print('\t Error was %s' % e )
-        return {}
-    if len(data) < 5:
-        return {}
-    # print( '[DEBUG] Metadata :%s' % metadata )
-    if data.shape[1] < len( cols_):
-        print('[INFO] This file does not have enough columns' )
-        return {} 
-    time, sensor = data[:,1], data[:,0]
-    tone, puff, led = data[:,4], data[:,5], data[:,6]
-    cstype = int(data[1,2])
-    time, nTimeTimeWraps = straighten_time( time )
-    assert (np.sort(time) == time).all(), "Time must be ascending order"
+    metadata, data = parse_csv_file( trialFile )
+
+    time, sensor = get_colums(data, 0), get_colums(data, 1)
+    time = time - time.min() 
+    tone, puff, led = get_colums(data,6), get_colums(data,7), get_colums(data,8)
+    status = get_colums( data, 9 )
     if plot:
         ax = plt.subplot(3, 1, 1)
         plot_raw_trace( ax )
