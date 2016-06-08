@@ -33,7 +33,6 @@ args_ = None
 csplus = []
 csplusIdx, csminusIdx = [], []
 csminus = []
-aN, bN = at.aN, at.bN
 
 def main(  ):
     global args_
@@ -50,8 +49,9 @@ def main(  ):
             if ext == 'csv':
                 filepath = os.path.join(d, f)
                 trialIndex = re.search('Trial(?P<index>\d+)\.csv', filepath) 
-                index = int(trialIndex.groupdict()['index'])
-                files[index] = (filepath, f)
+                if trialIndex:
+                    index = int(trialIndex.groupdict()['index'])
+                    files[index] = (filepath, f)
     # Sort the trials according to trial number
     fileIdx = sorted( files )
     if len(fileIdx) == 0:
@@ -67,6 +67,7 @@ def main(  ):
 
         tVec = result['time']
         row = result['sensor']
+        aN, bN = result['aNbN']
         if len(row) > 100:
             if result['cstype'] == 0: 
                 csminus.append( row[aN:bN] )
@@ -76,19 +77,20 @@ def main(  ):
                 csplusIdx.append( idx )
 
     plt.figure()
-    csplusData = np.vstack( csplus ) 
-    plt.subplot(1, 1, 1)
-    plt.imshow( csplusData, cmap = "jet"
-            , extent = [10*aN, 10*bN, len(csplusIdx), 0]  
-            , vmin = csplusData.min(), vmax = csplusData.max()
-            , interpolation = 'none', aspect='auto' 
-            )
-    plt.yticks( range(0,len(csplusIdx),2), csplusIdx[::2] , fontsize = 6)
-    plt.xlabel( 'Time (ms)' )
-    plt.ylabel( '# Trial' )
-    plt.title( 'CS+ Trials' )
-    plt.legend( )
-    plt.colorbar( )
+    if len(csplus) > 1:
+        csplusData = np.vstack( csplus ) 
+        plt.subplot(1, 1, 1)
+        plt.imshow( csplusData, cmap = "jet"
+                , extent = [10*aN, 10*bN, len(csplusIdx), 0]  
+                , vmin = csplusData.min(), vmax = csplusData.max()
+                , interpolation = 'none', aspect='auto' 
+                )
+        plt.yticks( range(0,len(csplusIdx),2), csplusIdx[::2] , fontsize = 6)
+        plt.xlabel( 'Time (ms)' )
+        plt.ylabel( '# Trial' )
+        plt.title( 'CS+ Trials' )
+        plt.legend( )
+        plt.colorbar( )
 
     outfile = '%s/summary.png' % args_.output_dir
     print('[INFO] Saving file to %s' % outfile )

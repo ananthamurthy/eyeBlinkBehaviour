@@ -28,7 +28,11 @@ except Exception as e:
 
 plt.rcParams.update({'font.size': 8})
 # These are the columns in CSV file and these are fixed.
-cols_ = [ 'sensor', 'time', 'cs_type', 'session_num', 'tone', 'puff', 'led' ]
+cols_ = [ 'time', 'sensor', 'trial_num', 'total_trials'
+        , 'cs_type', 'next_probe_in', 'tone', 'puff', 'led' 
+        , 'status'
+        ]
+
 aN, bN = 0, 0
 toneBeginN, toneEndN = 0, 0
 puffBeginN, puffEndN = 0, 0
@@ -37,7 +41,7 @@ tone = None
 puff = None
 led = None
 status = None
-cstype = 0
+cstype = 1              # Always 1 for this branch
 time = None
 newtime = None
 sensor = None
@@ -56,9 +60,6 @@ def straighten_time( time ):
         time[x+1:] += diff
     return time, nTimesTimeWrapBack
 
-def get_data_to_plot( mat ):
-    return mat
-
 def add_puff_and_tone_labels( ax, time ):
     global tone, puff, led
     global toneBeginN, toneEndN
@@ -66,22 +67,25 @@ def add_puff_and_tone_labels( ax, time ):
     toneN = get_status_ids( 'CS_P' )
     toneBeginN, toneEndN = toneN[0], toneN[-1]
     toneW = time[ toneEndN ] - time[ toneBeginN ]
-    puffN = get_status_ids( 'PUFF' )
-    puffBeginN, puffEndN = puffN[0], puffN[-1]
     ax.add_patch( mpatch.Rectangle( 
         (time[toneBeginN], min(400,sensor.mean()-200)), toneW, 50, lw=0)
         )
     ax.annotate('Tone', xy=(time[toneEndN], sensor.mean() )
             , xytext=(time[toneBeginN], min(300,sensor.mean()-300))
             )
-    puffW = time[ puffEndN ] - time[ puffBeginN ]
-    ax.add_patch( 
-            mpatch.Rectangle( (time[puffBeginN],
-                min(400,sensor.mean()-200))
-                , puffW, 50,lw=0)
-            )
-    ax.annotate('Puff', xy=(time[puffBeginN], sensor.mean())
-            , xytext=(time[puffBeginN], min(300,sensor.mean()-300)))
+    try:
+        puffN = get_status_ids( 'PUFF' )
+        puffBeginN, puffEndN = puffN[0], puffN[-1]
+        puffW = time[ puffEndN ] - time[ puffBeginN ]
+        ax.add_patch( 
+                mpatch.Rectangle( (time[puffBeginN],
+                    min(400,sensor.mean()-200))
+                    , puffW, 50,lw=0)
+                )
+        ax.annotate('Puff', xy=(time[puffBeginN], sensor.mean())
+                , xytext=(time[puffBeginN], min(300,sensor.mean()-300)))
+    except Exception as e:
+        print( '[INFO] This trial does not have PUFF' )
 
 def get_status_ids( status_id ):
     global status
@@ -92,7 +96,8 @@ def plot_raw_trace( ax ):
     global status
     global aN, bN
     aN = get_status_ids('CS_P' )[0]
-    bN = get_status_ids('PUFF')[-1] + 10
+    bN = get_status_ids('POST')[0] + 10
+
     ax.plot(time, sensor)
     ax.plot(time[aN], sensor[aN], color = 'b')
     ax.plot(time[aN:bN], sensor[aN:bN], color = 'r')
@@ -201,10 +206,14 @@ def main( args ):
     plot = args.get('plot', True)
     print('[INFO] Processing file %s' % trialFile )
     metadata, data = parse_csv_file( trialFile )
+    if len( data ) <= 10:
+        print( '[INFO] Few or no entry in this trial' )
+        return 
 
     time, sensor = get_colums(data, 0), get_colums(data, 1)
     time = time - time.min() 
     tone, puff, led = get_colums(data,6), get_colums(data,7), get_colums(data,8)
+    cstype = get_colums( data, 4 )[0]
     status = get_colums( data, 9 )
     if plot:
         ax = plt.subplot(3, 1, 1)
@@ -236,6 +245,7 @@ def main( args ):
             , 'newtime' : newtime
             , 'area' : (bins, areaUnderCurve) 
             , 'cstype' : int(cstype)
+            , 'aNbN' : (aN, bN )
             }
 
 if __name__ == '__main__':
