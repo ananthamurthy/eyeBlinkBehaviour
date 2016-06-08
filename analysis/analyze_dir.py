@@ -68,6 +68,7 @@ def main(  ):
         tVec = result['time']
         row = result['sensor']
         aN, bN = result['aNbN']
+        bN = aN + 55            # just to make sure I can vstack.
         if len(row) > 100:
             if result['cstype'] == 0: 
                 csminus.append( row[aN:bN] )
@@ -81,7 +82,7 @@ def main(  ):
         csplusData = np.vstack( csplus ) 
         plt.subplot(1, 1, 1)
         plt.imshow( csplusData, cmap = "jet"
-                , extent = [10*aN, 10*bN, len(csplusIdx), 0]  
+                , extent = [tVec[aN], tVec[bN], len(csplusIdx), 0]  
                 , vmin = csplusData.min(), vmax = csplusData.max()
                 , interpolation = 'none', aspect='auto' 
                 )
