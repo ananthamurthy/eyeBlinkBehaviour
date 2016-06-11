@@ -30,9 +30,30 @@ import analyze_trial as at
 matplotlib.rcParams.update( {'font.size' : 10} )
 
 args_ = None
-csplus = []
+
+csplus, csminus = [], []
 csplusIdx, csminusIdx = [], []
-csminus = []
+
+distraction = []
+distractionIdx = []
+
+probes = []
+probesIdx = []
+
+def plot_subplot( ax, data, idx, tVec, aN, bN, title ):
+    csplusData = np.vstack( data ) 
+    plt.imshow( csplusData, cmap = "jet"
+            , extent = [tVec[aN], tVec[bN], len(idx), 0]  
+            , vmin = data.min(), vmax = data.max()
+            , interpolation = 'none', aspect='auto' 
+            )
+    # ax.set_xticks( range(0,len(idx),2), idx[::2] )
+    ax.set_xlabel( 'Time (ms)' )
+    ax.set_ylabel( '# Trial' )
+    ax.set_title( title )
+    ax.legend( )
+    # ax.colorbar( )
+
 
 def main(  ):
     global args_
@@ -70,29 +91,33 @@ def main(  ):
         aN, bN = result['aNbN']
         bN = aN + 55            # just to make sure I can vstack.
         if len(row) > 100:
-            if result['cstype'] == 0: 
-                csminus.append( row[aN:bN] )
-                csminusIdx.append( idx )
-            else: 
-                csplus.append( row[aN:bN] )
+            r = row[aN:bN]
+            if result['trial_type'] == 'CS_P': 
+                csplus.append( r )
                 csplusIdx.append( idx )
+            elif result['trial_type'] == 'PROB':
+                probes.append( r )
+                probesIdx.append( idx )
+            elif result['trial_type'] == 'DIST':
+                distraction.append( r )
+                distractionIdx.append( idx )
+            else:
+                raise NameError( 'Unknown trial type  %s' % result['trial_type'])
 
     plt.figure()
-    if len(csplus) > 1:
-        csplusData = np.vstack( csplus ) 
-        plt.subplot(1, 1, 1)
-        plt.imshow( csplusData, cmap = "jet"
-                , extent = [tVec[aN], tVec[bN], len(csplusIdx), 0]  
-                , vmin = csplusData.min(), vmax = csplusData.max()
-                , interpolation = 'none', aspect='auto' 
-                )
-        plt.yticks( range(0,len(csplusIdx),2), csplusIdx[::2] , fontsize = 6)
-        plt.xlabel( 'Time (ms)' )
-        plt.ylabel( '# Trial' )
-        plt.title( 'CS+ Trials' )
-        plt.legend( )
-        plt.colorbar( )
 
+    if csplus:
+        ax = plt.subplot(3, 1, 1)
+        csplusData = np.vstack( csplus ) 
+        plot_subplot( ax, csplusData, csplusIdx, tVec, aN, bN, 'CS+' )
+    if probes:
+        ax = plt.subplot(3, 1, 2)
+        probData = np.vstack( probes ) 
+        plot_subplot( ax, probData, probesIdx, tVec, aN, bN, 'PROBES' )
+    if distraction:
+        ax = plt.subplot( 3, 1, 3 )
+        distractData = np.vstack( distraction )
+        plot_subplot( ax, distractData, distractionIdx, tVec, aN, bN, 'DIST')
     outfile = '%s/summary.png' % args_.output_dir
     print('[INFO] Saving file to %s' % outfile )
     plt.tight_layout( )

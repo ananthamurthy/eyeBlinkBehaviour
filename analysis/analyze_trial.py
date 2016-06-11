@@ -42,6 +42,7 @@ puff = None
 led = None
 status = None
 cstype = 1              # Always 1 for this branch
+trial_type = 'csplus'   # cs+, distraction, or probe
 time = None
 newtime = None
 sensor = None
@@ -167,7 +168,26 @@ def plot_histogram( ax ):
     # plt.title('Histogram of sensor readout')
     plt.legend(loc='best', framealpha=0.4)
 
+def get_colums( data, n ):
+    column = []
+    for d in data:
+        column.append( d[n] )
+    try:
+        column = np.array( column )
+    except Exception as e:
+        pass
+    return column
+
+def determine_trial_type( last_column ):
+    if 'DIST' in last_column:
+        return 'DIST'
+    elif 'CS_P' in last_column and ('PUFF' not in last_column ):
+        return 'PROB'
+    else:
+        return 'CS_P'
+
 def parse_csv_file( filename ):
+    global trial_type
     with open( filename, 'r' ) as f:
         lines = f.read().split( '\n' )
     metadata, data = [], []
@@ -185,23 +205,17 @@ def parse_csv_file( filename ):
             except Exception as e:
                 dd.append( x.strip() )
         data.append( dd )
+    trial_type = determine_trial_type( get_colums( data, 9) )
+    print('\t Trial type %s' % trial_type )
     return metadata, data
 
-def get_colums( data, n ):
-    column = []
-    for d in data:
-        column.append( d[n] )
-    try:
-        column = np.array( column )
-    except Exception as e:
-        pass
-    return column
 
 def main( args ):
     global cstype, trialFile
     global tone, puff, led
     global data, sensor, time
     global status
+    global trial_type
     trialFile = args['input']
     plot = args.get('plot', True)
     print('[INFO] Processing file %s' % trialFile )
@@ -232,8 +246,11 @@ def main( args ):
         ax = plt.subplot(3, 1, 2)
         plot_zoomedin_raw_trace( ax )
         ax = plt.subplot(3, 1, 3)
-        plot_histogram( ax )
-
+        try:
+            plot_histogram( ax )
+        except Exception as e:
+            print( '[WARNING] Failed to plot histogram' )
+            print( '\t Error was %s' % e )
     plt.suptitle( " ".join(metadata) + ' CS : %s' % cstype, fontsize = 8 )
     plt.tight_layout()
     outfile = args['output'] or '%s%s.png' % (trialFile, '')
@@ -246,6 +263,7 @@ def main( args ):
             , 'area' : (bins, areaUnderCurve) 
             , 'cstype' : int(cstype)
             , 'aNbN' : (aN, bN )
+            , 'trial_type' : trial_type
             }
 
 if __name__ == '__main__':
