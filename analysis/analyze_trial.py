@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """analyze_trial.py: 
 
 """
@@ -18,6 +16,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatch
 import itertools
 import random 
+import logging
 
 #style = random.choice( plt.style.available )
 style = 'seaborn-darkgrid' 
@@ -86,7 +85,7 @@ def add_puff_and_tone_labels( ax, time ):
         ax.annotate('Puff', xy=(time[puffBeginN], sensor.mean())
                 , xytext=(time[puffBeginN], min(300,sensor.mean()-300)))
     except Exception as e:
-        print( '[INFO] This trial does not have PUFF' )
+        logging.info( 'This trial does not have PUFF' )
 
 def get_status_ids( status_id ):
     global status
@@ -179,9 +178,10 @@ def get_colums( data, n ):
     return column
 
 def determine_trial_type( last_column ):
+    assert len( last_column ) > 50, 'Few entries %s' % len( last_column )
     if 'DIST' in last_column:
         return 'DIST'
-    elif 'CS_P' in last_column and ('PUFF' not in last_column ):
+    elif ('CS_P' in last_column) and ('PUFF' not in last_column ):
         return 'PROB'
     else:
         return 'CS_P'
@@ -190,6 +190,9 @@ def parse_csv_file( filename ):
     global trial_type
     with open( filename, 'r' ) as f:
         lines = f.read().split( '\n' )
+    if len(lines) < 10:
+        return [], []
+
     metadata, data = [], []
     for l in lines:
         if not l:
@@ -206,7 +209,7 @@ def parse_csv_file( filename ):
                 dd.append( x.strip() )
         data.append( dd )
     trial_type = determine_trial_type( get_colums( data, 9) )
-    print('\t Trial type %s' % trial_type )
+    logging.debug('\t Trial type %s' % trial_type )
     return metadata, data
 
 
@@ -218,10 +221,10 @@ def main( args ):
     global trial_type
     trialFile = args['input']
     plot = args.get('plot', True)
-    print('[INFO] Processing file %s' % trialFile )
+    logging.debug('Processing file %s' % trialFile )
     metadata, data = parse_csv_file( trialFile )
     if len( data ) <= 10:
-        print( '[INFO] Few or no entry in this trial' )
+        logging.debug( 'Few or no entry in this trial' )
         return 
 
     time, sensor = get_colums(data, 0), get_colums(data, 1)
@@ -249,14 +252,15 @@ def main( args ):
         try:
             plot_histogram( ax )
         except Exception as e:
-            print( '[WARNING] Failed to plot histogram' )
-            print( '\t Error was %s' % e )
-    plt.suptitle( " ".join(metadata) + ' CS : %s' % cstype, fontsize = 8 )
-    plt.tight_layout()
-    outfile = args['output'] or '%s%s.png' % (trialFile, '')
-    print('[INFO] Plotting trial to %s' % outfile )
-    plt.savefig( outfile )
-    plt.close()
+            logging.warn( 'Failed to plot histogram' )
+            logging.warn( '\t Error was %s' % e )
+
+        plt.suptitle( " ".join(metadata) + ' CS : %s' % cstype, fontsize = 8 )
+        plt.tight_layout()
+        outfile = args['output'] or '%s%s.png' % (trialFile, '')
+        logging.warn('Plotting trial to %s' % outfile )
+        plt.savefig( outfile )
+        plt.close()
 
     return { 'time' : time, 'sensor' : sensor
             , 'newtime' : newtime
