@@ -29,6 +29,7 @@ import analyze_trial as at
 import session_type as st
 
 matplotlib.rcParams.update( {'font.size' : 10} )
+plt.style.use('classic')
 
 args_ = None
 
@@ -69,12 +70,17 @@ def rank_behaviour( session_type_dirs ):
     
     cspData = []
     for sd in session_type_dirs:
-        sessionData = st.rank_session( sd )
+        sessionData = st.session_data( sd )
         cspData.append( sessionData['CS_P'] )
 
-    for t in cspData:
-        print len(t )
-        plt.plot( t)
+    allSession = []
+    for t, sense in cspData:
+        allSession.append( np.mean(sense, axis=0) )
+    for i, sens in enumerate(allSession):
+        plt.subplot( len(allSession), 1, i + 1 )
+        plt.plot( sens, label = 'Session %s' % (i + 1) )
+        plt.legend( )
+    # plt.colorbar( )
     plt.show( )
 
 def get_sessions( dir_name, **kwargs ):

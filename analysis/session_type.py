@@ -5,6 +5,7 @@ import sys
 import re
 import pylab
 import logging
+import numpy as np
 from collections import defaultdict
 
 import analyze_trial as at
@@ -17,8 +18,22 @@ def get_trial_files( session_dir ):
             files.append( fPath )
     return files
 
+def reshape_session_data( s_data ):
+    tList, vList = [], []
+    lengths = []
+    for t, v in s_data:
+        tList.append( t )
+        vList.append( v )
+        lengths += [ len(t), len( v ) ]
+    # Reshapes all entries the minimum length
+    tList = [ x[0:min(lengths)] for x in tList ]
+    vList = [ x[0:min(lengths)] for x in vList ]
+    tVec = np.mean(tList, axis=0)
+    sensorImg = np.vstack( vList )
+    return tVec, sensorImg
+    
 
-def rank_session( session_dir ):
+def session_data( session_dir ):
     print( '[INFO] Analysing session stored in %s' % session_dir )
     trialFiles = get_trial_files( session_dir )
     sessionData = defaultdict( list )
@@ -33,5 +48,8 @@ def rank_session( session_dir ):
             continue
         trialType = tRes['trial_type']
         sessionData[trialType].append( (tVec, sensor) )
-    print len( sessionData['CS_P'] )
-    return sessionData
+
+    data = {}
+    for k in sessionData:
+        data[k] = reshape_session_data( sessionData[k] )
+    return data
