@@ -265,6 +265,7 @@ def main( args ):
         plot_raw_trace( ax )
 
     puffArea = compute_area_under_curve( sensor, time, 5450, 5750 )
+    toneArea = compute_area_under_curve( sensor, time, 5000, 5300 )
 
     binSize = 100
     areaInBins = []
@@ -295,6 +296,7 @@ def main( args ):
     return { 'time' : time, 'sensor' : sensor
             , 'newtime' : newtime
             , 'puff_area' : puffArea
+            , 'tone_area' : toneArea
             , 'area_in_bins' : areaInBins
             , 'cstype' : int(cstype)
             , 'aNbN' : (aN, bN )
