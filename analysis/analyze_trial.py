@@ -212,6 +212,34 @@ def parse_csv_file( filename ):
     logging.debug('\t Trial type %s' % trial_type )
     return metadata, data
 
+def find_zeros( y ):
+    posEdge, negEdge = [], []
+    for i, x in enumerate(y[1:]):
+        # y[i] is previous value if x in current value
+        if y[i] >= 0 and x < 0:
+            negEdge.append( i )
+        elif y[i] <= 0 and x > 0:
+            posEdge.append( i )
+    return (negEdge, posEdge)
+
+def compute_area_under_curve( y, t ):
+    print( '[DEBUG] Computing area under the curve for trial' )
+    # Get the window in which puff is most-likely. It starts when puff singal is
+    # ON, with maximum width of 300 ms.
+    offset = 0
+    puffStart = np.where( t >= 5450 )[0][0] - offset
+    puffEnd = np.where( t >= 5850 )[0][0] + offset
+    puffTime = t[puffStart:puffEnd]
+    puffSignal = y[puffStart:puffEnd] - y.mean()
+    negE, posE = find_zeros( puffSignal )
+    zs = sorted( negE + posE )
+
+    assert len(zs) >= 2, 'Must have at least 2 pairs of zeros: %s' % zs
+    area = 0.0 
+    for i, x in enumerate( zs[1:] ):
+        start, end =  zs[i]+1, x+1
+        area += abs( np.sum( puffSignal[start:end] ) )
+    return area
 
 def main( args ):
     global cstype, trialFile
@@ -236,11 +264,13 @@ def main( args ):
         ax = plt.subplot(3, 1, 1)
         plot_raw_trace( ax )
 
+    area = compute_area_under_curve( sensor, time )
+
     binSize = 100
-    areaUnderCurve = []
+    areaInBins = []
     bins = np.arange(0, len(sensor), binSize)
     for i, x in enumerate(bins[1:]):
-        areaUnderCurve.append( np.sum(sensor[bins[i]:x]) )
+        areaInBins.append( np.sum(sensor[bins[i]:x]) )
 
     ######
     # In this subplot, we scale down the pre and post baseline by a factor of
@@ -264,7 +294,8 @@ def main( args ):
 
     return { 'time' : time, 'sensor' : sensor
             , 'newtime' : newtime
-            , 'area' : (bins, areaUnderCurve) 
+            , 'area' : area
+            , 'area_in_bins' : areaInBins
             , 'cstype' : int(cstype)
             , 'aNbN' : (aN, bN )
             , 'trial_type' : trial_type
