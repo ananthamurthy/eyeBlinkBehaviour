@@ -222,13 +222,13 @@ def find_zeros( y ):
             posEdge.append( i )
     return (negEdge, posEdge)
 
-def compute_area_under_curve( y, t ):
+def compute_area_under_curve( y, t, a, b ):
     print( '[DEBUG] Computing area under the curve for trial' )
     # Get the window in which puff is most-likely. It starts when puff singal is
     # ON, with maximum width of 300 ms.
     offset = 0
-    puffStart = np.where( t >= 5450 )[0][0] - offset
-    puffEnd = np.where( t >= 5850 )[0][0] + offset
+    puffStart = np.where( t >= a )[0][0] - offset
+    puffEnd = np.where( t >= b )[0][0] + offset
     puffTime = t[puffStart:puffEnd]
     puffSignal = y[puffStart:puffEnd] - y.mean()
     negE, posE = find_zeros( puffSignal )
@@ -264,7 +264,7 @@ def main( args ):
         ax = plt.subplot(3, 1, 1)
         plot_raw_trace( ax )
 
-    area = compute_area_under_curve( sensor, time )
+    puffArea = compute_area_under_curve( sensor, time, 5450, 5750 )
 
     binSize = 100
     areaInBins = []
@@ -294,7 +294,7 @@ def main( args ):
 
     return { 'time' : time, 'sensor' : sensor
             , 'newtime' : newtime
-            , 'area' : area
+            , 'puff_area' : puffArea
             , 'area_in_bins' : areaInBins
             , 'cstype' : int(cstype)
             , 'aNbN' : (aN, bN )

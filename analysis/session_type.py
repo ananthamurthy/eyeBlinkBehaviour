@@ -43,6 +43,7 @@ def session_data( session_dir ):
             print( '[WARN] Files %s has no data ' % tF )
             continue
         tVec, sensor = tRes['time'], tRes['sensor']
+        area = tRes['puff_area']
         if len( tVec ) < 10 or len( sensor) < 10:
             print( "[WARN] No data in file %s" % tF )
             continue
