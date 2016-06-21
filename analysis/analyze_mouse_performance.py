@@ -29,7 +29,10 @@ import analyze_trial as at
 import session_type as st
 
 matplotlib.rcParams.update( {'font.size' : 10} )
-plt.style.use('classic')
+try:
+    plt.style.use('classic')
+except Exception as e:
+    pass
 
 args_ = None
 
