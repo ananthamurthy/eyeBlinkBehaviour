@@ -81,8 +81,28 @@ def plot_area_under_curve( cspData, normalised = True ):
         else:
             plt.scatter( area[0] / np.max( area[0] ) , area[1] / np.max( area[1]))
 
+    plt.xlabel( 'Tone AOC' )
+    plt.ylabel( 'Puff AOC' )
+
     plt.savefig( outfile  )
     print('[INFO] Saved tone/puff area scatter for all session to %s' % outfile)
+
+
+def plot_performance( cspData ):
+    global args_
+    outfile = os.path.join( args_.dir, 'performance.png' )
+    sessions, performances = [], []
+    for i, (t, sense, area) in enumerate( cspData ):
+        sessions.append( i + 1 )
+        area = zip( *area )
+        tone, puff = area 
+        performances.append( np.mean(tone) / np.mean( puff) )
+
+    plt.plot( sessions, performances , '-*')
+    plt.xlabel( '# Session ' )
+    plt.ylabel( 'Performance = tone / puff ' )
+    plt.savefig( outfile )
+    print( '[INFO] Performance is save to %s' % outfile )
 
 
 def plot_csp_data( cspData ):
@@ -105,6 +125,10 @@ def plot_csp_data( cspData ):
     plot_area_under_curve( cspData, False )
     plt.figure( )
     plot_area_under_curve( cspData, True )
+
+    # Final performace.
+    plt.figure( )
+    plot_performance( cspData )
 
 
 def rank_behaviour( session_type_dirs ):
