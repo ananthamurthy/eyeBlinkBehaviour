@@ -25,6 +25,7 @@ import logging
 import re
 import analyze_trial as at
 import session_type as st
+import math
 
 matplotlib.rcParams.update( {'font.size' : 10} )
 try:
@@ -64,11 +65,32 @@ def accept( subdir_name, reject_list ):
             return False
     return True
 
+def plot_area_under_curve( cspData, normalised = True ):
+    if normalised:
+        outfile = os.path.join( args_.dir, 'area_under_tone_puff_normalised.png' )
+    else:
+        outfile = os.path.join( args_.dir, 'area_under_tone_puff_raw.png' )
+
+    for i, (t, sense, area) in enumerate(cspData):
+        ax = plt.subplot( math.ceil( len(cspData)/ 2.0 ), 2, i + 1 )
+        area = zip(*area)
+        if not normalised:
+            plt.scatter( area[0] , area[1] )
+            ax.set_xlim( 0, 3000 )
+            ax.set_ylim( 0, 3000 )
+        else:
+            plt.scatter( area[0] / np.max( area[0] ) , area[1] / np.max( area[1]))
+
+    plt.savefig( outfile  )
+    print('[INFO] Saved tone/puff area scatter for all session to %s' % outfile)
+
+
 def plot_csp_data( cspData ):
     """Plot CS_P type of trials from each session """
     global args_
     allSession = []
-    for t, sense in cspData:
+    allArea = []
+    for t, sense, area in cspData:
         allSession.append( np.mean(sense, axis=0) )
     for i, sens in enumerate(allSession):
         plt.subplot( len(allSession), 1, i + 1 )
@@ -79,12 +101,19 @@ def plot_csp_data( cspData ):
     plt.savefig( outfile )
     print( '[INFO] Saved all CS_P to %s' % outfile )
 
+    plt.figure( )
+    plot_area_under_curve( cspData, False )
+    plt.figure( )
+    plot_area_under_curve( cspData, True )
+
+
 def rank_behaviour( session_type_dirs ):
     """Rank the behaviour of a given mouse. The directory session_type_dirs 
     contains all the data related to this mouse.
     """
     
     cspData = []
+    areaData = []
     for sd in session_type_dirs:
         sessionData = st.session_data( sd )
         cspData.append( sessionData['CS_P'] )

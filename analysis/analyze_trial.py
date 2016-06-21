@@ -234,13 +234,11 @@ def compute_area_under_curve( y, t, a, b ):
     yEnd = np.where( t >= b )[0][0] + offset
     yTime = t[yStart:yEnd]
     ySignal = y[yStart:yEnd] - y.mean()
+    yAbsSignal = [ abs(x) for x in ySignal ]
     negE, posE = find_zeros( ySignal )
     zs = sorted( negE + posE )
-    print ySignal
     if len(zs) < 2:
-        print( 'Must have at least 2 pairs of zeros: %s' % zs )
-        print( '\t Probably a probe trial. Ignoring %s ' % trialFile  )
-        return 0.0
+        return np.sum( yAbsSignal )
 
     area = 0.0 
     for i, x in enumerate( zs[1:] ):
