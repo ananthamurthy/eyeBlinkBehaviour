@@ -64,6 +64,21 @@ def accept( subdir_name, reject_list ):
             return False
     return True
 
+def plot_csp_data( cspData ):
+    """Plot CS_P type of trials from each session """
+    global args_
+    allSession = []
+    for t, sense in cspData:
+        allSession.append( np.mean(sense, axis=0) )
+    for i, sens in enumerate(allSession):
+        plt.subplot( len(allSession), 1, i + 1 )
+        plt.plot( sens, label = 'Session %s' % (i + 1) )
+        plt.legend( )
+    # plt.colorbar( )
+    outfile = os.path.join( args_.dir, 'all_cs_p.png' )
+    plt.savefig( outfile )
+    print( '[INFO] Saved all CS_P to %s' % outfile )
+
 def rank_behaviour( session_type_dirs ):
     """Rank the behaviour of a given mouse. The directory session_type_dirs 
     contains all the data related to this mouse.
@@ -74,15 +89,7 @@ def rank_behaviour( session_type_dirs ):
         sessionData = st.session_data( sd )
         cspData.append( sessionData['CS_P'] )
 
-    allSession = []
-    for t, sense in cspData:
-        allSession.append( np.mean(sense, axis=0) )
-    for i, sens in enumerate(allSession):
-        plt.subplot( len(allSession), 1, i + 1 )
-        plt.plot( sens, label = 'Session %s' % (i + 1) )
-        plt.legend( )
-    # plt.colorbar( )
-    plt.show( )
+    plot_csp_data( cspData )
 
 def get_sessions( dir_name, **kwargs ):
     ignoreSessionTypeList = kwargs.get( 'ignore_session_types', [] )
