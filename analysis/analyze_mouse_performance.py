@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """analyze_dir.py: 
 
 Analyze a given directory. All trials are accumulated and plotted.
