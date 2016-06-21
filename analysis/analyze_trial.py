@@ -214,6 +214,11 @@ def parse_csv_file( filename ):
 
 def find_zeros( y ):
     posEdge, negEdge = [], []
+    if y[0] < 0:
+        negEdge.append( 0 )
+    else:
+        posEdge.append( 0 )
+
     for i, x in enumerate(y[1:]):
         # y[i] is previous value if x in current value
         if y[i] >= 0 and x < 0:
@@ -223,22 +228,24 @@ def find_zeros( y ):
     return (negEdge, posEdge)
 
 def compute_area_under_curve( y, t, a, b ):
-    print( '[DEBUG] Computing area under the curve for trial' )
-    # Get the window in which puff is most-likely. It starts when puff singal is
-    # ON, with maximum width of 300 ms.
+    global trialFile
     offset = 0
-    puffStart = np.where( t >= a )[0][0] - offset
-    puffEnd = np.where( t >= b )[0][0] + offset
-    puffTime = t[puffStart:puffEnd]
-    puffSignal = y[puffStart:puffEnd] - y.mean()
-    negE, posE = find_zeros( puffSignal )
+    yStart = np.where( t >= a )[0][0] - offset
+    yEnd = np.where( t >= b )[0][0] + offset
+    yTime = t[yStart:yEnd]
+    ySignal = y[yStart:yEnd] - y.mean()
+    negE, posE = find_zeros( ySignal )
     zs = sorted( negE + posE )
+    print ySignal
+    if len(zs) < 2:
+        print( 'Must have at least 2 pairs of zeros: %s' % zs )
+        print( '\t Probably a probe trial. Ignoring %s ' % trialFile  )
+        return 0.0
 
-    assert len(zs) >= 2, 'Must have at least 2 pairs of zeros: %s' % zs
     area = 0.0 
     for i, x in enumerate( zs[1:] ):
         start, end =  zs[i]+1, x+1
-        area += abs( np.sum( puffSignal[start:end] ) )
+        area += abs( np.sum( ySignal[start:end] ) )
     return area
 
 def main( args ):
@@ -266,6 +273,7 @@ def main( args ):
 
     puffArea = compute_area_under_curve( sensor, time, 5450, 5750 )
     toneArea = compute_area_under_curve( sensor, time, 5000, 5300 )
+    print( 'ToneArea = %f, PuffArea = %f' % ( toneArea, puffArea ))
 
     binSize = 100
     areaInBins = []
@@ -288,7 +296,7 @@ def main( args ):
 
         plt.suptitle( " ".join(metadata) + ' CS : %s' % cstype, fontsize = 8 )
         plt.tight_layout()
-        outfile = args['output'] or '%s%s.png' % (trialFile, '')
+        outfile = args.get('output', False) or '%s%s.png' % (trialFile, '')
         logging.warn('Plotting trial to %s' % outfile )
         plt.savefig( outfile )
         plt.close()
