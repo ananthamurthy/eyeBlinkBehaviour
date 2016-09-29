@@ -78,6 +78,9 @@ int initialize()
 {
     reboot_ = false;
 
+    CSTime = 100;
+    CS_TONE_2 = CS_TONE_1;
+
     /*
      * Keep sending question onto serial port every second.
      */
@@ -93,7 +96,7 @@ int initialize()
                 Serial.println("!! Expected a positive interger.");
             else
             {
-                mouseName = "MouseK" + answer;
+                mouseName = "MouseS" + answer;
                 Serial.println("-> Got mouse name: #" + mouseName);
                 break;
             }
@@ -184,8 +187,8 @@ int initialize()
             blink = analogRead(blink_ai);
             // Since this is not timestamped data, send 0 as timestamp.
             // NOTE: Can't use -1 since it is unsigned long.
-            write_data_line( blink, 0 );
             startT = millis();
+            write_data_line( blink, 0 );
         }
         // Read the character and decide what to do.
         if( is_command_read( CS_PLUS_COMMAND , false) )
@@ -198,15 +201,15 @@ int initialize()
         else if( is_command_read( CS_MINUS_COMMAND, false) )
         {
             Serial.println("COMMAND: Play CS2");
-            if( sessionType_ind % 2 == 0 )
+            if( sessionType_ind % 2 == 0 && sessionType_ind != 18 )
             {
-		tone( tonePin, CS_TONE_2);
+		            tone( tonePin, CS_TONE_2);
                 delay( CSTime );
                 noTone( tonePin );
- 	    }
+ 	          }
             else
             {
-		digitalWrite( ledPin, HIGH);
+		            digitalWrite( ledPin, HIGH);
                 delay( CSTime );
                 digitalWrite( ledPin, LOW );                
             }
@@ -250,13 +253,16 @@ int initialize()
     // Get totalTrials and traceTime based on the Session Type
     
    // if ((sessionType_ind == 0) || (sessionType_ind == 1) || (sessionType == 2) || (sessionType == 3) || (sessionType_ind == 4) || (sessionType_ind == 5)) //control (no-puff)
-    if (sessionType_ind <= 5)
+    if ((sessionType_ind <= 5) || (sessionType_ind == 12))
     {
         totalTrials = 41;
+        
         if ((sessionType_ind == 0) || (sessionType_ind == 1))
             traceTime = 0;
         else if ((sessionType_ind == 2) || (sessionType_ind == 3))
             traceTime = 250;
+        else if (sessionType_ind == 12)
+            traceTime = 350;
         else
             traceTime = 500;
     }
@@ -269,8 +275,11 @@ int initialize()
         //else if ((sessionType_ind == 8) || (sessionType_ind == 9)) //trace = 350 ms
         else if (sessionType_ind >7 && sessionType_ind <=9)
             traceTime = 250; //in ms
-        else //(sessionType_ind>9 && sessionType_ind<=11) //trace = 350 ms
+        else if (sessionType_ind>9 && sessionType_ind<=11) 
             traceTime = 500; //in ms
+        else if (sessionType_ind >= 13)
+            traceTime = 350; //in ms   
+        
     }
     return sessionType_ind;
     return traceTime;

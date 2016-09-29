@@ -23,7 +23,6 @@
 
 #ifndef Globals_h
 #define Globals_h
-
 #define DEBUG  1
 
 // #define ENABLE_LCD
@@ -54,25 +53,31 @@ extern const int tonePin;
 extern const int ledPin;
 extern unsigned long startT;
 extern unsigned long currentPhaseTime;
+extern unsigned long currentTime; 
 extern unsigned long lastTime;
 extern unsigned short sampleInterval;
 extern int shutterDelay;
 extern int totalTrials;
 extern int trialNum;
+extern long int trialTime;
 
 extern int sessionType_ind;
 
 extern const int puffTime;
-extern const int CSTime;
+extern int CSTime;
 extern int traceTime;
+
+// Time of distractor / LED or tone.
+extern int distractorOnTime;
+extern int distractorOffTime;
 
 /**
  * @brief What fraction of all CS is CS+. Value between 0 and 10.
  */
 extern unsigned int CS_fraction;
 
-#define CS_TONE_1       4500
-#define CS_TONE_2       11000
+extern unsigned int CS_TONE_1;
+extern unsigned int CS_TONE_2;
 
 // reset the arduino within 1 seconds.
 extern bool reboot_;
@@ -102,4 +107,8 @@ void check_for_pause( );
 extern int nextProbeIn;
 extern int prevTwoTrials[2];
 
+/**
+ * @brief Status of the experiment: PRE_, TONE, TRAC, DIST, POST etc.
+ */
+extern char status_[5];
 #endif

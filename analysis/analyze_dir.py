@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """analyze_dir.py: 
 
 Analyze a given directory. All trials are accumulated and plotted.
@@ -28,10 +30,30 @@ import analyze_trial as at
 matplotlib.rcParams.update( {'font.size' : 10} )
 
 args_ = None
-csplus = []
+
+csplus, csminus = [], []
 csplusIdx, csminusIdx = [], []
-csminus = []
-aN, bN = at.aN, at.bN
+
+distraction = []
+distractionIdx = []
+
+probes = []
+probesIdx = []
+
+def plot_subplot( ax, data, idx, tVec, aN, bN, title ):
+    csplusData = np.vstack( data ) 
+    plt.imshow( csplusData, cmap = "jet"
+            , extent = [tVec[aN], tVec[bN], len(idx), 0]  
+            , vmin = data.min(), vmax = data.max()
+            , interpolation = 'none', aspect='auto' 
+            )
+    # ax.set_xticks( range(0,len(idx),2), idx[::2] )
+    ax.set_xlabel( 'Time (ms)' )
+    ax.set_ylabel( '# Trial' )
+    ax.set_title( title )
+    ax.legend( )
+    # ax.colorbar( )
+
 
 def main(  ):
     global args_
@@ -41,17 +63,21 @@ def main(  ):
         os.makedirs( args_.output_dir )
 
     files = {}
+    print( '[INFO] Searching in %s' % args_.dir )
     for d, sd, fs in os.walk( args_.dir ):
         for f in fs:
             ext = f.split('.')[-1]
             if ext == 'csv':
                 filepath = os.path.join(d, f)
                 trialIndex = re.search('Trial(?P<index>\d+)\.csv', filepath) 
-                index = int(trialIndex.groupdict()['index'])
-                files[index] = (filepath, f)
-    tVec = []
+                if trialIndex:
+                    index = int(trialIndex.groupdict()['index'])
+                    files[index] = (filepath, f)
     # Sort the trials according to trial number
     fileIdx = sorted( files )
+    if len(fileIdx) == 0:
+        print('[WARN] No files found' )
+        quit()
     for idx  in fileIdx:
         f, fname = files[idx]
         result = at.main( { 'input' : f
@@ -59,48 +85,39 @@ def main(  ):
             )
         if not result:
             continue
+
         tVec = result['time']
         row = result['sensor']
+        aN, bN = result['aNbN']
+        bN = aN + 55            # just to make sure I can vstack.
         if len(row) > 100:
-            if result['cstype'] == 0: 
-                csminus.append( row[aN:bN] )
-                csminusIdx.append( idx )
-            else: 
-                csplus.append( row[aN:bN] )
+            r = row[aN:bN]
+            if result['trial_type'] == 'CS_P': 
+                csplus.append( r )
                 csplusIdx.append( idx )
+            elif result['trial_type'] == 'PROB':
+                probes.append( r )
+                probesIdx.append( idx )
+            elif result['trial_type'] == 'DIST':
+                distraction.append( r )
+                distractionIdx.append( idx )
+            else:
+                raise NameError( 'Unknown trial type  %s' % result['trial_type'])
 
     plt.figure()
-    csplusData = np.vstack( csplus ) 
-    csminusData = np.vstack( csminus )
-    try:
-        plt.style.use('classic')
-    except Exception as e:
-        pass
-    plt.subplot(2, 1, 1)
-    plt.imshow( csminusData, cmap = "jet"
-            , extent = [10*aN, 10*bN, len(csminusIdx), 0]  
-            , vmin = csplusData.min(), vmax = csplusData.max()
-            , interpolation = 'none', aspect='auto' 
-            )
-    plt.xlabel( 'Time (ms)' )
-    plt.ylabel( '# Trial ')
-    plt.yticks( range(0,len(csminusIdx),2), csminusIdx[::2], fontsize = 6 )
-    plt.title( 'CS- Trials' )
-    plt.legend( )
-    plt.colorbar( )
-    plt.subplot(2, 1, 2)
-    plt.imshow( csplusData, cmap = "jet"
-            , extent = [10*aN, 10*bN, len(csplusIdx), 0]  
-            , vmin = csplusData.min(), vmax = csplusData.max()
-            , interpolation = 'none', aspect='auto' 
-            )
-    plt.yticks( range(0,len(csplusIdx),2), csplusIdx[::2] , fontsize = 6)
-    plt.xlabel( 'Time (ms)' )
-    plt.ylabel( '# Trial' )
-    plt.title( 'CS+ Trials' )
-    plt.legend( )
-    plt.colorbar( )
 
+    if csplus:
+        ax = plt.subplot(3, 1, 1)
+        csplusData = np.vstack( csplus ) 
+        plot_subplot( ax, csplusData, csplusIdx, tVec, aN, bN, 'CS+' )
+    if probes:
+        ax = plt.subplot(3, 1, 2)
+        probData = np.vstack( probes ) 
+        plot_subplot( ax, probData, probesIdx, tVec, aN, bN, 'PROBES' )
+    if distraction:
+        ax = plt.subplot( 3, 1, 3 )
+        distractData = np.vstack( distraction )
+        plot_subplot( ax, distractData, distractionIdx, tVec, aN, bN, 'DIST')
     outfile = '%s/summary.png' % args_.output_dir
     print('[INFO] Saving file to %s' % outfile )
     plt.tight_layout( )

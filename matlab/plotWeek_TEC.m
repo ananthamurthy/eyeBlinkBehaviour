@@ -8,8 +8,8 @@ close all
 
 week = 3;
 nAnimals = 3;
-nSessions = 12;
-sessionType = 10;
+nSessions = 2;
+sessionType = 12;
 multipleSets = 0;
 
 if multipleSets == 1
@@ -18,7 +18,7 @@ else
     nSets = 1;
 end
 
-if sessionType == 4
+if sessionType == 12
     probe = 0;
 else
     probe = 1;
@@ -29,7 +29,7 @@ saveDirec = ('/home/shriya/Work/Analysis/eyeBlinkBehaviourAnalysis/');
 
 fontSize = 12;
 
-for session = 8:nSessions
+for session = 1:nSessions
     close all
     for set = 1:nSets
         if set == 1
@@ -42,10 +42,10 @@ for session = 8:nSessions
         for i = 1:nAnimals
             if set == 1
                 %mouse = ['MouseK' num2str(i+16)]; %edit
-                mouse = ['K' num2str(i+19)]; %edit
+                mouse = ['S' num2str(i+1)]; %edit
             else
                 %mouse = ['MouseK' num2str(i+22)]; %edit
-                mouse = ['K' num2str(i+22)]; %edit
+                mouse = ['S' num2str(i+22)]; %edit
             end
             
             a_plus = [];

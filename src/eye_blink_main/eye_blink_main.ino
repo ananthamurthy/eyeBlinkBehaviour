@@ -44,6 +44,7 @@ unsigned int tcnt2; // used to store timer value
 #include "Solenoid.h"
 #include "ChangePhase.h"
 #include "TriggerImaging.h"
+#include "Distractor.h"
 
 #ifdef ENABLE_LCD
 #include "LCDRelated.h"
@@ -60,21 +61,32 @@ const int ledPin               = 3;         // added on 20160127
 int blinkCount                 = 0;         // Code
 unsigned long startT;
 String mouseName               = String(1); // Please enter the name of the mouse
-extern int sessionType_ind;                 // Please specify the Session Type (0: Control, 1: Trace, 2: Delay)
+
 int session                    = 1;
-extern int traceTime;                              // in ms
-int totalTrials                = 100;  
+extern int traceTime;                       // in ms
+int totalTrials                = 100;
 int shutterDelay               = 60;        // in ms
 
 boolean profilingDataDump      = 0;         // For dumping profiling data
 
 // Protocol Information
 const int preTime              = 5000;      // in ms
-const int CSTime               = 350;       // in ms
+int CSTime                     = 100;       // in ms //changed on 20160423, for Distractor training where one needs 50ms CS times.
 const int puffTime             = 50;        // in ms //change made on 20151214
 const int postTime             = 5000;      // in ms
 const int minITI               = 15000;     // in ms
 const int randITI              = 5000;      // in ms
+
+// Time of distractor / LED or tone.
+int distractorOnTime     = 100;
+int distractorOffTime    = 250;
+
+////For session 12
+//
+//if (sessionType_ind == 12)
+//{  CSTime = 50;                            // in ms
+//}
+
 
 // Miscellaneous Initialisations
 int condition                  = 0;
@@ -82,6 +94,7 @@ boolean pause                  = 0 ;
 unsigned long startPhaseTime;
 unsigned long startTrialTime;
 unsigned long currentPhaseTime = 0;
+unsigned long currentTime;
 unsigned long lastTime         = 0;
 unsigned short sampleInterval  = 10;        // Ten milliseconds for 100 Hz
 unsigned int interTrialTime    = 0;
@@ -116,7 +129,7 @@ void setup()
 
     //Set up the tone pin:
     pinMode(tonePin, OUTPUT);
-    
+
     //Set up the LED pin:
     pinMode(ledPin, OUTPUT);
 
@@ -130,7 +143,7 @@ void setup()
 
     //For randomizations
     randomSeed( analogRead( blink_ai ) ); // 0 -> use system clock to generate random seed the CS type for trials
-    
+
     nextProbeIn = (int) random(8,13); //NOTE: the "(int)" only truncates
 }
 
@@ -168,6 +181,8 @@ void loop()
             }
         }
 
+
+
         if (trialNum == 0)
         {
             startPhaseTime = millis();
@@ -179,14 +194,18 @@ void loop()
             printStatus(START_PRE, trialNum);
 #endif
         }
+
         else
         {
-
             // has to be calculated for every loop
             currentPhaseTime = millis() - startPhaseTime;
+            
+            
             // has to be calculated for every loop; not being used anywhere
             unsigned long currentTime = millis() - startTrialTime;
-
+            
+            trialTime = millis() - startTrialTime;
+            
 #ifdef ENABLE_LCD
             int lcd_key = read_lcd_button();
             if (lcd_key == btnRIGHT)
@@ -195,104 +214,147 @@ void loop()
             }
 #endif
 
+
+            // Shriya's session types.
+            if (sessionType_ind >= 12 && sessionType_ind <= 18) 
+            {
+
+              //All the session types involving a distractor. 
+              //The first 20 trials are always CS+ to establish learning and baseline. From trial 21, it is randomized to play distractors in 80% of the trials.
+              
+                if (sessionType_ind >= 16)   
+                {
+                }
+                else
+                    CS_plus = 1;
+
+              
+                //To expand or minimize the trace interval after the 20th trial.
+                
+                if (trialNum > 20)  
+                {
+                    if (sessionType_ind == 14)
+                        traceTime = 250;
+
+                    if (sessionType_ind == 15)
+                        traceTime = 500;
+                }
+            }
+
             switch ( condition )
             {
             // PRE
             case 0:
+                sprintf(status_, "PRE_");
                 PF((condition+1));
                 detectBlinks();
+                //startTrialTime = millis();
+                //Serial.println("StartPre");
+
+
+                // The distractoor switched on in the Pre-tone Phase and remains on till Trace begins.
+                // Session Type 17 and 18 and Distractor sessions.
+                
+                if ((sessionType_ind == 17) && (CS_plus == 1))
+                  {
+                    switchOnDistractor( currentTime, tonePin );
+                  }
+
+                else if ((sessionType_ind == 18) && (CS_plus == 1))
+                  {
+                     switchOnDistractor( currentTime, ledPin  );
+                  }
+                            
                 if (currentPhaseTime >= preTime)
-                {
-                    // If sessionType_ind involves LED
-                    //if ((sessionType_ind == 1) || (sessionType_ind == 3) || (sessionType_ind == 5) || (sessionType_ind == 7) || (sessionType_ind == 9) || (sessionType_ind == 11))
-                    if (sessionType_ind % 2 == 0)
-                    {
-			if (CS_plus == 1 )
-                        {
-                            if( flipped_ )
-                                tone( tonePin, CS_TONE_2);
-                            else
-                                tone( tonePin, CS_TONE_1);
-                            changePhase( 1, START_CS_PLUS );
-                        }
-                        else // CS_plus is not 1
-                        {
-                            if( flipped_ )
-                                tone( tonePin, CS_TONE_1);
-                            else
-                                tone( tonePin, CS_TONE_2);
-                            changePhase(2, START_CS_MINUS);
-                        }            
+                
+                {  //Serial.println("EndPre");
+
+                    if (sessionType_ind == 17)
+                    { digitalWrite(ledPin, HIGH);
                     }
-                    else // sessionType_ind invovles LED
+                    else if (sessionType_ind >= 12 && sessionType_ind <= 18) 
                     {
-			
-			if( true == CS_plus )
-                        {
-                            if(flipped_)
-                                digitalWrite( ledPin, HIGH);
-                            else
-                                tone( tonePin, CS_TONE_1 );
-                            changePhase( 1, START_CS_PLUS );
-                        }
-                        else // CS_minus 
-                        {
-                            if( flipped_ )
-                                tone( tonePin, CS_TONE_1);
-                            else
-                                digitalWrite( ledPin, HIGH);
-                            changePhase(2, START_CS_MINUS);
-                        }
-		    }       
-                }
+                        tone( tonePin, CS_TONE_1);
+                    }
+                        changePhase(1, START_CS_PLUS);
+                 }
                 break;
-            
+
             //CS+
             case 1:
                 PF((condition+1));
                 detectBlinks();
+                sprintf(status_, "CS_P");
+                //Serial.println("StartCS+");
 
                 if (currentPhaseTime >= CSTime)
-                {
+                { 
+                    //Serial.println("EndCS+");
                     shutoff_cs( tonePin, ledPin );
-                    changePhase( 3, START_TRACE );
+
+                    
+                   //Session Type 16 is where CS and Distractor are both tones. Not using this right now.
+                   
+                    if( sessionType_ind == 16 && CS_plus == 1)
+                     {                   
+                      changePhase( 7, GAP );
+                     }
+                        
+                    else
+                      changePhase( 3, START_TRACE );
                 }
                 break;
 
-            //CS-
+            //Distractor
             case 2:
                 PF((condition+1));
                 detectBlinks();
+                sprintf(status_,  "DIST");
+                //Serial.println("Distractor!");             //For verification
+
                 
                 if (currentPhaseTime >= CSTime)
-                {
+                {  //Serial.println("EndCS-");
                     shutoff_cs( tonePin, ledPin );
                     changePhase( 3, START_TRACE );
                 }
                 break;
-            
+
             //Trace
             case 3:
+                sprintf(status_, "TRAC");
                 PF((condition+1));
                 detectBlinks();
+
+//                if ((sessionType_ind == 17) && (CS_plus == 1))
+//                  digitalWrite (ledPin, LOW);
+//                else if ((sessionType_ind == 18) && (CS_plus == 1))  
+//                  digitalWrite (ledPin, LOW);
+
+                  
+                //Serial.println("StartTrace");
+
                 if (currentPhaseTime >= traceTime)
-                {
+                {   //Serial.println("EndTrace");
+                    //Serial.print("Trace=");                              //For verification
+                    //Serial.println(traceTime);
                     // start the next phase
-                    if (sessionType_ind >= 6)
+                    if ((sessionType_ind >= 6) && (sessionType_ind != 12))
                     {
-                        if (CS_plus == 1)
+                        if ((CS_plus == 1) || (sessionType_ind == 16))
                         {
-                           if (nextProbeIn != 0)
-                           {
-                               playPuff(puff_do, HIGH);
-                               changePhase( 4, START_US );    // US: Air-puff
-                           }
-                           else
-                           {
-                               playPuff(puff_do, LOW);
-                               nextProbeIn = (int) random(8,13); //NOTE: the "(int)" only truncates
-                               changePhase(5, START_US_NO_PUFF);
-                           }
+                            if (nextProbeIn != 0)
+                            {
+                                playPuff(puff_do, HIGH);
+                                //Serial.println("PuffON");
+                                changePhase( 4, START_US );    // US: Air-puff
+                            }
+                            else
+                            {
+                                playPuff(puff_do, LOW);
+                                nextProbeIn = (int) random(8,13); //NOTE: the "(int)" only truncates
+                                changePhase(5, START_US_NO_PUFF);
+                            }
                         }
                         else
                         {
@@ -305,20 +367,23 @@ void loop()
                     {
                         // control case (No-Puff)
                         playPuff(puff_do, LOW);
+                        //Serial.println("NoPuff");
                         // US: Air- no puff
                         changePhase( 5, START_US_NO_PUFF );
                     }
                 }
                 break;
-            
+
             //Puff
             case 4:
+                sprintf( status_, "PUFF" );
                 PF((condition+1));
                 detectBlinks();
                 if (currentPhaseTime >= puffTime)
                 {
                     // start the next phase
                     playPuff(puff_do, LOW);
+                    //Serial.println("PuffOFF");
                     // Post pairing/stimuli
                     changePhase( 6, START_POST );
                 }
@@ -326,10 +391,11 @@ void loop()
 
             //No-Puff
             case 5:
+                sprintf(status_, "NPUF");
                 PF((condition+1));
                 detectBlinks();
                 if (currentPhaseTime >= puffTime)
-                {
+                {   //Serial.println("NONOPuff");
                     // start the next phase
                     playPuff(puff_do, LOW);
                     // Post pairing/stimuli
@@ -339,37 +405,57 @@ void loop()
 
             //Post-Stim
             case 6:
+                sprintf(status_, "POST");
                 // Post Pairing/Stimuli
                 PF((condition+1));
                 detectBlinks();
+                //Serial.println("StartPost");
                 if (currentPhaseTime >= postTime)
                 {
                     interTrialTime = minITI + random( randITI );
-                    changePhase( 7, START_ITI );
+                    //Serial.println("EndPost");
+                    changePhase( 8, START_ITI );
 
                     // Switch OFF the imaging trigger
                     triggerImaging(imagingTrigger_do, LOW);
                 }
                 break;
+
+           // Gap between Cs and Distractor 
+            case 7:
+                sprintf(status_, "____");
+                PF((condition+1));
+                detectBlinks();
+
+                if (currentPhaseTime >= CSTime)
+                { tone (tonePin, CS_TONE_1);
+                  changePhase( 2, START_DISTRACTOR );
+                             
+                }
+                break;
             
             //ITI
-            case 7:
+            case 8:
                 // Inter trial interval
+                sprintf(status_, "ITI_");
                 PF((condition+1));
+                //Serial.println("StartITI");
                 if (paused_)
                 {
-                    changePhase( 9, PAUSE );
+                    changePhase( 10, PAUSE );
                     break;
                 }
                 else
                 {
                     if (currentPhaseTime >= interTrialTime)
-                    {
+                    {   //Serial.println("EndITI");
+                        Serial.println(trialNum);
                         trialNum++;
+                        startTrialTime = millis();
                         blinkCount = 0;
                         if (trialNum > totalTrials)
                         {
-                            changePhase( 8, END );                 // END of session
+                            changePhase( 9, END );                 // END of session
                             break;
                         }
                         else
@@ -378,7 +464,7 @@ void loop()
                                 CS_plus = 1;                       // play CS+
                             else
                                 CS_plus = 0;                       // play CS-
-                        
+
 #ifdef ENABLE_LCD
                             printStatus(START_PRE, trialNum);
 #endif
@@ -386,46 +472,45 @@ void loop()
 
                             // Switch ON the imaging trigger
                             triggerImaging(imagingTrigger_do, HIGH);
-
-                            startTrialTime = millis();
                         }
                     }
                     break;
                 }
 
             // End of session
-            case 8:                                                
+            case 9:
+                sprintf(status_, "EOS_");
                 if (profilingDataDump == 1)
                 {
                     profilingDataDump = 0;
                 }
                 // has the microcontroller on indefinite hold
-                while(1);                                          
+                while(1);
                 break;
 
-            case 9:                                              
+            case 10:
 #ifdef ENABLE_LCD
-            //PAUSE
+                //PAUSE
                 int unpause_key = read_lcd_button();
                 if (unpause_key == btnLEFT)
                 {
                     pause = 0;
-                    changePhase( 7, PAUSE );                   
-                    break;                                        
+                    changePhase( 8, PAUSE );
+                    break;
                 }
 #else
                 if( is_command_read( UNPAUSE_COMMAND, true) )
                 {
                     paused_ = false;
                     Serial.println("COMMAND: Unpause");
-                    changePhase( 7, START_ITI );
+                    changePhase( 8, START_ITI );
                 }
 #endif
                 break;
-            }                                                      
+            }
 
-        }       
+        }
 
-    }          
+    }
 
-}             
+}
