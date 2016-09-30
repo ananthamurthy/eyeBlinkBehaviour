@@ -25,7 +25,7 @@
 
 #define         SENSOR_PIN      A5
 
-#define         TONE_FREQ       11000
+#define         TONE_FREQ       4500
 
 unsigned long stamp_ = 0;
 unsigned dt_ = 2;
@@ -101,31 +101,25 @@ void reset_watchdog( )
  * @return False when not mactched. If first character is matched, it is
  * consumed, second character is left in  the buffer.
  */
-bool read_command( char* command )
+bool is_command_read( char* command, bool consume = true )
 {
-    int first, second;
-    if( Serial.available( ) > 0 )
+    // Peek for the first character.
+    if( ! Serial.available() )
+        return false;
+
+     //Serial.println( "Expected " + String( command[0] ));
+     //Serial.println( "Got " + String(Serial.peek()) );
+    if( command[0] == Serial.peek( ) )
     {
-        first = Serial.peek( );
-        delay( 1 );
-        if( first == command[0] )
-        {
-            incoming_byte_ = Serial.read();     /* Remove it. */
-            delay( 1 );
-
-            while( Serial.available( ) <= 0 )
-            { }
-
-            second = Serial.peek( );
-            if( second == command[1] )
-            {
-                incoming_byte_ = Serial.read(); /* Remove it */
-                delay( 1 );
-                return true;
-            }
-        }
-
+        // If character exists, then find the whole command.
+        if( Serial.find( command ) )
+            return true;
     }
+
+    // consume the character. We must consume the character when there is no
+    // alternate rule matching.
+    if(consume)
+        Serial.read();
     return false;
 }
 
@@ -151,9 +145,13 @@ void write_data_line( )
             , trial_state_
             );
     Serial.println(msg_);
-    if( read_command( "rr" ) == true )
+}
+
+void check_for_reset( void )
+{
+    if( is_command_read( "rr" ) )
     {
-        Serial.println( "Going to reboot in 2 seconds" );
+        Serial.println( ">>> Reboot in 2 seconds" );
         reboot_ = true;
     }
 }
@@ -170,16 +168,15 @@ void write_data_line( )
 void play_tone( unsigned long period, double duty_cycle = 0.5 )
 {
     reset_watchdog( );
+    check_for_reset( );
     unsigned long toneStart = millis();
     while( millis() - toneStart <= period )
     {
         write_data_line();
         if( millis() - toneStart <= (period * duty_cycle) )
             tone( TONE_PIN, TONE_FREQ );
-            //digitalWrite( TONE_PIN, HIGH );
         else
             noTone( TONE_PIN );
-            //digitalWrite( TONE_PIN, LOW );
     }
 }
 
@@ -221,12 +218,13 @@ void configure( )
 }
 void wait_for_start( )
 {
-    while( false == read_command( "ss" ) )
+    while( ! is_command_read( "ss" ) )
     {
         sprintf( trial_state_, "INVA" , 4);
         delay( dt_ );
         write_data_line( );
     }
+    Serial.println( ">>> Start" );
 }
 
 
@@ -251,6 +249,8 @@ void setup()
 void do_trial( unsigned int trial_num, trial_type_t_ ttype)
 {
     reset_watchdog( );
+    check_for_reset( );
+
     trial_start_time_ = millis( );
 
     /*-----------------------------------------------------------------------------
@@ -280,7 +280,10 @@ void do_trial( unsigned int trial_num, trial_type_t_ ttype)
     stamp_ = millis( );
     sprintf( trial_state_, "TRAC", 4 );
     while( millis( ) - stamp_ < traceDuration )
+    {
+        check_for_reset( );
         write_data_line( );
+    }
 
     /*-----------------------------------------------------------------------------
      *  PUFF
@@ -291,6 +294,7 @@ void do_trial( unsigned int trial_num, trial_type_t_ ttype)
     stamp_ = millis();
     while( millis() - stamp_ <= puffDuration )
     {
+        check_for_reset( );
         digitalWrite( PUFF_PIN, HIGH);
         write_data_line( );
     }
@@ -306,7 +310,10 @@ void do_trial( unsigned int trial_num, trial_type_t_ ttype)
     sprintf( trial_state_, "POST", 4 );
     stamp_ = millis( );
     while( millis( ) - trial_start_time_ <= trial_duration_ )
+    {
+        check_for_reset( );
         write_data_line( );
+    }
 
     /*-----------------------------------------------------------------------------
      *  End trial.

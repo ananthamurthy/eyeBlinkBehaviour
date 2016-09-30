@@ -1,9 +1,9 @@
 #!/usr/bin/env python2
 
-"""arduino_live.py: 
+"""
+arduino_live.py: 
 
-    Read the data from serial port and plot it using FuncAnimation from
-    matplotlib.
+Read the data from serial port and plot it using FuncAnimation from matplotlib.
 
 """
 from __future__ import print_function
@@ -41,8 +41,7 @@ total_trials_ = 100
 cs_type_ = None
 next_probe_in_ = -1
 flipped_ = 0
-
-select_sent_ = False
+current_state_ = "INVA"
 
 # Our shared queue used in multiprocessing
 q_ = Queue.Queue()
@@ -116,13 +115,14 @@ def collect_data( lock ):
     global running_trial_
     global cs_type_ 
     global next_probe_in_
-    global select_sent_ 
+    global current_state_
     tstart = time.time()
     runningTrial = 0
     while True:
         running_data_line_ += 1
         line = config.serial_port_.read_line( )
         data = line_to_data( line )
+        current_state_ = data[6]
         trialNum = data[2]
         if data[1] is None:
             continue
@@ -136,8 +136,6 @@ def collect_data( lock ):
         if trialNum != 0:
             break
 
-    # Either we have pressed the SELECT or we have sent the select command ss
-    select_sent_ = True
     _logger.info('Out of first loop.')
     while True:
         if finished_all_ == 1:
@@ -166,8 +164,16 @@ def collect_data( lock ):
             cleanup()
 
 def line_to_data( line ):
+    """Convert read line to valid data.
+    If >>> is in the line, print it onto console. THis is command response 
+    from arduino.
+    """
     sizeOfData = 7
     data = [None]*sizeOfData
+
+    if '>>>' in line:
+        print(line)
+        return data
 
     if len( line.split(',')) != sizeOfData:
         return data;
@@ -202,12 +208,13 @@ def plot_data( lock ):
             t, v = q_.get()
             config.ybuff_.append( int(v) )
         
-        title = '%s %2.2f, Mouse: %s, Trial: %2d/%3d' % ( 
+        title = '%s %2.2f, Mouse: %s, Trial: %2d/%3d, State=%s' % ( 
                 config.args_.port
                 , time.time() - ptstart 
                 , config.args_.name
                 , running_trial_
                 , total_trials_
+                , current_state_
                 )
 
         gp.plot( np.asarray(config.ybuff_[-2000:]) 
@@ -266,7 +273,6 @@ def init( ):
 
 def send_command( ):
     # all commands should be two characters long
-    global select_sent_
     global finished_all_
     command = ""
     legalCommandsBeforeStart = [ "11", "22", "pp", "ss" ]
@@ -277,13 +283,12 @@ def send_command( ):
         k = readchar.readkey()
         if k in validStartChars:
             command += k
-            if command in legalCommandsBeforeStart and not select_sent_:
+            if command in legalCommandsBeforeStart:
                 _logger.info("[COMMAND] Sending command: %s" % command)
                 config.serial_port_.write_msg( command )
                 command = ""
             # Last two commands needs to be handled separately.
-            elif command == 'ss' and (not select_sent_):
-                select_sent_ = True
+            elif command == 'ss':
                 config.serial_port_.write_msg( command )
             elif command == 'rr':
                 # reboot. 
@@ -292,15 +297,12 @@ def send_command( ):
                 finished_all_ = 1
                 cleanup()
                 return None
-            elif (command in legalCommandsAfterStart) and select_sent_:
+            elif (command in legalCommandsAfterStart):
                 _logger.info("[COMMAND] Sending command (after start): %s" % command)
                 config.serial_port_.write_msg( command )
                 command = ""
             else:
-                if(len(command) == 2):
-                    _logger.info("Did not send :%s, select_sent_ %s" % (
-                        command, select_sent_)
-                        )
+                pass
             if len(command) == 2:
                 command = ""
         elif k in [ '\x03', '\x04', '\x1a' ]:
