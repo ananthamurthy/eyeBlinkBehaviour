@@ -213,7 +213,7 @@ def plot_data( lock ):
         gp.plot( np.asarray(config.ybuff_[-2000:]) 
                 , title = title
                 , terminal = 'x11'
-                , yrange = '200:800'
+                , yrange = '100:600'
                 )
 
 def answer_questions( numbers = 1):

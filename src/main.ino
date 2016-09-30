@@ -14,6 +14,8 @@
  *        License:  GNU GPL2
  */
 
+#include <avr/wdt.h>
+
 #define         DRY_RUN         1
 
 // Pins etc.
@@ -63,12 +65,69 @@ trial_subtype_t_ tsubtype_ = first;
  *  User response
  *-----------------------------------------------------------------------------*/
 int incoming_byte_ = 0;
+bool reboot_ = false;
 
 unsigned long currentTime( )
 {
     return millis() - trial_start_time_;
 }
 
+/*-----------------------------------------------------------------------------
+ *  WATCH DOG
+ *-----------------------------------------------------------------------------*/
+/**
+ * @brief Interrupt serviving routine.
+ *
+ * @param _vect
+ */
+ISR(WDT_vect)
+{
+    // Handle interuppts here.
+    // Nothing to handle.
+}
+
+void reset_watchdog( )
+{
+    if( not reboot_ )
+        wdt_reset( );
+}
+
+
+/**
+ * @brief  Read a command from command line. Consume when character is matched.
+ *
+ * @param command
+ *
+ * @return False when not mactched. If first character is matched, it is
+ * consumed, second character is left in  the buffer.
+ */
+bool read_command( char* command )
+{
+    int first, second;
+    if( Serial.available( ) > 0 )
+    {
+        first = Serial.peek( );
+        delay( 1 );
+        if( first == command[0] )
+        {
+            incoming_byte_ = Serial.read();     /* Remove it. */
+            delay( 1 );
+
+            while( Serial.available( ) <= 0 )
+            { }
+
+            second = Serial.peek( );
+            if( second == command[1] )
+            {
+                incoming_byte_ = Serial.read(); /* Remove it */
+                delay( 1 );
+                return true;
+            }
+        }
+
+    }
+    return false;
+}
 
 /**
  * @brief Write data line to Serial port.
@@ -79,6 +138,7 @@ unsigned long currentTime( )
  */
 void write_data_line( )
 {
+    reset_watchdog( );
     int data = analogRead( SENSOR_PIN );
     int tone = analogRead( TONE_PIN );
     int puff = analogRead( PUFF_PIN );
@@ -91,6 +151,11 @@ void write_data_line( )
             , trial_state_
             );
     Serial.println(msg_);
+    if( read_command( "rr" ) == true )
+    {
+        Serial.println( "Going to reboot in 2 seconds" );
+        reboot_ = true;
+    }
 }
 
 /**
@@ -104,6 +169,7 @@ void write_data_line( )
  */
 void play_tone( unsigned long period, double duty_cycle = 0.5 )
 {
+    reset_watchdog( );
     unsigned long toneStart = millis();
     while( millis() - toneStart <= period )
     {
@@ -153,43 +219,6 @@ void configure( )
         }
     }
 }
-
-/**
- * @brief  Read a command from command line. Consume when character is matched.
- *
- * @param command
- *
- * @return False when not mactched. If first character is matched, it is
- * consumed, second character is left in  the buffer.
- */
-bool read_command( char* command )
-{
-    int first, second;
-    if( Serial.available( ) > 0 )
-    {
-        first = Serial.peek( );
-        delay( 1 );
-        if( first == command[0] )
-        {
-            incoming_byte_ = Serial.read();     /* Remove it. */
-            delay( 1 );
-
-            while( Serial.available( ) <= 0 )
-            { }
-
-            second = Serial.peek( );
-            if( second == command[1] )
-            {
-                incoming_byte_ = Serial.read(); /* Remove it */
-                delay( 1 );
-                return true;
-            }
-        }
-
-    }
-    return false;
-}
-
 void wait_for_start( )
 {
     while( false == read_command( "ss" ) )
@@ -213,10 +242,15 @@ void setup()
 
     configure( );
     wait_for_start( );
+
+    // setup watchdog. If not reset in 2 seconds, it reboots the system.
+    wdt_enable( WDTO_2S );
+    wdt_reset();
 }
 
 void do_trial( unsigned int trial_num, trial_type_t_ ttype)
 {
+    reset_watchdog( );
     trial_start_time_ = millis( );
 
     /*-----------------------------------------------------------------------------
@@ -288,14 +322,18 @@ void do_trial( unsigned int trial_num, trial_type_t_ ttype)
 
 void loop()
 {
+    reset_watchdog( );
+
     for (size_t i = 0; i < 10; i++) 
     {
+        reset_watchdog( );
         if( i % 10 == 0 )
             do_trial( i, probe );
         else
             do_trial( i, type );
     }
     // We are done with all trials. Nothing to do.
+    reset_watchdog( );
     Serial.println( "All done. Party!" );
     Serial.flush( );
     delay( 100 );
