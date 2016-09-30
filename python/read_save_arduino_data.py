@@ -47,7 +47,7 @@ if os.path.exists(os.path.join(save_direc, outfile)):
     outfile = outfile + stamp
 
 tty = None
-baudRate = 9600
+baudRate = 38400
 for t in ttyoptions:
     try:
         tty = serial.Serial(t, baudRate, timeout = 1)

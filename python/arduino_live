@@ -1,4 +1,5 @@
 #!/usr/bin/env python2
+
 """arduino_live.py: 
 
     Read the data from serial port and plot it using FuncAnimation from
@@ -36,7 +37,7 @@ import logging
 _logger = logging.getLogger('')
 
 running_data_line_ = 0
-total_trials_ = 0
+total_trials_ = 100
 cs_type_ = None
 next_probe_in_ = -1
 flipped_ = 0
@@ -122,11 +123,7 @@ def collect_data( lock ):
         running_data_line_ += 1
         line = config.serial_port_.read_line( )
         data = line_to_data( line )
-        total_trials_ = totalTrials = data[3]
         trialNum = data[2]
-        totalTrials = data[3]
-        cs_type_ = data[4]
-
         if data[1] is None:
             continue
         try:
@@ -137,14 +134,6 @@ def collect_data( lock ):
 
         # Valid trial has started.
         if trialNum != 0:
-            break
-        # All right. If we are here then we are waiting for SELECT to be
-        # pressed. Let's press is by sending three ` to serialport after
-        # some timeout.
-        if send_press_select( tstart, config.args_.select_after ):
-            lock.acquire()
-            _logger.info("SELECT sent")
-            lock.release()
             break
 
     # Either we have pressed the SELECT or we have sent the select command ss
@@ -162,23 +151,22 @@ def collect_data( lock ):
         q_.put((data[0],data[1]))
         trialFile = trial_file_path( trialNum )
         append_trial_data(trialFile, data)
-        total_trials_ = totalTrials
         print_line( line, lock )
         if trialNum > running_trial_:
             outfile = trial_file_path( running_trial_ )
             _logger.info("|| Wrote previous trial to %s" % outfile)
             _logger.info('== New Trial: :%s/%s, cs: %s' % (trialNum,
-                totalTrials, cs_type_)
+                total_trials_, cs_type_)
                 )
             # Also initialize the new trial file.
             initialize_trial_file( trialNum )
             running_trial_ = trialNum
-        if running_trial_ == totalTrials:
+        if running_trial_ == total_trials_:
             # Exit
             cleanup()
 
 def line_to_data( line ):
-    sizeOfData = 10
+    sizeOfData = 7
     data = [None]*sizeOfData
 
     if len( line.split(',')) != sizeOfData:
@@ -214,14 +202,12 @@ def plot_data( lock ):
             t, v = q_.get()
             config.ybuff_.append( int(v) )
         
-        title = '%s %2.2f, Mouse: %s, Trial: %2d/%3d, CS: %s, next probe in: %s' % ( 
+        title = '%s %2.2f, Mouse: %s, Trial: %2d/%3d' % ( 
                 config.args_.port
                 , time.time() - ptstart 
                 , config.args_.name
                 , running_trial_
                 , total_trials_
-                , cs_type_
-                , next_probe_in_
                 )
 
         gp.plot( np.asarray(config.ybuff_[-2000:]) 
@@ -230,49 +216,13 @@ def plot_data( lock ):
                 , yrange = '200:800'
                 )
 
-def answer_questions( numbers = 5):
-    # All great UI have four questions. Yes we have to, they all starts with
-    # Please. Not three. Four. Sorry.
-    questionsAnswered = [ ]
-    for i in range( 20 ):
-        l = arduino.read_until('?? Please', timeout = 1)
-        if 'mouse ID number' in l:
-            _logger.info('[ANSW] %s = %s' % (l, config.args_.name))
-            config.serial_port_.write_msg('%s\r' % config.args_.name )
-            time.sleep(0.5)
-            if l not in questionsAnswered:
-                questionsAnswered.append(l)
-        elif 'session type' in l:
-            _logger.info('[ANSW] %s = %s' % (l, config.args_.session_type))
-            config.serial_port_.write_msg( '%s\r' % config.args_.session_type )
-            time.sleep(0.5)
-            if l not in questionsAnswered:
-                questionsAnswered.append(l)
-        elif 'session number' in l:
-            _logger.info('[ANSW] %s = %s' % (l, config.args_.session_num))
-            config.serial_port_.write_msg('%s\r' % config.args_.session_num )
-            time.sleep(0.5)
-            if l not in questionsAnswered:
-                questionsAnswered.append(l)
-        elif  'want to flip' in l:
-            _logger.info('[ANSW] %s = %s' % (l, config.args_.flipped))
-            config.serial_port_.write_msg('%s\r' % config.args_.flipped)
-            time.sleep(0.5)
-            flipped_ = 1
-            if l not in questionsAnswered:
-                questionsAnswered.append( l )
-        elif 'CS Fraction' in l:
-            _logger.info("[ANSW] %s = %s " % (l, config.args_.cs_fraction))
-            config.serial_port_.write_msg( '%s\r' % config.args_.cs_fraction)
-            time.sleep( 0.5 )
-            if l not in questionsAnswered:
-                questionsAnswered.append( l )
-        else:
-                pass
-
-        if len(questionsAnswered) == numbers:
-            _logger.info('[INFO] All questions are answered')
-            return 
+def answer_questions( numbers = 1):
+    l = config.serial_port_.read_line( )
+    if 'session type' in l.lower():
+        _logger.info('[ANSW] %s = %s' % (l, config.args_.session_type))
+        config.serial_port_.write_msg('%s\r' % config.args_.session_type )
+        time.sleep(0.5)
+    print( '[INFO] Configuration done' )
 
 
 def init( ):
@@ -288,8 +238,7 @@ def init( ):
         l = config.serial_port_.read_line( )
         while not l:
             l = config.serial_port_.read_line( )
-        if 'please' in l.lower():
-            # mere sawalo ka jawav do... do naa!
+        if '?? please' in l.lower():
             answer_questions(  )
             break
         # If valid data is found in lines (trial is more than 1) then don't ask
@@ -392,7 +341,7 @@ if __name__ == '__main__':
     parser.add_argument('--session-type', '-st'
         , required = True
         , type = int
-        , help = 'Seession Type [0 to 11]'
+        , help = 'Seession Type [0 or 1]'
         )
     parser.add_argument('--session-num', '-sn'
         , required = True
@@ -403,24 +352,6 @@ if __name__ == '__main__':
         , required = False
         , default = None
         , help = 'Serial port [full path]'
-        )
-    parser.add_argument('--select_after', '-sa'
-        , required = False
-        , default = 60000000.0
-        , type = float
-        , help = 'Press SELECT after time. Default 600 sec.'
-        )
-    parser.add_argument('--flipped', '-f'
-        , required = False
-        , default = 0
-        , type = int
-        , help = 'Wheather CS+/CS- are to be flipped (0/1 (False,True)'
-        )
-    parser.add_argument('--cs_fraction', '-cf'
-        , required = False
-        , default = 8
-        , type = int
-        , help = 'CS fraction'
         )
     parser.parse_args( namespace = config.args_ )
     init_serial()

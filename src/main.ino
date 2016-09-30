@@ -120,8 +120,8 @@ void play_tone( unsigned long period, double duty_cycle = 0.5 )
 void configure( )
 {
     // While this is not answered, keep looping 
-    Serial.println( "== Configure your experiment" );
-    Serial.println( "Press 0 for 0.5 sec trace, 1 for 1 sec trace ? " );
+    Serial.println( "?? Please configure your experiment" );
+    Serial.println( "Session type: Press 0 for 0.5 sec trace, 1 for 1 sec trace ? " );
     while( true )
     {
         incoming_byte_ = Serial.read( );
@@ -154,6 +154,52 @@ void configure( )
     }
 }
 
+/**
+ * @brief  Read a command from command line. Consume when character is matched.
+ *
+ * @param command
+ *
+ * @return False when not mactched. If first character is matched, it is
+ * consumed, second character is left in  the buffer.
+ */
+bool read_command( char* command )
+{
+    int first, second;
+    if( Serial.available( ) > 0 )
+    {
+        first = Serial.peek( );
+        delay( 1 );
+        if( first == command[0] )
+        {
+            incoming_byte_ = Serial.read();     /* Remove it. */
+            delay( 1 );
+
+            while( Serial.available( ) <= 0 )
+            { }
+
+            second = Serial.peek( );
+            if( second == command[1] )
+            {
+                incoming_byte_ = Serial.read(); /* Remove it */
+                delay( 1 );
+                return true;
+            }
+        }
+
+    }
+    return false;
+}
+
+void wait_for_start( )
+{
+    while( false == read_command( "ss" ) )
+    {
+        sprintf( trial_state_, "INVA" , 4);
+        delay( dt_ );
+        write_data_line( );
+    }
+}
+
 
 void setup()
 {
@@ -166,6 +212,7 @@ void setup()
     digitalWrite( TONE_PIN, LOW );
 
     configure( );
+    wait_for_start( );
 }
 
 void do_trial( unsigned int trial_num, trial_type_t_ ttype)
@@ -224,7 +271,7 @@ void do_trial( unsigned int trial_num, trial_type_t_ ttype)
     // Last phase is post. If we are here just spend rest of time here.
     sprintf( trial_state_, "POST", 4 );
     stamp_ = millis( );
-    while( millis( ) - trial_start_time_ < trial_duration_ )
+    while( millis( ) - trial_start_time_ <= trial_duration_ )
         write_data_line( );
 
     /*-----------------------------------------------------------------------------

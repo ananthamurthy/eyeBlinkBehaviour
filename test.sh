@@ -21,5 +21,10 @@ set -x
 set -e
 set -o nounset                              # Treat unset variables as an error
 
-make  upload
+#make  upload
+#miniterm.py -p /dev/ttyACM0 -b  38400
+./reset_all_boards.sh 
+./build_and_upload.sh
+rm -rf *.log
 miniterm.py -p /dev/ttyACM0 -b  38400
+#./record_and_plot.sh -n 1 -st 1 -sn 1
