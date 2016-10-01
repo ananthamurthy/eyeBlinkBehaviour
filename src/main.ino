@@ -117,8 +117,8 @@ bool is_command_read( char command, bool consume = true )
 
 /**
  * @brief Write data line to Serial port.
- * NOTE: Don't specify a delay, let's get the best possible output arduino.
- *
+ *   NOTE: Use python dictionary format. It can't be written at baud rate of
+ *   38400 at least.
  * @param data
  * @param timestamp
  */
@@ -131,12 +131,14 @@ void write_data_line( )
     int led = analogRead( LED_PIN );
     unsigned long timestamp = millis() - trial_start_time_;
     
-    sprintf(msg_, "%6lu,%5d,%3d,%1d,%1d,%1d,%s"
+    sprintf(msg_  
+            , "%lu,%d,%d,%d,%d,%d,%s"
             , timestamp, data, trial_count_
             , tone, puff, led
             , trial_state_
             );
     Serial.println(msg_);
+    Serial.flush( );
 }
 
 void check_for_reset( void )
@@ -192,37 +194,42 @@ void play_puff( unsigned long duration )
 }
 
 
-void configure( )
+/**
+ * @brief Configure the experiment here. All parameters needs to be set must be
+ * done here.
+ */
+void configure_experiment( )
 {
     // While this is not answered, keep looping 
     Serial.println( "?? Please configure your experiment" );
     Serial.println( "Session type: Press 0 for 0.5 sec trace, 1 for 1 sec trace ? " );
     while( true )
     {
-        incoming_byte_ = Serial.read( );
-        if( incoming_byte_ == -1 )
+        incoming_byte_ = Serial.read( ) - '0';
+        if( incoming_byte_ < 0 )
         {
-            delay( 1000 );
-            Serial.println( "... Waiting for response" );
+            Serial.println( ">>> ... Waiting for response" );
             delay( 1000 );
         }
-        else if( incoming_byte_ == 48 )
+        else if( incoming_byte_ == 0 )
         {
-            Serial.print( "Recieved : " );
-            Serial.println( incoming_byte_ );
+            Serial.print( ">>> Valid response. Got " );
+            Serial.println( incoming_byte_  );
+            Serial.flush( );
             tsubtype_ = first;
-            break;
+            return;
         }
-        else if( incoming_byte_ == 49 )
+        else if( incoming_byte_ == 1 )
         {
-            Serial.print( "Recieved : " );
+            Serial.print( ">>> Valid response. Got " );
             Serial.println( incoming_byte_ );
+            Serial.flush( );
             tsubtype_ = second;
-            break;
+            return;
         }
         else
         {
-            Serial.print( "Unexpected response, recieved : " );
+            Serial.print( ">>> Unexpected response, recieved : " );
             Serial.println( incoming_byte_ - '0' );
             delay( 100 );
         }
@@ -251,6 +258,7 @@ void wait_for_start( )
         }
         else
         {
+            Serial.print( 'x' );
         }
     }
 }
@@ -259,6 +267,10 @@ void wait_for_start( )
 void setup()
 {
     Serial.begin( 38400 );
+
+    // setup watchdog. If not reset in 2 seconds, it reboots the system.
+    wdt_enable( WDTO_2S );
+    wdt_reset();
     stamp_ = 0;
 
     pinMode( TONE_PIN, OUTPUT );
@@ -267,13 +279,12 @@ void setup()
     digitalWrite( PUFF_PIN, LOW );
     digitalWrite( TONE_PIN, LOW );
 
-    configure( );
+    configure_experiment( );
+    Serial.println( ">>> Waiting for 's' to be pressed" );
     wait_for_start( );
-
-    // setup watchdog. If not reset in 2 seconds, it reboots the system.
-    wdt_enable( WDTO_2S );
-    wdt_reset();
 }
+
+
 /**
  * @brief Do a single trial.
  *

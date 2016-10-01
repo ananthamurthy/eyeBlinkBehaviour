@@ -66,7 +66,7 @@ class ArduinoPort( ):
 
     def write_msg(self, msg):
         _logger.info('Writing %s to serial port' % msg)
-        self.port.write(b'%s' % msg)
+        self.port.write( bytes(msg) )
 
 def get_default_serial_port( ):
     # If port part is not given from command line, find a serial port by

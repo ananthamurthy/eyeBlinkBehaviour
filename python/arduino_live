@@ -236,7 +236,7 @@ def answer_questions( numbers = 1):
     l = config.serial_port_.read_line( )
     if 'session type' in l.lower():
         _logger.info('[ANSW] %s = %s' % (l, config.args_.session_type))
-        config.serial_port_.write_msg('%s\r' % config.args_.session_type )
+        config.serial_port_.write_msg('%s' % config.args_.session_type )
         time.sleep(0.5)
     print( '[INFO] Configuration done' )
 
@@ -290,7 +290,7 @@ def send_command( ):
         if command in legalCommands:
             if command == 's' or command == 'p':
                 print( '[INFO] Command = %s' % command )
-                config.serial_port_.write_msg( "%s\r" % command )
+                config.serial_port_.write_msg( "%s" % command )
             elif command == 'r':
                 # reboot. 
                 _logger.warn("Reboot in 2 seconds. You have to relaunch the app")
