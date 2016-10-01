@@ -17,15 +17,13 @@
 #include <avr/wdt.h>
 
 #define         DRY_RUN         1
-
 // Pins etc.
 #define         TONE_PIN        2
 #define         LED_PIN         3
 #define         PUFF_PIN        11
-
 #define         SENSOR_PIN      A5
-
 #define         TONE_FREQ       4500
+#define         PUFF_DURATION  50
 
 unsigned long stamp_ = 0;
 unsigned dt_ = 2;
@@ -101,25 +99,19 @@ void reset_watchdog( )
  * @return False when not mactched. If first character is matched, it is
  * consumed, second character is left in  the buffer.
  */
-bool is_command_read( char* command, bool consume = true )
+bool is_command_read( char command, bool consume = true )
 {
-    // Peek for the first character.
     if( ! Serial.available() )
         return false;
 
-     //Serial.println( "Expected " + String( command[0] ));
-     //Serial.println( "Got " + String(Serial.peek()) );
-    if( command[0] == Serial.peek( ) )
+    // Peek for the first character.
+    if( command == Serial.peek( ) )
     {
-        // If character exists, then find the whole command.
-        if( Serial.find( command ) )
-            return true;
+        if( consume )
+            Serial.read( );
+        return true;
     }
 
-    // consume the character. We must consume the character when there is no
-    // alternate rule matching.
-    if(consume)
-        Serial.read();
     return false;
 }
 
@@ -149,7 +141,7 @@ void write_data_line( )
 
 void check_for_reset( void )
 {
-    if( is_command_read( "rr" ) )
+    if( is_command_read( 'r', true ) )
     {
         Serial.println( ">>> Reboot in 2 seconds" );
         reboot_ = true;
@@ -179,6 +171,26 @@ void play_tone( unsigned long period, double duty_cycle = 0.5 )
             noTone( TONE_PIN );
     }
 }
+
+
+/**
+ * @brief Play puff for given duration.
+ *
+ * @param duration
+ */
+void play_puff( unsigned long duration )
+{
+    check_for_reset( );
+    stamp_ = millis();
+    while( millis() - stamp_ <= duration )
+    {
+        digitalWrite( PUFF_PIN, HIGH);
+        write_data_line( );
+    }
+    digitalWrite( PUFF_PIN, LOW );
+    write_data_line( );
+}
+
 
 void configure( )
 {
@@ -216,15 +228,31 @@ void configure( )
         }
     }
 }
+
+
+/**
+ * @brief Wait for trial to start.
+ */
 void wait_for_start( )
 {
-    while( ! is_command_read( "ss" ) )
+    sprintf( trial_state_, "INVA" , 4);
+    while( true )
     {
-        sprintf( trial_state_, "INVA" , 4);
-        delay( dt_ );
         write_data_line( );
+        if( is_command_read( 's', true ) )
+        {
+            Serial.println( ">>> Start" );
+            break;
+        }
+        else if( is_command_read( 'p', true ) ) 
+        {
+            Serial.println( ">>> Playing puff" );
+            play_puff( PUFF_DURATION );
+        }
+        else
+        {
+        }
     }
-    Serial.println( ">>> Start" );
 }
 
 
@@ -232,6 +260,7 @@ void setup()
 {
     Serial.begin( 38400 );
     stamp_ = 0;
+
     pinMode( TONE_PIN, OUTPUT );
     pinMode( PUFF_PIN, OUTPUT );
 
@@ -245,7 +274,12 @@ void setup()
     wdt_enable( WDTO_2S );
     wdt_reset();
 }
-
+/**
+ * @brief Do a single trial.
+ *
+ * @param trial_num. Index of the trial.
+ * @param ttype. Type of the trial.
+ */
 void do_trial( unsigned int trial_num, trial_type_t_ ttype)
 {
     reset_watchdog( );
@@ -290,17 +324,7 @@ void do_trial( unsigned int trial_num, trial_type_t_ ttype)
      *-----------------------------------------------------------------------------*/
     //Serial.println( "PUFF" );
     sprintf( trial_state_, "PUFF", 4 );
-    unsigned long puffDuration = 50;
-    stamp_ = millis();
-    while( millis() - stamp_ <= puffDuration )
-    {
-        check_for_reset( );
-        digitalWrite( PUFF_PIN, HIGH);
-        write_data_line( );
-    }
-
-    // Switch OFF the puff.
-    digitalWrite( PUFF_PIN, LOW );
+    play_puff( PUFF_DURATION );
     delay( 1 );
     
     /*-----------------------------------------------------------------------------
@@ -331,7 +355,7 @@ void loop()
 {
     reset_watchdog( );
 
-    for (size_t i = 0; i < 10; i++) 
+    for (size_t i = 0; i <= 100; i++) 
     {
         reset_watchdog( );
         if( i % 10 == 0 )
@@ -345,5 +369,4 @@ void loop()
     Serial.flush( );
     delay( 100 );
     exit( 0 );
-
 }

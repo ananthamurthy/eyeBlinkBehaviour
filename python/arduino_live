@@ -31,7 +31,7 @@ import numpy as np
 import codecs
 import Queue
 from threading import Thread, Lock
-import gnuplotlib as gp
+import gnuplotlib 
 import logging
 
 _logger = logging.getLogger('')
@@ -42,6 +42,10 @@ cs_type_ = None
 next_probe_in_ = -1
 flipped_ = 0
 current_state_ = "INVA"
+shutdown_command_ = 'r'
+
+gp_ = gnuplotlib.gnuplotlib( terminal = 'x11' )
+
 
 # Our shared queue used in multiprocessing
 q_ = Queue.Queue()
@@ -53,9 +57,11 @@ def trial_file_path( trialNum ):
 
 def cleanup():
     global finished_all_
+    global gp_
     finished_all_ = 1
-    config.serial_port_.write_msg( 'rr' )
+    config.serial_port_.write_msg( shutdown_command_ )
     print("+++++++++++++++++++++++++++++ All over")
+    gp_.__del__( )
     raise KeyboardInterrupt("Finished all")
 
 def init_serial( baudRate = 38400):
@@ -194,6 +200,7 @@ def plot_data( lock ):
     global running_trial_
     global total_trials_
     global cs_type_, next_probe_in_
+    global gp_
     ptstart = time.time()
     while True:
         if finished_all_ == 1:
@@ -217,10 +224,12 @@ def plot_data( lock ):
                 , current_state_
                 )
 
-        gp.plot( np.asarray(config.ybuff_[-2000:]) 
-                , title = title
-                , terminal = 'x11'
-                , yrange = '200:600'
+        # NOTE: Any other temrinal than x11 will steal the focus from terminal.
+        # User won't be able to send command 
+        gp_.plot( np.asarray(config.ybuff_[-2000:])
+                , legend = title
+                # , yrange = '200:600'  # When commented out 
+                                        # Auto-scale y-range automatically.
                 )
 
 def answer_questions( numbers = 1):
@@ -275,37 +284,20 @@ def send_command( ):
     # all commands should be two characters long
     global finished_all_
     command = ""
-    legalCommandsBeforeStart = [ "11", "22", "pp", "ss" ]
-    legalCommandsAfterStart = [ "rr", "ww", "cc" ]
-    validCommands = legalCommandsAfterStart + legalCommandsBeforeStart 
-    validStartChars = ''.join([ x[0] for x in validCommands ])
+    legalCommands = [ "1", "2", "p", "s", 'r' ]
     while True:
-        k = readchar.readkey()
-        if k in validStartChars:
-            command += k
-            if command in legalCommandsBeforeStart:
-                _logger.info("[COMMAND] Sending command: %s" % command)
-                config.serial_port_.write_msg( command )
-                command = ""
-            # Last two commands needs to be handled separately.
-            elif command == 'ss':
-                config.serial_port_.write_msg( command )
-            elif command == 'rr':
+        command = readchar.readkey()
+        if command in legalCommands:
+            if command == 's' or command == 'p':
+                print( '[INFO] Command = %s' % command )
+                config.serial_port_.write_msg( "%s\r" % command )
+            elif command == 'r':
                 # reboot. 
                 _logger.warn("Reboot in 2 seconds. You have to relaunch the app")
-                config.serial_port_.write_msg( command )
+                config.serial_port_.write_msg( "%s\r" % command )
                 finished_all_ = 1
-                cleanup()
-                return None
-            elif (command in legalCommandsAfterStart):
-                _logger.info("[COMMAND] Sending command (after start): %s" % command)
-                config.serial_port_.write_msg( command )
-                command = ""
-            else:
-                pass
-            if len(command) == 2:
-                command = ""
-        elif k in [ '\x03', '\x04', '\x1a' ]:
+                raise KeyboardInterrupt
+        elif command in [ '\x03', '\x04', '\x1a' ]:
             finished_all_ = 1
             raise KeyboardInterrupt
 
