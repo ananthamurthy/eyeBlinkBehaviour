@@ -258,7 +258,7 @@ void wait_for_start( )
         }
         else
         {
-            Serial.print( "Got this character " );
+            //Serial.print( "Got this character " );
             Serial.println( Serial.read( ) );
         }
     }
