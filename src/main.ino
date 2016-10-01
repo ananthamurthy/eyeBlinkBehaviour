@@ -258,7 +258,8 @@ void wait_for_start( )
         }
         else
         {
-            Serial.print( 'x' );
+            Serial.print( "Got this character " );
+            Serial.println( Serial.read( ) );
         }
     }
 }
