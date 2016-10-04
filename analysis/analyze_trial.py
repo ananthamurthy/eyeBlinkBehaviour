@@ -27,10 +27,9 @@ except Exception as e:
 
 plt.rcParams.update({'font.size': 8})
 # These are the columns in CSV file and these are fixed.
-cols_ = [ 'time', 'sensor', 'trial_num', 'total_trials'
-        , 'cs_type', 'next_probe_in', 'tone', 'puff', 'led' 
-        , 'status'
-        ]
+cols_ = { 'time' : 0 , 'sensor' : 1 , 'trial_count' : 2
+        , 'tone' : 3 , 'puff' : 4 , 'led' : 5 , 'status' : 6 }
+
 
 aN, bN = 0, 0
 toneBeginN, toneEndN = 0, 0
@@ -41,7 +40,7 @@ puff = None
 led = None
 status = None
 cstype = 1              # Always 1 for this branch
-trial_type = 'csplus'   # cs+, distraction, or probe
+trial_type = 'CS_P'   # cs+, distraction, or probe
 time = None
 newtime = None
 sensor = None
@@ -95,18 +94,10 @@ def plot_raw_trace( ax ):
     global cstype, data, time, sensor
     global status
     global aN, bN
-    aN = get_status_ids('CS_P' )[0]
-    bN = get_status_ids('POST')[0] + 10
 
     ax.plot(time, sensor)
-    ax.plot(time[aN], sensor[aN], color = 'b')
-    ax.plot(time[aN:bN], sensor[aN:bN], color = 'r')
-    ax.plot(time[bN:], sensor[bN:], color = 'b')
-    # ax.plot( time,  [np.median( sensor )] * len(time))
     plt.xlim( (0, max(time)) )
     plt.ylim( (0, sensor.max() + 100 ) )
-    plt.legend( framealpha=0.4)
-    add_puff_and_tone_labels( ax, time )
     plt.xlabel( 'Time (ms)' )
     plt.ylabel( 'Sensor readout' )
 
@@ -167,7 +158,9 @@ def plot_histogram( ax ):
     # plt.title('Histogram of sensor readout')
     plt.legend(loc='best', framealpha=0.4)
 
-def get_colums( data, n ):
+def get_colums( data, col_name ):
+    global cols_
+    n = cols_[ col_name ]
     column = []
     for d in data:
         column.append( d[n] )
@@ -208,7 +201,7 @@ def parse_csv_file( filename ):
             except Exception as e:
                 dd.append( x.strip() )
         data.append( dd )
-    trial_type = determine_trial_type( get_colums( data, 9) )
+    trial_type = 'CS_P'
     logging.debug('\t Trial type %s' % trial_type )
     return metadata, data
 
@@ -260,13 +253,14 @@ def main( args ):
         logging.debug( 'Few or no entry in this trial' )
         return 
 
-    time, sensor = get_colums(data, 0), get_colums(data, 1)
+    time, sensor = get_colums(data, 'time'), get_colums(data, 'sensor')
     time = time - time.min() 
-    tone, puff, led = get_colums(data,6), get_colums(data,7), get_colums(data,8)
-    cstype = get_colums( data, 4 )[0]
-    status = get_colums( data, 9 )
+    tone, puff = get_colums(data, 'tone'), get_colums(data, 'puff')
+    led = get_colums(data,'led')
+    cstype = 'CS+'
+    status = get_colums( data, 'status' )
     if plot:
-        ax = plt.subplot(3, 1, 1)
+        ax = plt.subplot(2, 1, 1)
         plot_raw_trace( ax )
 
     puffArea = compute_area_under_curve( sensor, time, 5450, 5750 )
@@ -283,9 +277,7 @@ def main( args ):
     # In this subplot, we scale down the pre and post baseline by a factor of
     # 10. The newtime vector is transformation of time vector to achive this.
     if plot:
-        ax = plt.subplot(3, 1, 2)
-        plot_zoomedin_raw_trace( ax )
-        ax = plt.subplot(3, 1, 3)
+        ax = plt.subplot(2, 1, 2)
         try:
             plot_histogram( ax )
         except Exception as e:
@@ -304,7 +296,7 @@ def main( args ):
             , 'puff_area' : puffArea
             , 'tone_area' : toneArea
             , 'area_in_bins' : areaInBins
-            , 'cstype' : int(cstype)
+            , 'cstype' : 2
             , 'aNbN' : (aN, bN )
             , 'trial_type' : trial_type
             }
