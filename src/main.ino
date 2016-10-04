@@ -332,12 +332,15 @@ void do_trial( unsigned int trial_num, trial_type_t_ ttype)
     }
 
     /*-----------------------------------------------------------------------------
-     *  PUFF
+     *  PUFF, only when ttype is not probe
      *-----------------------------------------------------------------------------*/
-    //Serial.println( "PUFF" );
-    sprintf( trial_state_, "PUFF", 4 );
-    play_puff( PUFF_DURATION );
-    delay( 1 );
+    if( probe != ttype  )
+    {
+        //Serial.println( "PUFF" );
+        sprintf( trial_state_, "PUFF", 4 );
+        play_puff( PUFF_DURATION );
+        delay( 1 );
+    }
     
     /*-----------------------------------------------------------------------------
      *  POST, flexible duration till trial is over.

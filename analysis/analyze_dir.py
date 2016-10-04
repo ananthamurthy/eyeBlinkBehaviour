@@ -45,37 +45,33 @@ probesIdx = []
 min_trial_time_ = 17500      # ms
 
 def plot_subplot( ax, data, idx, tvecs, title ):
-    try:
-        plt.imshow( data, cmap = "jet"
-                , vmin = np.min(data), vmax = np.max(data)
-                , interpolation = 'none', aspect='auto' 
-                )
-    except ValueError as e:
-        # Dimention mismatch, use histogram2d
-        newImg = []
-        for i, tvec in enumerate( tvecs ):
-            # print( '[INFO] Interpolating for %d' % i )
-            # Nearest gives the best fit.
-            f = interp1d( tvec, data[i], kind='nearest' )
-            tnew = np.arange( 0, min_trial_time_, 5 )
-            dnew = f( tnew )
-            meanErr = abs(np.mean( dnew ) - np.mean( data[i] ))
-            stdErr = abs(np.std( dnew ) - np.std( data[i] )) 
-            assert meanErr < 1.0, 'Got %f' % meanErr
-            assert stdErr < 1.0, 'Got %f' % stdErr
-            newImg.append( dnew )
-        data = newImg
-        plt.imshow( data, cmap = "jet"
-                , vmin = np.min(data), vmax = np.max(data)
-                , interpolation = 'none', aspect='auto' 
-                )
+    assert len( data ) > 2
+    assert len(tvecs) == len(data)
+    # Dimention mismatch, use histogram2d
+    newImg = []
+    for i, tvec in enumerate( tvecs ):
+        t = tvec.values
+        d = data[i].values
+        # Nearest gives the best fit.
+        f = interp1d( t, d, kind='nearest' )
+        tnew = np.arange( 200, min_trial_time_, 5 )
+        dnew = f( tnew )
+
+        meanErr = abs(np.mean( dnew ) - np.mean( d ))
+        stdErr = abs(np.std( dnew ) - np.std( d )) 
+        assert meanErr < 1.0, 'Got %f' % meanErr
+        assert stdErr < 2.0, 'Got %f' % stdErr
+        newImg.append( dnew )
+
+    plt.imshow( np.vstack(newImg), cmap = "jet"
+            , interpolation = 'none', aspect='auto' 
+            )
 
     # ax.set_xticks( range(0,len(idx),2), idx[::2] )
     ax.set_xlabel( 'Time (ms)' )
     ax.set_ylabel( '# Trial' )
     ax.set_title( title )
     ax.legend( )
-    # ax.colorbar( )
 
 
 def main(  ):
@@ -106,16 +102,24 @@ def main(  ):
     cstvecs, probetvecs = [], []
     for idx  in fileIdx:
         f, fname = files[idx]
-        result = at.main( { 'input' : f
-            , 'output' : os.path.join(args_.output_dir, fname+'.png') 
-            , 'plot' : True }
-            )
+        result = None
+        try:
+            result = at.main( { 'input' : f
+                , 'output' : os.path.join(args_.output_dir, fname+'.png') 
+                , 'plot' : False }
+                )
+        except Exception as e:
+            result = None
+            print( '[WARN] Failed to process file %s' % f )
+
         if not result:
             continue
 
         tVec = result['time']
         if tVec.max()  < min_trial_time_:
+            print( '[WARN] Ignoring file %s' % fname )
             continue
+
 
         row = result['sensor']
         if len(row) > 100:
@@ -131,13 +135,17 @@ def main(  ):
 
     if csplus:
         ax = plt.subplot(2, 1, 1)
+        print( 'Plotting csplus' )
         plot_subplot( ax, csplus, csplusIdx, cstvecs, 'CS+' )
+        plt.colorbar()
     if probes:
         ax = plt.subplot(2, 1, 2)
+        print( 'Plotting probes' )
         plot_subplot( ax, probes, probesIdx, probetvecs, 'PROBES' )
+        plt.colorbar( )
+
     outfile = '%s/summary.png' % args_.output_dir
     print('[INFO] Saving file to %s' % outfile )
-    plt.tight_layout( )
     plt.suptitle( args_.dir.split('/')[-1].replace('_', ', ')
             , horizontalalignment = 'left'
             , fontsize = 9 )
