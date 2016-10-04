@@ -54,14 +54,15 @@ def plot_subplot( ax, data, idx, tvecs, title ):
         # Dimention mismatch, use histogram2d
         newImg = []
         for i, tvec in enumerate( tvecs ):
-            print( '[INFO] Interpolating for %d' % i )
-            f = interp1d( tvec, data[i], kind='slinear' )
+            # print( '[INFO] Interpolating for %d' % i )
+            # Nearest gives the best fit.
+            f = interp1d( tvec, data[i], kind='nearest' )
             tnew = np.arange( 0, min_trial_time_, 5 )
             dnew = f( tnew )
             meanErr = abs(np.mean( dnew ) - np.mean( data[i] ))
             stdErr = abs(np.std( dnew ) - np.std( data[i] )) 
             assert meanErr < 1.0, 'Got %f' % meanErr
-            assert stdErr < 10, 'Got %f' % stdErr
+            assert stdErr < 1.0, 'Got %f' % stdErr
             newImg.append( dnew )
         data = newImg
         plt.imshow( data, cmap = "jet"
@@ -107,7 +108,7 @@ def main(  ):
         f, fname = files[idx]
         result = at.main( { 'input' : f
             , 'output' : os.path.join(args_.output_dir, fname+'.png') 
-            , 'plot' : False }
+            , 'plot' : True }
             )
         if not result:
             continue
