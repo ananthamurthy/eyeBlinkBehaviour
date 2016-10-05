@@ -59,8 +59,10 @@ def plot_subplot( ax, data, idx, tvecs, title ):
 
         meanErr = abs(np.mean( dnew ) - np.mean( d ))
         stdErr = abs(np.std( dnew ) - np.std( d )) 
-        assert meanErr < 1.0, 'Got %f' % meanErr
-        assert stdErr < 2.0, 'Got %f' % stdErr
+        if meanErr > 1.0:
+            print( '[Warn] Got error in mean after resampling %f' % meanErr )
+        if stdErr > 2.0:
+            print( '[WARN] Got error in std  %f' % stdErr )
         newImg.append( dnew )
 
     plt.imshow( np.vstack(newImg), cmap = "jet"
