@@ -26,8 +26,10 @@ from collections import defaultdict
 import logging
 import re
 import analyze_trial as at
+import matplotlib.cm as cm
+from scipy.interpolate import interp1d
 
-matplotlib.rcParams.update( {'font.size' : 10} )
+#matplotlib.rcParams.update( {'font.size' : 10} )
 
 args_ = None
 
@@ -36,23 +38,40 @@ csplusIdx, csminusIdx = [], []
 
 distraction = []
 distractionIdx = []
-
 probes = []
 probesIdx = []
 
-def plot_subplot( ax, data, idx, tVec, aN, bN, title ):
-    csplusData = np.vstack( data ) 
-    plt.imshow( csplusData, cmap = "jet"
-            , extent = [tVec[aN], tVec[bN], len(idx), 0]  
-            , vmin = data.min(), vmax = data.max()
+# This is the valid trial time.
+min_trial_time_ = 17500      # ms
+
+def plot_subplot( ax, data, idx, tvecs, title ):
+    assert len( data ) > 2
+    assert len(tvecs) == len(data)
+    # Dimention mismatch, use histogram2d
+    newImg = []
+    for i, tvec in enumerate( tvecs ):
+        t = tvec.values
+        d = data[i].values
+        # Nearest gives the best fit.
+        f = interp1d( t, d, kind='nearest' )
+        tnew = np.arange( 200, min_trial_time_, 5 )
+        dnew = f( tnew )
+
+        meanErr = abs(np.mean( dnew ) - np.mean( d ))
+        stdErr = abs(np.std( dnew ) - np.std( d )) 
+        assert meanErr < 1.0, 'Got %f' % meanErr
+        assert stdErr < 2.0, 'Got %f' % stdErr
+        newImg.append( dnew )
+
+    plt.imshow( np.vstack(newImg), cmap = "jet"
             , interpolation = 'none', aspect='auto' 
             )
+
     # ax.set_xticks( range(0,len(idx),2), idx[::2] )
     ax.set_xlabel( 'Time (ms)' )
     ax.set_ylabel( '# Trial' )
     ax.set_title( title )
     ax.legend( )
-    # ax.colorbar( )
 
 
 def main(  ):
@@ -73,54 +92,60 @@ def main(  ):
                 if trialIndex:
                     index = int(trialIndex.groupdict()['index'])
                     files[index] = (filepath, f)
+
     # Sort the trials according to trial number
     fileIdx = sorted( files )
     if len(fileIdx) == 0:
         print('[WARN] No files found' )
         quit()
+
+    cstvecs, probetvecs = [], []
     for idx  in fileIdx:
         f, fname = files[idx]
-        result = at.main( { 'input' : f
-            , 'output' : os.path.join(args_.output_dir, fname+'.png') } 
-            )
+        result = None
+        try:
+            result = at.main( { 'input' : f
+                , 'output' : os.path.join(args_.output_dir, fname+'.png') 
+                , 'plot' : False }
+                )
+        except Exception as e:
+            result = None
+            print( '[WARN] Failed to process file %s' % f )
+
         if not result:
             continue
 
         tVec = result['time']
+        if tVec.max()  < min_trial_time_:
+            print( '[WARN] Ignoring file %s' % fname )
+            continue
+
+
         row = result['sensor']
-        aN, bN = result['aNbN']
-        bN = aN + 55            # just to make sure I can vstack.
         if len(row) > 100:
-            r = row[aN:bN]
-            if result['trial_type'] == 'CS_P': 
-                csplus.append( r )
-                csplusIdx.append( idx )
-            elif result['trial_type'] == 'PROB':
+            r = row
+            if idx % 10 == 0:
+                probetvecs.append( tVec )
                 probes.append( r )
                 probesIdx.append( idx )
-            elif result['trial_type'] == 'DIST':
-                distraction.append( r )
-                distractionIdx.append( idx )
             else:
-                raise NameError( 'Unknown trial type  %s' % result['trial_type'])
-
-    plt.figure()
+                csplus.append( r )
+                csplusIdx.append( idx )
+                cstvecs.append( tVec )
 
     if csplus:
-        ax = plt.subplot(3, 1, 1)
-        csplusData = np.vstack( csplus ) 
-        plot_subplot( ax, csplusData, csplusIdx, tVec, aN, bN, 'CS+' )
+        ax = plt.subplot(2, 1, 1)
+        print( 'Plotting csplus' )
+        plot_subplot( ax, csplus, csplusIdx, cstvecs, 'CS+' )
+        plt.colorbar()
     if probes:
-        ax = plt.subplot(3, 1, 2)
-        probData = np.vstack( probes ) 
-        plot_subplot( ax, probData, probesIdx, tVec, aN, bN, 'PROBES' )
-    if distraction:
-        ax = plt.subplot( 3, 1, 3 )
-        distractData = np.vstack( distraction )
-        plot_subplot( ax, distractData, distractionIdx, tVec, aN, bN, 'DIST')
+        ax = plt.subplot(2, 1, 2)
+        print( 'Plotting probes' )
+        plot_subplot( ax, probes, probesIdx, probetvecs, 'PROBES' )
+        plt.colorbar( )
+
     outfile = '%s/summary.png' % args_.output_dir
     print('[INFO] Saving file to %s' % outfile )
-    plt.tight_layout( )
     plt.suptitle( args_.dir.split('/')[-1].replace('_', ', ')
             , horizontalalignment = 'left'
             , fontsize = 9 )

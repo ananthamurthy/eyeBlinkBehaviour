@@ -1,5 +1,7 @@
 """analyze_trial.py: 
 
+Analyze each trial.
+
 """
     
 __author__           = "Dilawar Singh"
@@ -11,26 +13,26 @@ __maintainer__       = "Dilawar Singh"
 __email__            = "dilawars@ncbs.res.in"
 __status__           = "Development"
 
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatch
 import itertools
 import random 
 import logging
+import pandas
 
-#style = random.choice( plt.style.available )
-style = 'seaborn-darkgrid' 
 try:
-    plt.style.use( style )
+    plt.style.use( 'ggplot' )
 except Exception as e:
     pass
 
 plt.rcParams.update({'font.size': 8})
 # These are the columns in CSV file and these are fixed.
-cols_ = [ 'time', 'sensor', 'trial_num', 'total_trials'
-        , 'cs_type', 'next_probe_in', 'tone', 'puff', 'led' 
-        , 'status'
-        ]
+cols_ = { 'time' : 0 , 'sensor' : 1 , 'trial_count' : 2
+        , 'tone' : 3 , 'puff' : 4 , 'led' : 5 , 'status' : 6 }
+
+columns_ = [ 'time', 'sensor', 'trial_count', 'tone', 'puff', 'led', 'status']
 
 aN, bN = 0, 0
 toneBeginN, toneEndN = 0, 0
@@ -41,7 +43,7 @@ puff = None
 led = None
 status = None
 cstype = 1              # Always 1 for this branch
-trial_type = 'csplus'   # cs+, distraction, or probe
+trial_type = 'CS_P'     # cs+, distraction, or probe
 time = None
 newtime = None
 sensor = None
@@ -91,22 +93,16 @@ def get_status_ids( status_id ):
     global status
     return [i for i,x in enumerate( status ) if x == status_id ]
 
-def plot_raw_trace( ax ):
-    global cstype, data, time, sensor
-    global status
-    global aN, bN
-    aN = get_status_ids('CS_P' )[0]
-    bN = get_status_ids('POST')[0] + 10
-
-    ax.plot(time, sensor)
-    ax.plot(time[aN], sensor[aN], color = 'b')
-    ax.plot(time[aN:bN], sensor[aN:bN], color = 'r')
-    ax.plot(time[bN:], sensor[bN:], color = 'b')
-    # ax.plot( time,  [np.median( sensor )] * len(time))
+def plot_raw_trace( ax, data ):
+    time, sensor = data['time'], data['sensor'] 
+    preData = data[ data['status'] == 'PRE_' ]
+    postData = data[ data['status'] == 'POST' ]
+    ax.plot( time, sensor )
+    ax.plot( preData['time'], preData['sensor'], label = 'PRE')
+    ax.plot( postData['time'], postData['sensor' ], label = 'POST' )
+    ax.legend( )
     plt.xlim( (0, max(time)) )
-    plt.ylim( (0, sensor.max() + 100 ) )
-    plt.legend( framealpha=0.4)
-    add_puff_and_tone_labels( ax, time )
+    plt.ylim( (sensor.min()-100, sensor.max() + 200 ) )
     plt.xlabel( 'Time (ms)' )
     plt.ylabel( 'Sensor readout' )
 
@@ -133,49 +129,27 @@ def plot_zoomedin_raw_trace( ax ):
     plt.xlabel( 'Time (ms)' )
     plt.ylabel( 'Sensor readout' )
 
-def plot_histogram( ax ):
+def plot_histogram( ax, data):
     """Here we take the data from ROI (between aN and bN). A 100 ms window (size
     = 10) slides over it. At each step, we get min and max of window, store
     these values in a list. 
 
     We plot histogram of the list
     """
-    global newtime, time
-    roiData = sensor[aN:bN]
-    baselineData = np.concatenate( (sensor[:aN], sensor[bN:]) )
-    windowSize = 10
-    histdataRoi = []
-    for i in range( len(roiData) ):
-        window = roiData[i:i+windowSize]
-        histdataRoi.append( np.ptp( window ) ) # peak to peak
+    time, sensor = data['time'], data['sensor']
 
-    histdataBaseline = []
-    for i in range( len(baselineData) ):
-        window = baselineData[i:i+windowSize]
-        histdataBaseline.append( np.ptp( window ) )
+    preData = data[ data['status'] == 'PRE_' ]
+    postData = data[ data['status'] == 'POST' ]
 
-    plt.hist( histdataBaseline
-            , bins = np.arange( min(histdataBaseline), max(histdataBaseline), 5)
-            , normed = True, label = 'baseline (peak to peak)'
-            , alpha = 0.7
+    ax.hist( preData['sensor'].values
+            , normed = True, label = 'PRE'
+            , alpha = 0.7, bins = 50
             )
-    plt.hist( histdataRoi
-            , bins = np.arange( min(histdataRoi), max(histdataRoi), 5)
-            , normed = True , label = 'ROI (peak to peak)'
-            , alpha = 0.7
+    ax.hist( postData['sensor'].values
+            , normed = True, label = 'POST'
+            , alpha = 0.7, bins = 50
             )
-    # plt.title('Histogram of sensor readout')
-    plt.legend(loc='best', framealpha=0.4)
-
-def get_colums( data, n ):
-    column = []
-    for d in data:
-        column.append( d[n] )
-    try:
-        column = np.array( column )
-    except Exception as e:
-        pass
-    return column
+    ax.legend(loc='best', framealpha=0.4)
 
 def determine_trial_type( last_column ):
     assert len( last_column ) > 50, 'Few entries %s' % len( last_column )
@@ -188,29 +162,12 @@ def determine_trial_type( last_column ):
 
 def parse_csv_file( filename ):
     global trial_type
-    with open( filename, 'r' ) as f:
-        lines = f.read().split( '\n' )
-    if len(lines) < 10:
-        return [], []
+    print( '[DEBUG] Reading %s' % filename )
+    data = pandas.read_table( filename
+            , names = columns_
+            , sep = ',', comment = '#', skiprows = 5 )
+    return "", data
 
-    metadata, data = [], []
-    for l in lines:
-        if not l:
-            continue
-        if '#' == l[0]:
-            metadata.append( l )
-            continue
-        dd = []
-        l = l.split(',')
-        for x in l:
-            try:
-                dd.append( float( x.strip() ) )
-            except Exception as e:
-                dd.append( x.strip() )
-        data.append( dd )
-    trial_type = determine_trial_type( get_colums( data, 9) )
-    logging.debug('\t Trial type %s' % trial_type )
-    return metadata, data
 
 def find_zeros( y ):
     posEdge, negEdge = [], []
@@ -259,53 +216,32 @@ def main( args ):
     if len( data ) <= 10:
         logging.debug( 'Few or no entry in this trial' )
         return 
-
-    time, sensor = get_colums(data, 0), get_colums(data, 1)
-    time = time - time.min() 
-    tone, puff, led = get_colums(data,6), get_colums(data,7), get_colums(data,8)
-    cstype = get_colums( data, 4 )[0]
-    status = get_colums( data, 9 )
     if plot:
-        ax = plt.subplot(3, 1, 1)
-        plot_raw_trace( ax )
+        ax = plt.subplot(2, 1, 1)
+        plot_raw_trace( ax, data )
 
-    puffArea = compute_area_under_curve( sensor, time, 5450, 5750 )
-    toneArea = compute_area_under_curve( sensor, time, 5000, 5300 )
-    print( 'ToneArea = %f, PuffArea = %f' % ( toneArea, puffArea ))
-
-    binSize = 100
-    areaInBins = []
-    bins = np.arange(0, len(sensor), binSize)
-    for i, x in enumerate(bins[1:]):
-        areaInBins.append( np.sum(sensor[bins[i]:x]) )
-
-    ######
     # In this subplot, we scale down the pre and post baseline by a factor of
     # 10. The newtime vector is transformation of time vector to achive this.
     if plot:
-        ax = plt.subplot(3, 1, 2)
-        plot_zoomedin_raw_trace( ax )
-        ax = plt.subplot(3, 1, 3)
+        ax = plt.subplot(2, 1, 2)
         try:
-            plot_histogram( ax )
+            plot_histogram( ax, data )
         except Exception as e:
             logging.warn( 'Failed to plot histogram' )
             logging.warn( '\t Error was %s' % e )
 
-        plt.suptitle( " ".join(metadata) + ' CS : %s' % cstype, fontsize = 8 )
-        plt.tight_layout()
+        plt.suptitle( os.path.basename(trialFile) )
         outfile = args.get('output', False) or '%s%s.png' % (trialFile, '')
         logging.warn('Plotting trial to %s' % outfile )
         plt.savefig( outfile )
         plt.close()
 
-    return { 'time' : time, 'sensor' : sensor
-            , 'newtime' : newtime
-            , 'puff_area' : puffArea
-            , 'tone_area' : toneArea
-            , 'area_in_bins' : areaInBins
-            , 'cstype' : int(cstype)
-            , 'aNbN' : (aN, bN )
+    return { 'time' : data['time'] , 'sensor' : data['sensor']
+            #, 'puff_area' : puffArea
+            #, 'tone_area' : toneArea
+            #, 'area_in_bins' : areaInBins
+            #, 'cstype' : 2
+            #, 'aNbN' : (aN, bN )
             , 'trial_type' : trial_type
             }
 
