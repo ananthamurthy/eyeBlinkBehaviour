@@ -257,7 +257,7 @@ int initialize()
             traceTime = 0;
         else if ((sessionType_ind == 2) || (sessionType_ind == 3))
             traceTime = 250;
-        else if (sessionType_ind == 4) || (sessionType_ind == 5))
+        else if ((sessionType_ind == 4) || (sessionType_ind == 5))
             traceTime = 350;
         else
             traceTime = 450;
