@@ -250,28 +250,33 @@ int initialize()
     // Get totalTrials and traceTime based on the Session Type
     
    // if ((sessionType_ind == 0) || (sessionType_ind == 1) || (sessionType == 2) || (sessionType == 3) || (sessionType_ind == 4) || (sessionType_ind == 5)) //control (no-puff)
-    if (sessionType_ind <= 5)
+    if (sessionType_ind <= 7)
     {
-        totalTrials = 41;
+        totalTrials = 36;
         if ((sessionType_ind == 0) || (sessionType_ind == 1))
             traceTime = 0;
         else if ((sessionType_ind == 2) || (sessionType_ind == 3))
             traceTime = 250;
+        else if (sessionType_ind == 4) || (sessionType_ind == 5))
+            traceTime = 350;
         else
-            traceTime = 500;
+            traceTime = 450;
     }
     else
     {
-        totalTrials = 101;
-       // if ((sessionType_ind == 6) || (sessionType_ind == 7) ) //delay
-        if (sessionType_ind <=7)
+        totalTrials = 71;
+        if (sessionType_ind <=7) //delay
             traceTime = 0; //in ms
-        //else if ((sessionType_ind == 8) || (sessionType_ind == 9)) //trace = 350 ms
-        else if (sessionType_ind >7 && sessionType_ind <=9)
+        else if (sessionType_ind >7 && sessionType_ind <=9) // 250 ms trace
             traceTime = 250; //in ms
-        else //(sessionType_ind>9 && sessionType_ind<=11) //trace = 350 ms
-            traceTime = 500; //in ms
+        else if (sessionType_ind >9 && sessionType_ind <11) // 350 ms trace
+            traceTime = 350; //in ms
+        else if (sessionType_ind>11 && sessionType_ind<13)// 450 ms trace
+            traceTime = 450; //in ms
+        else
+            traceTime = 250; //in ms
     }
     return sessionType_ind;
     return traceTime;
+    return totalTrials;
 }

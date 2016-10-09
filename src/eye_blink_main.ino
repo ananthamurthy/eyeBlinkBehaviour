@@ -60,20 +60,20 @@ const int ledPin               = 3;         // added on 20160127
 int blinkCount                 = 0;         // Code
 unsigned long startT;
 String mouseName               = String(1); // Please enter the name of the mouse
-extern int sessionType_ind;                 // Please specify the Session Type (0: Control, 1: Trace, 2: Delay)
+extern int sessionType_ind;                 // Please specify the Session Type
 int session                    = 1;
 extern int traceTime;                              // in ms
-int totalTrials                = 100;  
+extern int totalTrials;
 int shutterDelay               = 60;        // in ms
 
 boolean profilingDataDump      = 0;         // For dumping profiling data
 
 // Protocol Information
 const int preTime              = 5000;      // in ms
-const int CSTime               = 350;       // in ms
-const int puffTime             = 50;        // in ms //change made on 20151214
+const int CSTime               = 50;       // in ms
+const int puffTime             = 50;        // in ms //change made on 20161009
 const int postTime             = 5000;      // in ms
-const int minITI               = 15000;     // in ms
+const int minITI               = 15000;     // in ms  //change made on 20161009
 const int randITI              = 5000;      // in ms
 
 // Miscellaneous Initialisations
@@ -181,7 +181,6 @@ void loop()
         }
         else
         {
-
             // has to be calculated for every loop
             currentPhaseTime = millis() - startPhaseTime;
             // has to be calculated for every loop; not being used anywhere
@@ -203,11 +202,10 @@ void loop()
                 detectBlinks();
                 if (currentPhaseTime >= preTime)
                 {
-                    // If sessionType_ind involves LED
-                    //if ((sessionType_ind == 1) || (sessionType_ind == 3) || (sessionType_ind == 5) || (sessionType_ind == 7) || (sessionType_ind == 9) || (sessionType_ind == 11))
+                    // If sessionType_ind does not involve an LED
                     if (sessionType_ind % 2 == 0)
                     {
-			if (CS_plus == 1 )
+			            if ( true == CS_plus )
                         {
                             if( flipped_ )
                                 tone( tonePin, CS_TONE_2);
@@ -215,7 +213,7 @@ void loop()
                                 tone( tonePin, CS_TONE_1);
                             changePhase( 1, START_CS_PLUS );
                         }
-                        else // CS_plus is not 1
+                        else // CS_minus
                         {
                             if( flipped_ )
                                 tone( tonePin, CS_TONE_1);
@@ -227,23 +225,23 @@ void loop()
                     else // sessionType_ind invovles LED
                     {
 			
-			if( true == CS_plus )
+			            if( true == CS_plus )
                         {
                             if(flipped_)
-                                digitalWrite( ledPin, HIGH);
-                            else
                                 tone( tonePin, CS_TONE_1 );
+                            else
+                                digitalWrite( ledPin, HIGH);
                             changePhase( 1, START_CS_PLUS );
                         }
                         else // CS_minus 
                         {
                             if( flipped_ )
-                                tone( tonePin, CS_TONE_1);
-                            else
                                 digitalWrite( ledPin, HIGH);
+                            else
+                                tone( tonePin, CS_TONE_1);
                             changePhase(2, START_CS_MINUS);
                         }
-		    }       
+		            }       
                 }
                 break;
             
@@ -278,7 +276,7 @@ void loop()
                 if (currentPhaseTime >= traceTime)
                 {
                     // start the next phase
-                    if (sessionType_ind >= 6)
+                    if (sessionType_ind >= 8) // Not No-Puff Control (NPC)
                     {
                         if (CS_plus == 1)
                         {
@@ -301,7 +299,7 @@ void loop()
                             changePhase( 5, START_US_NO_PUFF );
                         }
                     }
-                    else
+                    else // No-Puff Control (NPC)
                     {
                         // control case (No-Puff)
                         playPuff(puff_do, LOW);
