@@ -103,4 +103,5 @@ int read_lcd_button()
     if (lcd_input_key < 408)  return btnDOWN;
     if (lcd_input_key < 600)  return btnLEFT; //Unpause
     if (lcd_input_key < 900)  return btnSELECT; // assuming we never get 1000.
+    return 0;
 }

@@ -276,7 +276,5 @@ int initialize()
         else
             traceTime = 250; //in ms
     }
-    return sessionType_ind;
-    return traceTime;
-    return totalTrials;
+    return 0;
 }

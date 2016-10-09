@@ -58,7 +58,7 @@
 // Initialize LC library with # of interface pins
 extern LiquidCrystal lcd;
 
-static const char* sessionType[] = {"Cntrl", "Trace", "Delay"};
+//static const char* sessionType[] = {"Cntrl", "Trace", "Delay"};
 
 // Use these variables with the function "printStatus(value)" to
 const int START_PRE = 0;
@@ -73,7 +73,7 @@ const int END = 8;
 const int PAUSE = 9;
 
 // all values should have 7 letters/spaces between quotes
-static const char* printStr[] = {
+static const char* printStr[10] = {
     "    Pre", "    CS+", "    CS-"
     , "  Trace", "     US", "No-Puff", "   POST"
     , "    ITI", "    END", " Pause "
