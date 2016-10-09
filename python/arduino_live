@@ -230,7 +230,7 @@ def answer_questions( numbers = 5):
     questionsAnswered = [ ]
     for i in range( 20 ):
         l = arduino.read_until('?? Please', timeout = 1)
-        if 'mouse ID number' in l:
+        if 'mouse name' in l:
             _logger.info('[ANSW] %s = %s' % (l, config.args_.name))
             config.serial_port_.write_msg('%s\r' % config.args_.name )
             time.sleep(0.5)
@@ -412,7 +412,7 @@ if __name__ == '__main__':
         )
     parser.add_argument('--cs_fraction', '-cf'
         , required = False
-        , default = 8
+        , default = 10
         , type = int
         , help = 'CS fraction'
         )

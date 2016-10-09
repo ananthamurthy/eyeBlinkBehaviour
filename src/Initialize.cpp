@@ -84,19 +84,23 @@ int initialize()
     while(true)
     {
         reset_watchdog();
-        Serial.println("?? Please enter the mouse ID number: ");
+        Serial.println("?? Please enter the mouse name: ");
         if( wait_for_read( 1000 ))
         {
             // Probably answer to our question.
             String answer = Serial.readString();
-            if( answer.toInt() == 0 ) // Mouse name can't be zero
-                Serial.println("!! Expected a positive interger.");
-            else
-            {
-                mouseName = "MouseK" + answer;
-                Serial.println("-> Got mouse name: #" + mouseName);
-                break;
-            }
+            mouseName = "Mouse" + answer;
+            Serial.println("-> Got mouse name: #" + mouseName);
+            break;
+            
+            //if( answer.toInt() == 0 ) // Mouse name can't be zero
+            //    Serial.println("!! Expected a positive interger.");
+            //else
+            //{
+            //    mouseName = "MouseK" + answer;
+            //    Serial.println("-> Got mouse name: #" + mouseName);
+            //    break;
+            //}
         }
     }
 
