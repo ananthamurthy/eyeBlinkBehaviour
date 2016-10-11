@@ -50,8 +50,9 @@ extern int blink;
 extern const int blink_ai;    // pin that reads the blinks
 extern int blinkCount;
 extern const int puff_do; // pin that drives the eye-puff solenoid
-extern const int tonePin;
-extern const int ledPin;
+extern const int tonePin; // pin that drives tone output
+extern const int ledPin;  // pint that drives LED output
+extern const int videoTrigger_do; // pin that triggers video recording of behaviour
 extern unsigned long startT;
 extern unsigned long currentPhaseTime;
 extern unsigned long lastTime;

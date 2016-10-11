@@ -43,6 +43,7 @@ unsigned int tcnt2; // used to store timer value
 #include "DetectBlinks.h"
 #include "Solenoid.h"
 #include "ChangePhase.h"
+#include "VideoTrigger.h"
 #include "TriggerImaging.h"
 
 #ifdef ENABLE_LCD
@@ -53,6 +54,7 @@ unsigned int tcnt2; // used to store timer value
 int blink                      = 0;
 const int blink_ai             = A5;        // pin that reads the blinks
 const int imagingTrigger_do    = 13;        // pin that triggers imaging
+const int videoTrigger_do      = 12;        // pin that triggers video recording of behaviour
 const int puff_do              = 11;
 const int tonePin              = 2;         // changed this on 20150807
 const int ledPin               = 3;         // added on 20160127
@@ -83,7 +85,7 @@ unsigned long startPhaseTime;
 unsigned long startTrialTime;
 unsigned long currentPhaseTime = 0;
 unsigned long lastTime         = 0;
-unsigned short sampleInterval  = 10;        // Ten milliseconds for 100 Hz
+unsigned short sampleInterval  = 5;        // for 200 Hz
 unsigned int interTrialTime    = 0;
 
 boolean start                  = 0;
@@ -199,6 +201,7 @@ void loop()
             // PRE
             case 0:
                 PF((condition+1));
+                videoTrigger();
                 detectBlinks();
                 if (currentPhaseTime >= preTime)
                 {
@@ -248,6 +251,7 @@ void loop()
             //CS+
             case 1:
                 PF((condition+1));
+                videoTrigger();
                 detectBlinks();
 
                 if (currentPhaseTime >= CSTime)
@@ -260,6 +264,7 @@ void loop()
             //CS-
             case 2:
                 PF((condition+1));
+                videoTrigger();
                 detectBlinks();
                 
                 if (currentPhaseTime >= CSTime)
@@ -272,6 +277,7 @@ void loop()
             //Trace
             case 3:
                 PF((condition+1));
+                videoTrigger();
                 detectBlinks();
                 if (currentPhaseTime >= traceTime)
                 {
@@ -312,6 +318,7 @@ void loop()
             //Puff
             case 4:
                 PF((condition+1));
+                videoTrigger();
                 detectBlinks();
                 if (currentPhaseTime >= puffTime)
                 {
@@ -325,6 +332,7 @@ void loop()
             //No-Puff
             case 5:
                 PF((condition+1));
+                videoTrigger();
                 detectBlinks();
                 if (currentPhaseTime >= puffTime)
                 {
@@ -339,6 +347,7 @@ void loop()
             case 6:
                 // Post Pairing/Stimuli
                 PF((condition+1));
+                videoTrigger();
                 detectBlinks();
                 if (currentPhaseTime >= postTime)
                 {
