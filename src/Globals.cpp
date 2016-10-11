@@ -86,10 +86,10 @@ void check_for_pause( void )
     }
 }
 
-void shutoff_cs( unsigned tonePin, unsigned ledPin )
+void shutoff_cs( unsigned tonePin_do, unsigned ledPin_do )
 {
     // start the next phase
-    noTone(tonePin);
-    digitalWrite( ledPin, LOW);
+    noTone(tonePin_do);
+    digitalWrite( ledPin_do, LOW);
 }
 

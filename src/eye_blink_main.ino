@@ -40,7 +40,7 @@ unsigned int tcnt2; // used to store timer value
 // Include application, user and local libraries
 #include "Globals.h"
 #include "Initialize.h"
-#include "DetectBlinks.h"
+#include "DetectMotion.h"
 #include "Solenoid.h"
 #include "ChangePhase.h"
 #include "VideoTrigger.h"
@@ -51,13 +51,13 @@ unsigned int tcnt2; // used to store timer value
 #endif
 
 // Globals:
-int blink                      = 0;
-const int blink_ai             = A5;        // pin that reads the blinks
+int motion                     = 0;
+const int motion_di            = 10;        // pin that reads the treadmill motion
 const int imagingTrigger_do    = 13;        // pin that triggers imaging
 const int videoTrigger_do      = 12;        // pin that triggers video recording of behaviour
 const int puff_do              = 11;
-const int tonePin              = 2;         // changed this on 20150807
-const int ledPin               = 3;         // added on 20160127
+const int tonePin_do            = 2;         // changed this on 20150807
+const int ledPin_do            = 3;         // added on 20160127
 
 int blinkCount                 = 0;         // Code
 unsigned long startT;
@@ -85,7 +85,7 @@ unsigned long startPhaseTime;
 unsigned long startTrialTime;
 unsigned long currentPhaseTime = 0;
 unsigned long lastTime         = 0;
-unsigned short sampleInterval  = 5;        // for 200 Hz
+unsigned short sampleInterval  = 10;        // in ms; for 100 Hz
 unsigned int interTrialTime    = 0;
 
 boolean start                  = 0;
@@ -120,10 +120,10 @@ void setup()
     pinMode(puff_do, OUTPUT);
 
     //Set up the tone pin:
-    pinMode(tonePin, OUTPUT);
+    pinMode(tonePin_do, OUTPUT);
     
     //Set up the LED pin:
-    pinMode(ledPin, OUTPUT);
+    pinMode(ledPin_do, OUTPUT);
 
 #ifdef ENABLE_LCD
     // Initialize LCD
@@ -134,7 +134,7 @@ void setup()
 #endif
 
     //For randomizations
-    randomSeed( analogRead( blink_ai ) ); // 0 -> use system clock to generate random seed the CS type for trials
+    randomSeed( analogRead( A5 ) ); // 0 -> use system clock to generate random seed the CS type for trials
     
     nextProbeIn = (int) random(8,13); //NOTE: the "(int)" only truncates
 }
@@ -204,8 +204,8 @@ void loop()
             // PRE
             case 0:
                 PF((condition+1));
-                videoTrigger();
-                detectBlinks();
+                //videoTrigger();
+                detectMotion();
                 if (currentPhaseTime >= preTime)
                 {
                     // If sessionType_ind does not involve an LED
@@ -214,17 +214,17 @@ void loop()
 			            if ( true == CS_plus )
                         {
                             if( flipped_ )
-                                tone( tonePin, CS_TONE_2);
+                                tone( tonePin_do, CS_TONE_2);
                             else
-                                tone( tonePin, CS_TONE_1);
+                                tone( tonePin_do, CS_TONE_1);
                             changePhase( 1, START_CS_PLUS );
                         }
                         else // CS_minus
                         {
                             if( flipped_ )
-                                tone( tonePin, CS_TONE_1);
+                                tone( tonePin_do, CS_TONE_1);
                             else
-                                tone( tonePin, CS_TONE_2);
+                                tone( tonePin_do, CS_TONE_2);
                             changePhase(2, START_CS_MINUS);
                         }            
                     }
@@ -234,17 +234,17 @@ void loop()
 			            if( true == CS_plus )
                         {
                             if(flipped_)
-                                tone( tonePin, CS_TONE_1 );
+                                tone( tonePin_do, CS_TONE_1 );
                             else
-                                digitalWrite( ledPin, HIGH);
+                                digitalWrite( ledPin_do, HIGH);
                             changePhase( 1, START_CS_PLUS );
                         }
                         else // CS_minus 
                         {
                             if( flipped_ )
-                                digitalWrite( ledPin, HIGH);
+                                digitalWrite( ledPin_do, HIGH);
                             else
-                                tone( tonePin, CS_TONE_1);
+                                tone( tonePin_do, CS_TONE_1);
                             changePhase(2, START_CS_MINUS);
                         }
 		            }       
@@ -254,12 +254,12 @@ void loop()
             //CS+
             case 1:
                 PF((condition+1));
-                videoTrigger();
-                detectBlinks();
+                //videoTrigger();
+                detectMotion();
 
                 if (currentPhaseTime >= CSTime)
                 {
-                    shutoff_cs( tonePin, ledPin );
+                    shutoff_cs( tonePin_do, ledPin_do );
                     changePhase( 3, START_TRACE );
                 }
                 break;
@@ -267,12 +267,12 @@ void loop()
             //CS-
             case 2:
                 PF((condition+1));
-                videoTrigger();
-                detectBlinks();
+                //videoTrigger();
+                detectMotion();
                 
                 if (currentPhaseTime >= CSTime)
                 {
-                    shutoff_cs( tonePin, ledPin );
+                    shutoff_cs( tonePin_do, ledPin_do );
                     changePhase( 3, START_TRACE );
                 }
                 break;
@@ -280,8 +280,8 @@ void loop()
             //Trace
             case 3:
                 PF((condition+1));
-                videoTrigger();
-                detectBlinks();
+                //videoTrigger();
+                detectMotion();
                 if (currentPhaseTime >= traceTime)
                 {
                     // start the next phase
@@ -321,8 +321,8 @@ void loop()
             //Puff
             case 4:
                 PF((condition+1));
-                videoTrigger();
-                detectBlinks();
+                //videoTrigger();
+                detectMotion();
                 if (currentPhaseTime >= puffTime)
                 {
                     // start the next phase
@@ -335,8 +335,8 @@ void loop()
             //No-Puff
             case 5:
                 PF((condition+1));
-                videoTrigger();
-                detectBlinks();
+                //videoTrigger();
+                detectMotion();
                 if (currentPhaseTime >= puffTime)
                 {
                     // start the next phase
@@ -350,8 +350,8 @@ void loop()
             case 6:
                 // Post Pairing/Stimuli
                 PF((condition+1));
-                videoTrigger();
-                detectBlinks();
+                //videoTrigger();
+                detectMotion();
                 if (currentPhaseTime >= postTime)
                 {
                     interTrialTime = minITI + random( randITI );

@@ -46,12 +46,12 @@
 #define SESSION_BEGIN_MARKER "<"
 #define SESSION_END_MARKER ">"
 
-extern int blink;
-extern const int blink_ai;    // pin that reads the blinks
+extern int motion;
+extern const int motion_di;    // pin that reads the treadmill motion
 extern int blinkCount;
 extern const int puff_do; // pin that drives the eye-puff solenoid
-extern const int tonePin; // pin that drives tone output
-extern const int ledPin;  // pint that drives LED output
+extern const int tonePin_do; // pin that drives tone output
+extern const int ledPin_do;  // pint that drives LED output
 extern const int videoTrigger_do; // pin that triggers video recording of behaviour
 extern unsigned long startT;
 extern unsigned long currentPhaseTime;

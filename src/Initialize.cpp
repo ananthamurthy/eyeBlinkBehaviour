@@ -185,34 +185,34 @@ int initialize()
 
         if (startT > sampleInterval)
         {
-            blink = analogRead(blink_ai);
+            motion = digitalRead(motion_di);
             // Since this is not timestamped data, send 0 as timestamp.
             // NOTE: Can't use -1 since it is unsigned long.
-            write_data_line( blink, 0 );
+            write_data_line( motion, 0 );
             startT = millis();
         }
         // Read the character and decide what to do.
         if( is_command_read( CS_PLUS_COMMAND , false) )
         {
             Serial.println("COMMAND: Play CS1");
-            tone( tonePin, CS_TONE_1);
+            tone( tonePin_do, CS_TONE_1);
             delay( CSTime );
-            noTone( tonePin );
+            noTone( tonePin_do );
         }
         else if( is_command_read( CS_MINUS_COMMAND, false) )
         {
             Serial.println("COMMAND: Play CS2");
             if( sessionType_ind % 2 == 0 )
             {
-		tone( tonePin, CS_TONE_2);
+		tone( tonePin_do, CS_TONE_2);
                 delay( CSTime );
-                noTone( tonePin );
+                noTone( tonePin_do );
  	    }
             else
             {
-		digitalWrite( ledPin, HIGH);
+		digitalWrite( ledPin_do, HIGH);
                 delay( CSTime );
-                digitalWrite( ledPin, LOW );                
+                digitalWrite( ledPin_do, LOW );                
             }
         }
         else if( is_command_read( PUFF_COMMAND, false ) ) // Puff

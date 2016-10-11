@@ -22,10 +22,23 @@
 
 void videoTrigger()
 {
-    digitalWrite(videoTrigger_do, LOW);
-    if ( currentPhaseTime - lastTime > sampleInterval )
+    if (currentPhaseTime - lastTime <= sampleInterval)
     {
-        digitalWrite(videoTrigger_do, HIGH);
+        Serial.println("x");
+        if ( currentPhaseTime - lastTime <= sampleInterval/2 )
+        {
+            Serial.println("x1");
+            digitalWrite(videoTrigger_do, HIGH);
+        }
+	    else
+        {   
+            Serial.println("x2");
+	        digitalWrite(videoTrigger_do, LOW);
+        }
+    }
+    else
+    {
+        Serial.println("y");
         lastTime += sampleInterval;
     }
 }
