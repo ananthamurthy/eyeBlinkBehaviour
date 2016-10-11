@@ -22,7 +22,6 @@
 
 void detectBlinks() //(unsigned long currentTime)
 {
-
     if ( currentPhaseTime - lastTime > sampleInterval )
     {
         blink = analogRead(blink_ai);

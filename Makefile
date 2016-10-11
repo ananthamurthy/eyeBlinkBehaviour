@@ -61,7 +61,8 @@ LOCAL_CPP_SRCS     = $(PROJECT_DIR)/src/TriggerImaging.cpp \
 		$(PROJECT_DIR)/src/Initialize.cpp \
 		$(PROJECT_DIR)/src/DetectBlinks.cpp \
 		$(PROJECT_DIR)/src/Globals.cpp \
-		$(PROJECT_DIR)/src/ChangePhase.cpp 
+		$(PROJECT_DIR)/src/ChangePhase.cpp  \
+		$(PROJECT_DIR)/src/VideoTrigger.cpp 
 
 ### Do not touch - the path to Arduino.mk, inside the ARDMK_DIR
 include $(ARDMK_DIR)/Arduino.mk

@@ -1,3 +1,24 @@
+//
+// File			VideoTrigger.h
+// Header
+//
+// Details		<#details#>
+//
+// Project		 eye-Blink_Conditioning
+// Developed with [embedXcode](http://embedXcode.weebly.com)
+//
+// Author		Kambadur Ananthamurthy
+// 				Kambadur Ananthamurthy
+//
+// Date			04/08/15 1:41 pm
+// Version		<#version#>
+//
+// Copyright	© Kambadur Ananthamurthy, 2015
+// Licence    <#license#>
+//
+// See			ReadMe.txt for references
+//
+
 // Core library for code-sense - IDE-based
 #if defined(WIRING) // Wiring specific
 #   include "Wiring.h"
@@ -25,8 +46,8 @@
 #   error Platform not defined
 #endif // end IDE
 
-#ifndef DetectBlinks_h
-#define DetectBlinks_h
+#ifndef VideoTrigger_h
+#define VideoTrigger_h
 
 #include "Globals.h"
 

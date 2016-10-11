@@ -110,8 +110,11 @@ void setup()
     // Setup my watchdog.
     watchdog_setup();
 
-    // Set up the trigger pin
+    // Set up the imaging trigger pin
     pinMode(imagingTrigger_do, OUTPUT);
+    
+    // Set up the video trigger pin
+    pinMode(videoTrigger_do, OUTPUT);
 
     // Set up the puff pin:
     pinMode(puff_do, OUTPUT);

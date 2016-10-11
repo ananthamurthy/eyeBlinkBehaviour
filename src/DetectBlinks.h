@@ -19,7 +19,6 @@
 // See			ReadMe.txt for references
 //
 
-
 // Core library for code-sense - IDE-based
 #if defined(WIRING) // Wiring specific
 #   include "Wiring.h"
