@@ -55,6 +55,7 @@
  @description Detects blinks using analog read, and serial prints the read values
  */
 
-void detectBlinks();
+//void detectBlinks();
+void detectMotion( );
 
 #endif
