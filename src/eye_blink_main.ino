@@ -71,10 +71,11 @@ int shutterDelay               = 60;        // in ms
 boolean profilingDataDump      = 0;         // For dumping profiling data
 
 // Protocol Information
-const int preTime              = 5000;      // in ms
-const int CSTime               = 50;       // in ms
+const int preTime              = 500;      // in ms
+const int CSTime               = 50;        // in ms
 const int puffTime             = 50;        // in ms //change made on 20161009
-const int postTime             = 5000;      // in ms
+const int trialDuration        = 2000;     // in ms
+const int postTime             = trialDuration - (preTime+CSTime+traceTime+puffTime);// in ms
 const int minITI               = 15000;     // in ms  //change made on 20161009
 const int randITI              = 5000;      // in ms
 
@@ -175,11 +176,15 @@ void loop()
 
         if (trialNum == 0)
         {
+            trialNum = 1;
+            digitalWrite(videoTrigger_do, HIGH); // Switch ON the video trigger
+            delay(10);
+            digitalWrite(videoTrigger_do, LOW); // Switch OFF the video trigger
+            delay(10);
+            triggerImaging(imagingTrigger_do, HIGH); // Switch ON the imaging trigger
             startPhaseTime = millis();
             startTrialTime = millis();
-            trialNum = 1;
-            // Switch ON the imaging trigger
-            triggerImaging(imagingTrigger_do, HIGH);
+
 #ifdef ENABLE_LCD
             printStatus(START_PRE, trialNum);
 #endif
@@ -188,7 +193,6 @@ void loop()
         {
             // has to be calculated for every loop
             currentPhaseTime = millis() - startPhaseTime;
-            // has to be calculated for every loop; not being used anywhere
             unsigned long currentTime = millis() - startTrialTime;
 
 #ifdef ENABLE_LCD
@@ -197,8 +201,7 @@ void loop()
             {
                 pause = 1;
             }
-#endif
-
+#endif      
             switch ( condition )
             {
             // PRE
@@ -353,7 +356,7 @@ void loop()
                 //videoTrigger();
                 detectMotion();
                 if (currentPhaseTime >= postTime)
-                {
+                {   
                     interTrialTime = minITI + random( randITI );
                     changePhase( 7, START_ITI );
 
@@ -377,6 +380,7 @@ void loop()
                     {
                         trialNum++;
                         blinkCount = 0;
+                        delay(1);
                         if (trialNum > totalTrials)
                         {
                             changePhase( 8, END );                 // END of session
@@ -394,9 +398,11 @@ void loop()
 #endif
                             changePhase( 0, START_PRE );           // Next cycle
 
-                            // Switch ON the imaging trigger
-                            triggerImaging(imagingTrigger_do, HIGH);
-
+                            digitalWrite(videoTrigger_do, HIGH); // Switch ON the video trigger
+                            delay(10);
+                            digitalWrite(videoTrigger_do, LOW); // Switch OFF the video trigger
+                            delay(10);
+                            triggerImaging(imagingTrigger_do, HIGH); // Switch ON the imaging trigger
                             startTrialTime = millis();
                         }
                     }
