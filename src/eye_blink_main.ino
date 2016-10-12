@@ -177,10 +177,12 @@ void loop()
         if (trialNum == 0)
         {
             trialNum = 1;
+            /*
             digitalWrite(videoTrigger_do, HIGH); // Switch ON the video trigger
-            delay(10);
+            delay(1);
             digitalWrite(videoTrigger_do, LOW); // Switch OFF the video trigger
-            delay(10);
+            delay(1);
+            */
             triggerImaging(imagingTrigger_do, HIGH); // Switch ON the imaging trigger
             startPhaseTime = millis();
             startTrialTime = millis();
@@ -398,10 +400,12 @@ void loop()
 #endif
                             changePhase( 0, START_PRE );           // Next cycle
 
+                            /*
                             digitalWrite(videoTrigger_do, HIGH); // Switch ON the video trigger
-                            delay(10);
+                            delay(1);
                             digitalWrite(videoTrigger_do, LOW); // Switch OFF the video trigger
-                            delay(10);
+                            delay(1);
+                            */
                             triggerImaging(imagingTrigger_do, HIGH); // Switch ON the imaging trigger
                             startTrialTime = millis();
                         }
