@@ -185,7 +185,7 @@ int initialize()
 
         if (startT > sampleInterval)
         {
-            motion = digitalRead(motion_di);
+            motion = digitalRead(motion_ai);
             // Since this is not timestamped data, send 0 as timestamp.
             // NOTE: Can't use -1 since it is unsigned long.
             write_data_line( motion, 0 );

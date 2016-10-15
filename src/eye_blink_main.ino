@@ -52,7 +52,7 @@ unsigned int tcnt2; // used to store timer value
 
 // Globals:
 int motion                     = 0;
-const int motion_di            = 10;        // pin that reads the treadmill motion
+const int motion_ai            = A5;        // pin that reads the treadmill motion
 const int imagingTrigger_do    = 13;        // pin that triggers imaging
 const int videoTrigger_do      = 12;        // pin that triggers video recording of behaviour
 const int puff_do              = 11;
@@ -74,7 +74,7 @@ boolean profilingDataDump      = 0;         // For dumping profiling data
 const int preTime              = 500;      // in ms
 const int CSTime               = 50;        // in ms
 const int puffTime             = 50;        // in ms //change made on 20161009
-const int trialDuration        = 2000;     // in ms
+const int trialDuration        = 10000;     // in ms
 const int postTime             = trialDuration - (preTime+CSTime+traceTime+puffTime);// in ms
 const int minITI               = 15000;     // in ms  //change made on 20161009
 const int randITI              = 5000;      // in ms
