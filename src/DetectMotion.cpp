@@ -24,7 +24,7 @@ void detectMotion() //(unsigned long currentTime)
 {
     if ( currentPhaseTime - lastTime > sampleInterval )
 	{        
-		motion = digitalRead(motion_ai);
+		motion = analogRead(motion_ai);
         write_data_line( motion, currentPhaseTime % 10000 );
         lastTime += sampleInterval;
     }

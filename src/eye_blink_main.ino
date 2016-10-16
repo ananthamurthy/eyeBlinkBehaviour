@@ -54,7 +54,7 @@ unsigned int tcnt2; // used to store timer value
 int motion                     = 0;
 const int motion_ai            = A5;        // pin that reads the treadmill motion
 const int imagingTrigger_do    = 13;        // pin that triggers imaging
-const int videoTrigger_do      = 12;        // pin that triggers video recording of behaviour
+const int videoTrigger_do      = 13;        // pin that triggers video recording of behaviour
 const int puff_do              = 11;
 const int tonePin_do            = 2;         // changed this on 20150807
 const int ledPin_do            = 3;         // added on 20160127
@@ -74,7 +74,7 @@ boolean profilingDataDump      = 0;         // For dumping profiling data
 const int preTime              = 500;      // in ms
 const int CSTime               = 50;        // in ms
 const int puffTime             = 50;        // in ms //change made on 20161009
-const int trialDuration        = 10000;     // in ms
+const int trialDuration        = 2000;     // in ms
 const int postTime             = trialDuration - (preTime+CSTime+traceTime+puffTime);// in ms
 const int minITI               = 15000;     // in ms  //change made on 20161009
 const int randITI              = 5000;      // in ms
@@ -186,7 +186,7 @@ void loop()
             triggerImaging(imagingTrigger_do, HIGH); // Switch ON the imaging trigger
             startPhaseTime = millis();
             startTrialTime = millis();
-
+            triggerImaging(imagingTrigger_do, LOW);
 #ifdef ENABLE_LCD
             printStatus(START_PRE, trialNum);
 #endif
@@ -408,6 +408,7 @@ void loop()
                             */
                             triggerImaging(imagingTrigger_do, HIGH); // Switch ON the imaging trigger
                             startTrialTime = millis();
+                            triggerImaging(imagingTrigger_do, LOW);
                         }
                     }
                     break;
