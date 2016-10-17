@@ -256,7 +256,7 @@ int initialize()
    // if ((sessionType_ind == 0) || (sessionType_ind == 1) || (sessionType == 2) || (sessionType == 3) || (sessionType_ind == 4) || (sessionType_ind == 5)) //control (no-puff)
     if (sessionType_ind <= 7)
     {
-        totalTrials = 36;
+        totalTrials = 31;
         if ((sessionType_ind == 0) || (sessionType_ind == 1))
             traceTime = 0;
         else if ((sessionType_ind == 2) || (sessionType_ind == 3))
@@ -268,7 +268,7 @@ int initialize()
     }
     else
     {
-        totalTrials = 71;
+        totalTrials = 62;
         if (sessionType_ind <=7) //delay
             traceTime = 0; //in ms
         else if (sessionType_ind >7 && sessionType_ind <=9) // 250 ms trace

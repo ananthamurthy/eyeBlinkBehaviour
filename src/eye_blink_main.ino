@@ -186,7 +186,7 @@ void loop()
             triggerImaging(imagingTrigger_do, HIGH); // Switch ON the imaging trigger
             startPhaseTime = millis();
             startTrialTime = millis();
-            triggerImaging(imagingTrigger_do, LOW);
+            //triggerImaging(imagingTrigger_do, LOW);
 #ifdef ENABLE_LCD
             printStatus(START_PRE, trialNum);
 #endif
@@ -408,7 +408,7 @@ void loop()
                             */
                             triggerImaging(imagingTrigger_do, HIGH); // Switch ON the imaging trigger
                             startTrialTime = millis();
-                            triggerImaging(imagingTrigger_do, LOW);
+                            //triggerImaging(imagingTrigger_do, LOW);
                         }
                     }
                     break;
