@@ -50,7 +50,9 @@ save_dir_ = os.path.join(
         , 'Desktop'
         , 'Work'
         , 'Behaviour'
+        , 'Motion'
         )
+
 
 DATA_BEGIN_MARKER = '['
 DATA_END_MARKER = ']'
