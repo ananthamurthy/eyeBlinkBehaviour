@@ -54,9 +54,9 @@ unsigned int tcnt2; // used to store timer value
 int motion                     = 0;
 const int motion_ai            = A5;        // pin that reads the treadmill motion
 const int imagingTrigger_do    = 13;        // pin that triggers imaging
-const int videoTrigger_do      = 13;        // pin that triggers video recording of behaviour
+const int videoTrigger_do      = 10;        // !!NOT USED!! pin that triggers video recording of behaviour
 const int puff_do              = 11;
-const int tonePin_do            = 2;         // changed this on 20150807
+const int tonePin_do           = 2;         // changed this on 20150807
 const int ledPin_do            = 3;         // added on 20160127
 
 int blinkCount                 = 0;         // Code
@@ -65,18 +65,17 @@ String mouseName               = String(1); // Please enter the name of the mous
 extern int sessionType_ind;                 // Please specify the Session Type
 int session                    = 1;
 extern int traceTime;                              // in ms
+extern int postTime;
 extern int totalTrials;
 int shutterDelay               = 60;        // in ms
 
 boolean profilingDataDump      = 0;         // For dumping profiling data
 
 // Protocol Information
-const int preTime              = 500;      // in ms
+const int preTime              = 500;       // in ms
 const int CSTime               = 50;        // in ms
-const int puffTime             = 50;        // in ms //change made on 20161009
-const int trialDuration        = 2000;     // in ms
-const int postTime             = trialDuration - (preTime+CSTime+traceTime+puffTime);// in ms
-const int minITI               = 15000;     // in ms  //change made on 20161009
+const int puffTime             = 50;        // in ms
+const int minITI               = 15000;     // in ms
 const int randITI              = 5000;      // in ms
 
 // Miscellaneous Initialisations
@@ -176,17 +175,10 @@ void loop()
 
         if (trialNum == 0)
         {
+            triggerImaging(imagingTrigger_do, HIGH);                // Switch ON the imaging trigger        
             trialNum = 1;
-            /*
-            digitalWrite(videoTrigger_do, HIGH); // Switch ON the video trigger
-            delay(1);
-            digitalWrite(videoTrigger_do, LOW); // Switch OFF the video trigger
-            delay(1);
-            */
-            triggerImaging(imagingTrigger_do, HIGH); // Switch ON the imaging trigger
             startPhaseTime = millis();
             startTrialTime = millis();
-            //triggerImaging(imagingTrigger_do, LOW);
 #ifdef ENABLE_LCD
             printStatus(START_PRE, trialNum);
 #endif
@@ -206,10 +198,8 @@ void loop()
 #endif      
             switch ( condition )
             {
-            // PRE
-            case 0:
+            case 0:                                                 // Pre
                 PF((condition+1));
-                //videoTrigger();
                 detectMotion();
                 if (currentPhaseTime >= preTime)
                 {
@@ -256,10 +246,8 @@ void loop()
                 }
                 break;
             
-            //CS+
-            case 1:
+            case 1:                                                 //CS+
                 PF((condition+1));
-                //videoTrigger();
                 detectMotion();
 
                 if (currentPhaseTime >= CSTime)
@@ -269,10 +257,8 @@ void loop()
                 }
                 break;
 
-            //CS-
-            case 2:
+            case 2:                                                 //CS-
                 PF((condition+1));
-                //videoTrigger();
                 detectMotion();
                 
                 if (currentPhaseTime >= CSTime)
@@ -282,27 +268,25 @@ void loop()
                 }
                 break;
             
-            //Trace
-            case 3:
+            case 3:                                                 //Trace
                 PF((condition+1));
-                //videoTrigger();
                 detectMotion();
                 if (currentPhaseTime >= traceTime)
                 {
                     // start the next phase
-                    if (sessionType_ind >= 8) // Not No-Puff Control (NPC)
+                    if (sessionType_ind >= 8)                       // Not No-Puff Control (NPC)
                     {
                         if (CS_plus == 1)
                         {
                            if (nextProbeIn != 0)
                            {
                                playPuff(puff_do, HIGH);
-                               changePhase( 4, START_US );    // US: Air-puff
+                               changePhase( 4, START_US );          // US: Air-puff
                            }
                            else
                            {
                                playPuff(puff_do, LOW);
-                               nextProbeIn = (int) random(8,13); //NOTE: the "(int)" only truncates
+                               nextProbeIn = (int) random(8,13);    //NOTE: the "(int)" only truncates
                                changePhase(5, START_US_NO_PUFF);
                            }
                         }
@@ -323,10 +307,8 @@ void loop()
                 }
                 break;
             
-            //Puff
-            case 4:
+            case 4:                                                 //Puff
                 PF((condition+1));
-                //videoTrigger();
                 detectMotion();
                 if (currentPhaseTime >= puffTime)
                 {
@@ -337,10 +319,8 @@ void loop()
                 }
                 break;
 
-            //No-Puff
-            case 5:
+            case 5:                                                 //No-Puff
                 PF((condition+1));
-                //videoTrigger();
                 detectMotion();
                 if (currentPhaseTime >= puffTime)
                 {
@@ -351,25 +331,18 @@ void loop()
                 }
                 break;
 
-            //Post-Stim
-            case 6:
-                // Post Pairing/Stimuli
+            case 6:                                                 //Post-Stim
                 PF((condition+1));
-                //videoTrigger();
                 detectMotion();
                 if (currentPhaseTime >= postTime)
                 {   
+                    triggerImaging(imagingTrigger_do, LOW);         // Switch OFF the imaging trigger
                     interTrialTime = minITI + random( randITI );
                     changePhase( 7, START_ITI );
-
-                    // Switch OFF the imaging trigger
-                    triggerImaging(imagingTrigger_do, LOW);
                 }
                 break;
             
-            //ITI
-            case 7:
-                // Inter trial interval
+            case 7:                                                 //ITI
                 PF((condition+1));
                 if (paused_)
                 {
@@ -385,11 +358,12 @@ void loop()
                         delay(1);
                         if (trialNum > totalTrials)
                         {
-                            changePhase( 8, END );                 // END of session
+                            changePhase( 8, END );                  // END of session
                             break;
                         }
                         else
                         {
+                            triggerImaging(imagingTrigger_do, HIGH); // Switch ON the imaging trigger
                             if (random(11) <= CS_fraction)
                                 CS_plus = 1;                       // play CS+
                             else
@@ -399,23 +373,13 @@ void loop()
                             printStatus(START_PRE, trialNum);
 #endif
                             changePhase( 0, START_PRE );           // Next cycle
-
-                            /*
-                            digitalWrite(videoTrigger_do, HIGH); // Switch ON the video trigger
-                            delay(1);
-                            digitalWrite(videoTrigger_do, LOW); // Switch OFF the video trigger
-                            delay(1);
-                            */
-                            triggerImaging(imagingTrigger_do, HIGH); // Switch ON the imaging trigger
                             startTrialTime = millis();
-                            //triggerImaging(imagingTrigger_do, LOW);
                         }
                     }
                     break;
                 }
 
-            // End of session
-            case 8:                                                
+            case 8:                                                 // End of session 
                 if (profilingDataDump == 1)
                 {
                     profilingDataDump = 0;
@@ -424,9 +388,8 @@ void loop()
                 while(1);                                          
                 break;
 
-            case 9:                                              
+            case 9:                                                 //PAUSE
 #ifdef ENABLE_LCD
-            //PAUSE
                 int unpause_key = read_lcd_button();
                 if (unpause_key == btnLEFT)
                 {
@@ -444,9 +407,6 @@ void loop()
 #endif
                 break;
             }                                                      
-
         }       
-
     }          
-
 }             

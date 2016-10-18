@@ -31,6 +31,7 @@ extern int totalTrials;
 
 int traceTime;
 int sessionType_ind;
+int postTime;
 
 /**
  * @brief Wait for delay milliseconds for read. If no data appears in this time,
@@ -256,29 +257,56 @@ int initialize()
    // if ((sessionType_ind == 0) || (sessionType_ind == 1) || (sessionType == 2) || (sessionType == 3) || (sessionType_ind == 4) || (sessionType_ind == 5)) //control (no-puff)
     if (sessionType_ind <= 7)
     {
-        totalTrials = 31;
+        totalTrials = 33;
         if ((sessionType_ind == 0) || (sessionType_ind == 1))
+            {
             traceTime = 0;
+            postTime = 1400;
+            }
         else if ((sessionType_ind == 2) || (sessionType_ind == 3))
+        {
             traceTime = 250;
+            postTime = 1150;
+        }
         else if ((sessionType_ind == 4) || (sessionType_ind == 5))
+        {
             traceTime = 350;
+            postTime = 1050;
+        }
         else
+        {
             traceTime = 450;
+            postTime = 950;
+        }
     }
     else
     {
-        totalTrials = 62;
+        totalTrials = 63;
         if (sessionType_ind <=7) //delay
+        {
             traceTime = 0; //in ms
+            postTime = 1400;
+        }
         else if (sessionType_ind >7 && sessionType_ind <=9) // 250 ms trace
+        {
             traceTime = 250; //in ms
+            postTime = 1150;
+        }
         else if (sessionType_ind >9 && sessionType_ind <11) // 350 ms trace
+        {
             traceTime = 350; //in ms
+            postTime = 1050;
+        }
         else if (sessionType_ind>11 && sessionType_ind<13)// 450 ms trace
+        {
             traceTime = 450; //in ms
+            postTime = 950;
+        }
         else
+        {
             traceTime = 250; //in ms
+            postTime = 1150;
+        }
     }
     return 0;
 }
