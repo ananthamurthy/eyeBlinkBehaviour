@@ -255,7 +255,7 @@ int initialize()
     // Get totalTrials and traceTime based on the Session Type
     
    // if ((sessionType_ind == 0) || (sessionType_ind == 1) || (sessionType == 2) || (sessionType == 3) || (sessionType_ind == 4) || (sessionType_ind == 5)) //control (no-puff)
-    if (sessionType_ind <= 7)
+    if (sessionType_ind <= 5)
     {
         totalTrials = 33;
         if ((sessionType_ind == 0) || (sessionType_ind == 1))
@@ -292,12 +292,12 @@ int initialize()
             traceTime = 250; //in ms
             postTime = 1150;
         }
-        else if (sessionType_ind >9 && sessionType_ind <11) // 350 ms trace
+        else if (sessionType_ind >9 && sessionType_ind <=11) // 350 ms trace
         {
             traceTime = 350; //in ms
             postTime = 1050;
         }
-        else if (sessionType_ind>11 && sessionType_ind<13)// 450 ms trace
+        else if (sessionType_ind>11 && sessionType_ind<=13)// 450 ms trace
         {
             traceTime = 450; //in ms
             postTime = 950;
