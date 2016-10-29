@@ -282,22 +282,22 @@ int initialize()
     else
     {
         totalTrials = 63;
-        if (sessionType_ind <=7) //delay
+        if ((sessionType_ind == 6) || (sessionType_ind == 7)) // delay
         {
             traceTime = 0; //in ms
             postTime = 1400;
         }
-        else if (sessionType_ind >7 && sessionType_ind <=9) // 250 ms trace
+        else if ((sessionType_ind == 8) || (sessionType_ind == 9)) // 250 ms trace
         {
             traceTime = 250; //in ms
             postTime = 1150;
         }
-        else if (sessionType_ind >9 && sessionType_ind <=11) // 350 ms trace
+        else if ((sessionType_ind == 10) || (sessionType_ind == 11)) // 350 ms trace
         {
             traceTime = 350; //in ms
             postTime = 1050;
         }
-        else if (sessionType_ind>11 && sessionType_ind<=13)// 450 ms trace
+        else if ((sessionType_ind == 12) || (sessionType_ind == 13)) // 450 ms trace
         {
             traceTime = 450; //in ms
             postTime = 950;
