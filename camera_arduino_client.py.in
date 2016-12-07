@@ -19,7 +19,7 @@ import time
 import errno
 import numpy as np
 import cv2
-from multiprocessing import Process
+from multiprocessing import Process, Array
 import threading
 import datetime
 import re
@@ -76,6 +76,8 @@ metadata_ = { 'acquisition_datetime' : [ ] }
 
 # When True, put a small text on each frame.
 write_data_ = True
+
+current_data_line_ = Array( 'c', 200 )
 
 if not os.path.isdir( data_dir_ ):
     os.makedirs( data_dir_ )
@@ -347,7 +349,7 @@ def init_serial( baudRate = 38400):
 def line_to_data( line ):
     global current_data_line_
     now  = datetime.datetime.now( ).isoformat( )
-    current_data_line_ = now + '|' + line
+    current_data_line_.value = now + '|' + line
     if not line.strip():
         data = [None]*6
     try:
@@ -468,11 +470,11 @@ def camera_client( ):
                 img = np.frombuffer( buf[:frame_size_], dtype = np.uint8 )
                 img = np.reshape( img, img_shape_ )
                 if write_data_:
-                    cv2.putText( img, current_data_line_, (0, 10)
+                    cv2.putText( img, current_data_line_.value, (0, 10)
                             , cv2.FONT_HERSHEY_SIMPLEX, 0.4, 0, 1
                             )
                 # print( img.shape, img.max(), img.min(), len(img) )
-                # show_frame( img )
+                show_frame( img )
                 image_stack_[ framesInStack ] = img
                 metadata_[ 'acquisition_datetime' ].append( now )
                 framesInStack += 1
