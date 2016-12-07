@@ -9,15 +9,8 @@ PROJECT_DIR       = .
 ARDMK_DIR         = $(PROJECT_DIR)/makefiles
 
 ### ARDUINO_DIR
-ARDUINO_BIN       = $(shell which arduino)
-ifeq ($(UNAME_S),Darwin)
-    ARDUINO_DIR       = /Applications/Arduino.app/Contents/Java
-else
-    ARDUINO_DIR       = $(dir $(shell readlink -f $(ARDUINO_BIN)))
-    # On Linux such as Ubuntu if arduino was installed using package manager,
-    # this path most likely to be the following.
-    ARDUINO_DIR       = /usr/share/arduino
-endif
+ARDUINO_BIN       = /usr/bin/arduino
+ARDUINO_DIR       = /usr/share/arduino
 
 ### BOARD_TAG
 ### It must be set to the board you are currently using. (i.e uno, mega2560, etc.)
