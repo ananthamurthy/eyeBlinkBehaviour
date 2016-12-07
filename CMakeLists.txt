@@ -5,15 +5,23 @@ project(EyeBlinkBehavour)
 # ARDUINO BOARD 
 ################################################################################
 find_package( PythonInterp REQUIRED )
+
+if( NOT PORT )
 execute_process( 
     COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/config/get_serial_ports.py 
     OUTPUT_VARIABLE PORT 
     OUTPUT_STRIP_TRAILING_WHITESPACE
     )
+endif(NOT PORT)
 
 if (NOT PORT )
-    message( FATAL_ERROR "Could not find a serial port automatically. "
-        "\nProvide it from command line e.g. -DPORT=/dev/ttyACM0 etc "
+    message(STATUS "**WARNING** 
+        Could not find a serial port automatically. You won't be able to upload
+        and run the arduino target. If you are sure that arduino board is
+        connected and function, you should provide this information from command
+        line: e.g. \n"
+        "\t -DPORT=/dev/ttyACM0 etc."
+        "\n Or you may not be part of 'dailout' group?"
         )
 else (NOT PORT)
     message(STATUS "Default serial port ${PORT}" )
@@ -100,7 +108,7 @@ configure_file( ${CMAKE_SOURCE_DIR}/camera_arduino_client.py.in
 
 # Pass animal options to run.sh which will will passed to python script.
 SET(RUN_ARGS 
-    "-n ${ANIMAL_NAME} -sn ${SESSION_NUM} -st ${SESSION_TYPE}"
+    "-p ${PORT} -n ${ANIMAL_NAME} -sn ${SESSION_NUM} -st ${SESSION_TYPE}"
      " -f ${FLIPPED} -cf ${CS_FRACTION} -sa ${SELECT_AFTER}" 
      )
 

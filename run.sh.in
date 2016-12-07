@@ -52,8 +52,19 @@ function kill_acquition_from_point_grey( )
 # First, we execute the binary file acquition_from_point_grey  in background and
 # save its PID. We can use the PID to kill this process.
 
-$COMMAND &
-ACQ_PID=`echo $!`
+if pgrep $(basename $COMMAND)
+then
+    ACQ_PID=$(pgrep $(basename $COMMAND))
+    ACQ_PID=`echo "$ACQ_PID" | tr -d ' '`
+    if [ "$ACQ_PID" ]; then
+        echo "Camera server already running";
+    else
+        echo "Lauching camera server"
+        $COMMAND &
+        ACQ_PID=`echo $!`
+    fi
+fi
+
 trap 'kill_acquition_from_point_grey ${ACQ_PID}' INT
 echo "Running acquition app , PID = ${ACQ_PID}"
 
@@ -62,7 +73,7 @@ sleep 1;
 
 # Now run python script to acquire data. If user press Ctrl+c to stop it, we
 # must send ctrl+c to PID acquition_from_point_grey app as well.
-python ./camera_arduino_client.py "$@"
+python ./camera_arduino_client.py $@
 
 # If we have come here successfully, cleanup.
-kill_process( ${ACQ_PID} )
+killall $(basename $COMMAND) || echo "Nothing to kill"
