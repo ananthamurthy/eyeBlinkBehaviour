@@ -44,7 +44,7 @@ select_sent_ = False
 # Our shared queue used in multiprocessing
 q_ = Queue.Queue()
 running_trial_ = 0
-finished_all_ = 0
+finished_all_ = False
 
 script_dir = os.path.dirname( os.path.realpath( __file__ ) )
 config_file = os.path.join( script_dir, 'config.h' ) 
@@ -85,10 +85,9 @@ def trial_file_path( trialNum ):
 
 def cleanup():
     global finished_all_
-    finished_all_ = 1
+    finished_all_ = True
     config.serial_port_.write_msg( 'rr' )
     print("+++++++++++++++++++++++++++++ All over")
-    os._exit( 1 )
     
 
 def append_trial_data( outfile, value, time, trialNum, cs, nextProbeIn ):
@@ -149,7 +148,7 @@ def collect_data ( lock = None ):
     global select_sent_ 
     tstart = time.time()
     runningTrial = 0
-    while True:
+    while not finished_all_:
         running_data_line_ += 1
         line = config.serial_port_.read_line( )
         x, y, trialNum, totalTrials, cs, next_probe_in_ = line_to_data( line )
@@ -181,9 +180,7 @@ def collect_data ( lock = None ):
     # Either we have pressed the SELECT or we have sent the select command ss
     select_sent_ = True
     _logger.info('Out of first loop.')
-    while True:
-        if finished_all_ == 1:
-            return None
+    while not finished_all_:
         running_data_line_ += 1
         running_trial_ = runningTrial
         line = config.serial_port_.read_line()
@@ -323,7 +320,7 @@ def send_command( ):
                 # reboot. 
                 _logger.warn("Reboot in 2 seconds. You have to relaunch the app")
                 config.serial_port_.write_msg( command )
-                finished_all_ = 1
+                finished_all_ = True
                 raise KeyboardInterrupt
             elif (command in legalCommandsAfterStart) and select_sent_:
                 _logger.info("[COMMAND] Sending command (after start): %s" % command)
@@ -337,9 +334,8 @@ def send_command( ):
             if len(command) == 2:
                 command = ""
         elif k in [ '\x03', '\x04', '\x1a' ]:
-            finished_all_ = 1
-            raise KeyboardInterrupt
-
+            finished_all_ = True
+            break
 
 def init_serial( baudRate = 38400):
     if config.args_.port is None:
@@ -431,15 +427,17 @@ def arduino_client( ):
     collect_data( )
 
 def camera_client( ):
-    while True:
+    global finished_all_
+    while not finished_all_:
         continue
+
     return 
 
     global img_, buf_
     global image_stack_
     s = socket.socket( socket.AF_UNIX, socket.SOCK_STREAM )
 
-    while True:
+    while not finished_all_:
         if os.path.exists( sock_name_ ):
             try:
                 s.connect( sock_name_ )
@@ -509,6 +507,7 @@ def main( ):
     # Lock so that only one process prints to console at a time.
     # When daemon is set to True, all threads will exit (ungracefully) when main
     # terminates.
+    global finished_all_
 
     init( );
     print( 'Initialized arduino board' )
@@ -526,6 +525,8 @@ def main( ):
     try:
         send_command( )
     except Exception as e:
+        print( 'Got %s in send_comamnd' % e )
+        finished_all_ = True
         raise KeyboardInterrupt
 
     arduinoP.join( )
