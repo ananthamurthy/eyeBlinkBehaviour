@@ -14,6 +14,9 @@ ifeq ($(UNAME_S),Darwin)
     ARDUINO_DIR       = /Applications/Arduino.app/Contents/Java
 else
     ARDUINO_DIR       = $(dir $(shell readlink -f $(ARDUINO_BIN)))
+    # On Linux such as Ubuntu if arduino was installed using package manager,
+    # this path most likely to be the following.
+    ARDUINO_DIR       = /usr/share/arduino
 endif
 
 ### BOARD_TAG
