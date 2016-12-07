@@ -3,7 +3,10 @@ project(EyeBlinkBehavour)
 
 # Options related to Arduino board.
 # Set the board tag
-set(BOARD_TAG uno)
+set(BOARD_TAG   uno)
+set(BAUD_RATE   38400)
+set(PORT "/dev/ttyACM0" )
+
 find_program(ARDUINO_BIN arduino )
 
 set(ARDUINO_BOARD_FILE hardware/arduino/boards.txt)
@@ -44,8 +47,19 @@ add_custom_target( upload
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     )
 
-set_target_properties( build_arduino_hex PROPERTIES 
-    CMAKE_CXX_COMPILER gcc-avr
+# make miniterm will launch the miniterm.py .
+add_custom_target( miniterm
+    DEPENDS upload 
+    COMMAND miniterm.py ${PORT} ${BAUD_RATE}
+    VERBATIM 
     )
 
+# Reset all attached boards.
+add_custom_target( reset
+    COMMAND bash ./reset_all_boards.sh
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    VERBATIM
+    )
 
+# Now  add the client and server 
+add_subdirectory( ${CMAKE_SOURCE_DIR}/PointGreyCamera )
