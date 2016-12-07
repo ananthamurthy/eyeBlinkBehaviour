@@ -428,6 +428,10 @@ def arduino_client( ):
     """
     collect_data( )
 
+def show_frame( frame ):
+    cv2.imshow( 'frame', frame )
+    cv2.waitKey( 1 )
+
 def camera_client( ):
     global finished_all_
     global current_data_line_
@@ -456,7 +460,7 @@ def camera_client( ):
     init_stack( )
     framesInStack = 0
     trial_count = 0
-    while True:
+    while not finished_all_:
         try:
             data = s.recv( frame_size_ )
             buf += data
@@ -467,14 +471,8 @@ def camera_client( ):
                     cv2.putText( img, current_data_line_, (0, 10)
                             , cv2.FONT_HERSHEY_SIMPLEX, 0.4, 0, 1
                             )
-                print( 'f', end='')
-                sys.stdout.flush( )
                 # print( img.shape, img.max(), img.min(), len(img) )
-                try:
-                    cv2.imshow( 'img', img )
-                    cv2.waitKey( 1 )
-                except Exception as e:
-                    pass
+                # show_frame( img )
                 image_stack_[ framesInStack ] = img
                 metadata_[ 'acquisition_datetime' ].append( now )
                 framesInStack += 1
