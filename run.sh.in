@@ -62,7 +62,7 @@ sleep 1;
 
 # Now run python script to acquire data. If user press Ctrl+c to stop it, we
 # must send ctrl+c to PID acquition_from_point_grey app as well.
-python ./camera_arduino_client.py 
+python ./camera_arduino_client.py "$@"
 
 # If we have come here successfully, cleanup.
 kill_process( ${ACQ_PID} )

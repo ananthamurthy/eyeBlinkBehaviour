@@ -1,12 +1,29 @@
 cmake_minimum_required(VERSION 2.8)
 project(EyeBlinkBehavour)
 
+################################################################################
+# ARDUINO BOARD 
+################################################################################
+find_package( PythonInterp REQUIRED )
+execute_process( 
+    COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/config/get_serial_ports.py 
+    OUTPUT_VARIABLE PORT 
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+
+if (NOT PORT )
+    message( FATAL_ERROR "Could not find a serial port automatically. "
+        "\nProvide it from command line e.g. -DPORT=/dev/ttyACM0 etc "
+        )
+else (NOT PORT)
+    message(STATUS "Default serial port ${PORT}" )
+endif (NOT PORT)
+
+
 # Options related to Arduino board.
 # Set the board tag
 set(BOARD_TAG   uno)
 set(BAUD_RATE   38400)
-set(PORT "/dev/ttyACM0" )
-
 find_program(ARDUINO_BIN arduino )
 
 set(ARDUINO_BOARD_FILE hardware/arduino/boards.txt)
@@ -18,6 +35,20 @@ if(NOT ARDUINO_DIR)
     message(FATAL_ERROR "Arduino board list not found")
 endif( )
 message(STATUS "List of arduino boards ${ARDUINO_DIR}")
+
+################################################################################
+# Animal related options.
+################################################################################
+if( NOT (ANIMAL_NAME OR SESSION_TYPE OR SESSION_NUM ) )
+    message( FATAL_ERROR 
+        "Please pass ANIMAL_NAME, SESSION_NUM and SESSION_TYPE to cmake \n"
+        "\te.g cmake -DANIMAL_NAME=k3 -DSESSION_NUM=1 -DSESSION_TYPE=1 \n"
+        )
+endif ( )
+set(SELECT_AFTER 600000000)
+set(FLIPPED 0)
+set(CS_FRACTION 10)
+
 
 configure_file( ${CMAKE_SOURCE_DIR}/Makefile.in
     ${CMAKE_SOURCE_DIR}/Makefile 
@@ -66,9 +97,18 @@ configure_file( ${CMAKE_SOURCE_DIR}/run.sh.in ${CMAKE_BINARY_DIR}/run.sh )
 configure_file( ${CMAKE_SOURCE_DIR}/camera_arduino_client.py.in 
     ${CMAKE_BINARY_DIR}/camera_arduino_client.py 
     )
+
+# Pass animal options to run.sh which will will passed to python script.
+SET(RUN_ARGS 
+    "-n ${ANIMAL_NAME} -sn ${SESSION_NUM} -st ${SESSION_TYPE}"
+     " -f ${FLIPPED} -cf ${CS_FRACTION} -sa ${SELECT_AFTER}" 
+     )
+
 add_custom_target( run  
     DEPENDS cam_server
-    COMMAND bash ./run.sh
+    COMMAND ${CMAKE_COMMAND} -E copy_directory 
+        ${CMAKE_SOURCE_DIR}/pyblink ${CMAKE_BINARY_DIR}
+        COMMAND bash ./run.sh ${RUN_ARGS}
     COMMENT "Run arduino client and camera client"
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     VERBATIM
