@@ -116,9 +116,13 @@ def print_line( line, lock ):
     hline = '-'.join([ '' for x in range( min(80, int(ds[1])/10) ) ])
     # Only print if running data line is multiple of 10
     if running_data_line_ % 20 == 0:
-        lock.acquire()
-        _logger.info("%3s - %10s\n" % (line, hline ))
-        lock.release()
+        if lock:
+            lock.acquire()
+            _logger.info("%3s - %10s\n" % (line, hline ))
+            lock.release()
+        else:
+            _logger.info("%3s - %10s\n" % (line, hline ))
+
 
 def initialize_trial_file( trial_number ):
     trialFile = trial_file_path( trial_number )
@@ -132,7 +136,7 @@ def initialize_trial_file( trial_number ):
     print(".... Done")
 
     
-def collect_data ( lock ): 
+def collect_data ( lock = None ): 
     """
     This function reads each from ardino and keeps them in a queue
     """
@@ -167,9 +171,11 @@ def collect_data ( lock ):
         # pressed. Let's press is by sending three ` to serialport after
         # some timeout.
         if send_press_select( tstart, config.args_.select_after ):
-            lock.acquire()
+            if lock:
+                lock.acquire()
             _logger.info("SELECT sent")
-            lock.release()
+            if lock:
+                lock.release()
             break
 
     # Either we have pressed the SELECT or we have sent the select command ss
@@ -289,6 +295,8 @@ def init( ):
 
 def send_command( ):
     # all commands should be two characters long
+    # This function must be last one after all the threads/processes have been
+    # launched.
     global select_sent_
     global finished_all_
     lock = None
@@ -297,8 +305,9 @@ def send_command( ):
     legalCommandsAfterStart = [ "rr", "ww", "cc" ]
     validCommands = legalCommandsAfterStart + legalCommandsBeforeStart 
     validStartChars = ''.join([ x[0] for x in validCommands ])
+    print( 'Executing send command loop' )
     while True:
-        print( 'c' )
+        # This is blocking.
         k = readchar.readkey()
         if k in validStartChars:
             command += k
@@ -315,8 +324,7 @@ def send_command( ):
                 _logger.warn("Reboot in 2 seconds. You have to relaunch the app")
                 config.serial_port_.write_msg( command )
                 finished_all_ = 1
-                cleanup()
-                return None
+                raise KeyboardInterrupt
             elif (command in legalCommandsAfterStart) and select_sent_:
                 _logger.info("[COMMAND] Sending command (after start): %s" % command)
                 config.serial_port_.write_msg( command )
@@ -420,13 +428,7 @@ def arduino_client( ):
     data. This also update a global variable current_data_line_ which is read by
     camera client.
     """
-    l = threading.Lock( )
-
-    # Command client won't work in thread since it needs the terminal. So launch
-    # it after launching the collect data thread as main process.
-    readDataThread = threading.Thread( target = collect_data, args=(l,) )
-    readDataThread.daemon = True
-    readDataThread.start( )
+    collect_data( )
 
 def camera_client( ):
     while True:
@@ -521,8 +523,13 @@ def main( ):
     arduinoP.start( )
     print( "Arduino client launched" )
 
-    print( 'Launching send command' )
-    send_command( )
+    try:
+        send_command( )
+    except Exception as e:
+        raise KeyboardInterrupt
+
+    arduinoP.join( )
+    cam.join( )
     print( 'All done' )
 
 if __name__ == '__main__':
