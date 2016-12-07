@@ -56,7 +56,7 @@ add_custom_target( miniterm
 
 # Reset all attached boards.
 add_custom_target( reset
-    COMMAND bash ./reset_all_boards.sh
+    COMMAND bash scripts/reset_all_boards.sh
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     VERBATIM
     )
