@@ -75,7 +75,7 @@ data_dir_ = 'videos_/%s' % now
 metadata_ = { 'acquisition_datetime' : [ ] }
 
 # When True, put a small text on each frame.
-write_timestamp_ = True
+write_data_ = True
 
 if not os.path.isdir( data_dir_ ):
     os.makedirs( data_dir_ )
@@ -345,7 +345,9 @@ def init_serial( baudRate = 38400):
     config.serial_port_.open( wait = True )
 
 def line_to_data( line ):
-    print( line )
+    global current_data_line_
+    now  = datetime.datetime.now( ).isoformat( )
+    current_data_line_ = now + '|' + line
     if not line.strip():
         data = [None]*6
     try:
@@ -428,11 +430,7 @@ def arduino_client( ):
 
 def camera_client( ):
     global finished_all_
-    while not finished_all_:
-        continue
-
-    return 
-
+    global current_data_line_
     global img_, buf_
     global image_stack_
     s = socket.socket( socket.AF_UNIX, socket.SOCK_STREAM )
@@ -465,9 +463,8 @@ def camera_client( ):
             if len( buf) >= frame_size_:
                 img = np.frombuffer( buf[:frame_size_], dtype = np.uint8 )
                 img = np.reshape( img, img_shape_ )
-                now = datetime.datetime.now().isoformat( ) 
-                if write_timestamp_:
-                    cv2.putText( img, now, (0, 10)
+                if write_data_:
+                    cv2.putText( img, current_data_line_, (0, 10)
                             , cv2.FONT_HERSHEY_SIMPLEX, 0.4, 0, 1
                             )
                 print( 'f', end='')

@@ -51,18 +51,22 @@ function kill_acquition_from_point_grey( )
 
 # First, we execute the binary file acquition_from_point_grey  in background and
 # save its PID. We can use the PID to kill this process.
-
 if pgrep $(basename $COMMAND)
 then
     ACQ_PID=$(pgrep $(basename $COMMAND))
     ACQ_PID=`echo "$ACQ_PID" | tr -d ' '`
-    if [ "$ACQ_PID" ]; then
+    if [ $ACQ_PID ]; then
         echo "Camera server already running";
-    else
-        echo "Lauching camera server"
-        $COMMAND &
-        ACQ_PID=`echo $!`
     fi
+else
+    echo "Lauching camera server"
+    $COMMAND &
+    ACQ_PID=`echo $!`
+fi
+
+if [ ! $ACQ_PID ]; then
+    echo "Can't launch camera. I won't continue"
+    exit
 fi
 
 trap 'kill_acquition_from_point_grey ${ACQ_PID}' INT
