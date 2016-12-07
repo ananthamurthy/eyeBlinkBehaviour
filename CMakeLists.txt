@@ -38,6 +38,12 @@ add_custom_command( OUTPUT ${ARDDUINO_OUT_HEX_FILE}
     VERBATIM
     )
 
+add_custom_target( upload 
+    DEPENDS build_arduino_hex 
+    COMMAND $(MAKE) upload 
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    )
+
 set_target_properties( build_arduino_hex PROPERTIES 
     CMAKE_CXX_COMPILER gcc-avr
     )
