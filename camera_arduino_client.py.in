@@ -67,7 +67,7 @@ frame_size_ = img_shape_[0] * img_shape_[1]
 max_frames_in_trial = 2000
 image_stack_ = None
 
-now = datetime.datetime.now().strftime(  '%Y%n%d_%H%M%S' )
+now = datetime.datetime.now().strftime(  '%Y%m%d_%H%M%S' )
 # When True, put a small text on each frame.
 write_data_ = True
 data_dir_ = 'videos_/%s' % now 
