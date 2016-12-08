@@ -42,6 +42,7 @@ finished_all_ = False
 
 script_dir = os.path.dirname( os.path.realpath( __file__ ) )
 config_file = os.path.join( script_dir, 'config.h' ) 
+
 if not os.path.isfile( config_file ):
     print( "I can't find %s. Make sure it is available" % config_file )
     print( " Did you run cmake? " )
@@ -60,18 +61,19 @@ sock_name_ = sock
 img_shape_ = ( h, w )
 frame_size_ = img_shape_[0] * img_shape_[1]
 
+# Maximum allowed frame in each trial. This is guard against RAM overflow in
+# case arduino failes to update trial count. After every 2000 frames, the data
+# will be flushed to disk.
 max_frames_in_trial = 2000
 image_stack_ = None
 
-now = datetime.datetime.now().isoformat( )
-data_dir_ = 'videos_/%s' % now 
-
+now = datetime.datetime.now().strftime(  '%Y%n%d_%H%M%S' )
 # When True, put a small text on each frame.
 write_data_ = True
-
-
+data_dir_ = 'videos_/%s' % now 
 if not os.path.isdir( data_dir_ ):
-    os.makedirs( data_dir_ )
+    if write_data_:
+        os.makedirs( data_dir_ )
 
 def trial_file_path( trialNum ):
     return os.path.join( config.save_dir_, 'Trial%s.csv' % trialNum )
@@ -321,17 +323,20 @@ def save_img_stack( index ):
     print( '[INFO] Saved to %s' % filename )
 
 def init_stack( ):
+    """
+    Set height to be 1 more than what is sent by camera for we'll add dataline
+    recieved from arduino board as the first row of frame.
+    """
     global image_stack_
     global img_shape_, max_frames_in_trial 
     image_stack_ = np.zeros( 
-            shape=( max_frames_in_trial, img_shape_[0], img_shape_[1] )
+            shape=( max_frames_in_trial, img_shape_[0]+1, img_shape_[1] )
             , dtype = np.uint8
             )
 
 
 def poll_socket( ):
     return os.path.exists( sock_name_ )
-
 
 def show_frame( frame ):
     cv2.imshow( 'frame', frame )
@@ -372,18 +377,24 @@ def camera_client( readP, writeTrial, trialIndex ):
                 now  = datetime.datetime.now( ).isoformat( )
                 img = np.frombuffer( buf[:frame_size_], dtype = np.uint8 )
                 img = np.reshape( img, img_shape_ )
-                if write_data_:
-                    txt = now
-                    # Read from PIPE but it should not be blocking.
-                    if readP.poll( ):
-                        txt += ',' +  readP.recv( )
+                txt = now
+                # Read from PIPE but it should not be blocking.
+                if readP.poll( ):
+                    txt += ',' +  readP.recv( )
 
-                    cv2.putText( img, txt, (0, 10)
-                            , cv2.FONT_HERSHEY_SIMPLEX, 0.4, 0, 1
+                # Fill txt to have its length equal to frame width
+                txt += ' ' * ( img_shape_[1] - len( txt ) )
+                # Convert txt to binary and prefix to the img we got from camera
+                # server.
+                metadata = np.array( map(ord, txt), dtype=np.uint8 )
+                img = np.vstack( (metadata, img ) )
+                if write_data_:
+                    cv2.putText( img, txt.strip( )
+                            , (0, img_shape_[0]-10), cv2.FONT_HERSHEY_SIMPLEX, 0.4, 0, 1
                             )
-                # print( img.shape, img.max(), img.min(), len(img) )
-                show_frame( img )
                 image_stack_[ framesInStack ] = img
+
+                show_frame( img )
                 framesInStack += 1
                 buf = buf[frame_size_:]
             else:
