@@ -20,6 +20,15 @@ set -e
 
 COMMAND=`pwd`/cam_server
 
+# Check if user is member of dialout group.
+if id -nG $USER | grep -qw "dialout"; then
+    echo "$USER belongs to dialout group. Cool";
+else
+    echo "Add $USER to dialout group"
+    echo " Execute 'sudo gpasswd -a $USER dialout' and relogin" 
+    exit;
+fi
+
 # Call 
 function kill_process( ) 
 {
@@ -84,8 +93,11 @@ fi
 # Now check if camera server is still running. If not don't continue
 # Now run python script to acquire data. If user press Ctrl+c to stop it, we
 # must send ctrl+c to PID acquition_from_point_grey app as well.
-echo "Launching ardunio+camera client with options\n\t $@"
+echo "Launching ardunio+camera client with options: $@"
 python ./camera_arduino_client.py $@
 
 # If we have come here successfully, cleanup.
 killall $(basename $COMMAND) || echo "Nothing to kill"
+
+# Reset boards
+make reset

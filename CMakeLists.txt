@@ -16,12 +16,12 @@ endif(NOT PORT)
 
 if (NOT PORT )
     message(FATAL_ERROR 
-        "Could not find a serial port automatically. You won't be able to upload
-        and run the arduino target. If you are sure that arduino board is
-        connected and function, you should provide this information from command
-        line: e.g. \n"
+        "Could not find a serial port automatically. You won't be able to upload"
+        "\n and run the arduino target. If you are sure that arduino board is "
+        "\n connected and functional, you should provide port path from "
+        "\n command line: e.g. \n"
         "\t -DPORT=/dev/ttyACM0 etc."
-        "\n Or you may not be part of 'dailout' group?"
+        "\n\n Or you may not be part of 'dailout' group?"
         )
 else (NOT PORT)
     message(STATUS "Default serial port ${PORT}" )
@@ -116,7 +116,7 @@ add_custom_target( run
     DEPENDS cam_server
     COMMAND ${CMAKE_COMMAND} -E copy_directory 
         ${CMAKE_SOURCE_DIR}/pyblink ${CMAKE_BINARY_DIR}
-        COMMAND bash ./run.sh ${RUN_ARGS}
+        COMMAND bash -x ./run.sh ${RUN_ARGS}
     COMMENT "Run arduino client and camera client"
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     VERBATIM

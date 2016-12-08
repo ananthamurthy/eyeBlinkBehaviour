@@ -19,8 +19,7 @@ import time
 import errno
 import numpy as np
 import cv2
-from multiprocessing import Process, Array
-import threading
+from threading import Thread
 import datetime
 import re
 import config
@@ -29,9 +28,8 @@ import readchar
 from collections import defaultdict
 import Queue
 import logging
-import gnuplotlib as gp
 
-_logger = logging.getLogger('')
+logging.basicConfig( level = logging.INFO )
 
 running_data_line_ = 0
 total_trials_ = 0
@@ -66,8 +64,9 @@ sock_name_ = sock
 img_shape_ = ( h, w )
 frame_size_ = img_shape_[0] * img_shape_[1]
 
-max_frames_in_trial = 1200
+max_frames_in_trial = 3000
 image_stack_ = None
+data_line_ = 'UNKNOWN'
 
 now = datetime.datetime.now().isoformat( )
 data_dir_ = 'videos_/%s' % now 
@@ -77,7 +76,6 @@ metadata_ = { 'acquisition_datetime' : [ ] }
 # When True, put a small text on each frame.
 write_data_ = True
 
-current_data_line_ = Array( 'c', 200 )
 
 if not os.path.isdir( data_dir_ ):
     os.makedirs( data_dir_ )
@@ -99,10 +97,10 @@ def append_trial_data( outfile, value, time, trialNum, cs, nextProbeIn ):
 def send_press_select( reftime, interval ):
     if time.time() - reftime < interval:
         return False
-    _logger.info('Sending SELECT to board')
+    logging.info('Sending SELECT to board')
     config.serial_port_.write_msg("ss\r")
     time.sleep(0.5)
-    _logger.info('[INFO] Waiting for Board to respond .', end='')
+    logging.info('[INFO] Waiting for Board to respond .', end='')
     sys.stdout.flush()
     while '>>>Recieved' not in config.serial_port_.read_line():
         print('.', end='')
@@ -111,6 +109,7 @@ def send_press_select( reftime, interval ):
 
 def print_line( line, lock ):
     global running_data_line_
+    global data_line_
     ds = line.split(',')
     if len(ds) != 4:
         return 
@@ -119,10 +118,10 @@ def print_line( line, lock ):
     if running_data_line_ % 20 == 0:
         if lock:
             lock.acquire()
-            _logger.info("%3s - %10s\n" % (line, hline ))
+            logging.info("%3s - %10s\n" % (line, hline ))
             lock.release()
         else:
-            _logger.info("%3s - %10s\n" % (line, hline ))
+            logging.info("%3s - %10s\n" % (line, hline ))
 
 
 def initialize_trial_file( trial_number ):
@@ -137,10 +136,7 @@ def initialize_trial_file( trial_number ):
     print(".... Done")
 
     
-def collect_data ( lock = None ): 
-    """
-    This function reads each from ardino and keeps them in a queue
-    """
+def arduino_client( writeTrial, trialIndex ):
     global q_
     global running_data_line_
     global total_trials_
@@ -148,16 +144,22 @@ def collect_data ( lock = None ):
     global cs_type_ 
     global next_probe_in_
     global select_sent_ 
+    global data_line_
+    global finished_all_
+
     tstart = time.time()
     runningTrial = 0
+    data_line_ = 'UNKNOWN'
+
     while not finished_all_:
         running_data_line_ += 1
         line = config.serial_port_.read_line( )
+        data_line_ = line
+
         x, y, trialNum, totalTrials, cs, next_probe_in_ = line_to_data( line )
         total_trials_ = totalTrials
         if (x and y) is None:
             continue
-
         try:
             x, y = int(x), int(y)
             q_.put((y,x))
@@ -172,20 +174,17 @@ def collect_data ( lock = None ):
         # pressed. Let's press is by sending three ` to serialport after
         # some timeout.
         if send_press_select( tstart, config.args_.select_after ):
-            if lock:
-                lock.acquire()
-            _logger.info("SELECT sent")
-            if lock:
-                lock.release()
+            logging.info("SELECT sent")
             break
 
     # Either we have pressed the SELECT or we have sent the select command ss
     select_sent_ = True
-    _logger.info('Out of first loop.')
+    logging.info('Out of first loop.')
     while not finished_all_:
         running_data_line_ += 1
         running_trial_ = runningTrial
         line = config.serial_port_.read_line()
+        data_line_ = line
         x, y, trialNum, totalTrials, cs_type_, next_probe_in_ = line_to_data(line)
         if (x and y) is None:
             continue
@@ -193,19 +192,18 @@ def collect_data ( lock = None ):
         trialFile = trial_file_path( trialNum )
         append_trial_data(trialFile, y, x, trialNum, cs_type_, next_probe_in_)
         total_trials_ = totalTrials
-        print_line( line, lock )
         if trialNum > runningTrial:
             outfile = trial_file_path( runningTrial )
-            _logger.info("|| Wrote previous trial to %s" % outfile)
-            _logger.info('== New Trial: :%s/%s, cs: %s' % (trialNum,
-                totalTrials, cs_type_)
+            logging.info("|| Wrote previous trial to %s" % outfile)
+            logging.info('== New Trial: :%s/%s, cs: %s' % (trialNum, totalTrials, cs_type_)
                 )
             # Also initialize the new trial file.
             initialize_trial_file( trialNum )
             runningTrial = trialNum
+            writeTrial = True
+            trialIndex = runningTrial
         if runningTrial == totalTrials:
-            # Exit
-            cleanup()
+            finished_all_ = True
 
 def answer_questions( numbers = 5):
     # All great UI have four questions. Yes we have to, they all starts with
@@ -214,32 +212,32 @@ def answer_questions( numbers = 5):
     for i in range( 20 ):
         l = arduino.read_until('?? Please', timeout = 1)
         if 'mouse name' in l:
-            _logger.info('[ANSW] %s = %s' % (l, config.args_.name))
+            logging.info('[ANSW] %s = %s' % (l, config.args_.name))
             config.serial_port_.write_msg('%s\r' % config.args_.name )
             time.sleep(0.5)
             if l not in questionsAnswered:
                 questionsAnswered.append(l)
         elif 'session type' in l:
-            _logger.info('[ANSW] %s = %s' % (l, config.args_.session_type))
+            logging.info('[ANSW] %s = %s' % (l, config.args_.session_type))
             config.serial_port_.write_msg( '%s\r' % config.args_.session_type )
             time.sleep(0.5)
             if l not in questionsAnswered:
                 questionsAnswered.append(l)
         elif 'session number' in l:
-            _logger.info('[ANSW] %s = %s' % (l, config.args_.session_num))
+            logging.info('[ANSW] %s = %s' % (l, config.args_.session_num))
             config.serial_port_.write_msg('%s\r' % config.args_.session_num )
             time.sleep(0.5)
             if l not in questionsAnswered:
                 questionsAnswered.append(l)
         elif  'want to flip' in l:
-            _logger.info('[ANSW] %s = %s' % (l, config.args_.flipped))
+            logging.info('[ANSW] %s = %s' % (l, config.args_.flipped))
             config.serial_port_.write_msg('%s\r' % config.args_.flipped)
             time.sleep(0.5)
             flipped_ = 1
             if l not in questionsAnswered:
                 questionsAnswered.append( l )
         elif 'CS Fraction' in l:
-            _logger.info("[ANSW] %s = %s " % (l, config.args_.cs_fraction))
+            logging.info("[ANSW] %s = %s " % (l, config.args_.cs_fraction))
             config.serial_port_.write_msg( '%s\r' % config.args_.cs_fraction)
             time.sleep( 0.5 )
             if l not in questionsAnswered:
@@ -248,35 +246,17 @@ def answer_questions( numbers = 5):
                 pass
 
         if len(questionsAnswered) == numbers:
-            _logger.info('[INFO] All questions are answered')
+            logging.info('[INFO] All questions are answered')
             return 
 
 
-def init( ):
+def init_arduino_client( ):
     """
     Wait for first four questions to appear which requires writing to serial
     port. If serial port is sending legal data then continue, questions are
     probably answered.
     """
-
-    # Get 4 lines from arduino, and check if arduino is sending legal data or
-    # just waiting for questions to be answered.
-    for i in range(4):
-        l = config.serial_port_.read_line( )
-        while not l:
-            l = config.serial_port_.read_line( )
-        if 'please' in l.lower():
-            # mere sawalo ka jawav do... do naa!
-            answer_questions(  )
-            break
-        # If valid data is found in lines (trial is more than 1) then don't ask
-        # questions and quit immediately
-        else:
-            data = line_to_data( l )
-            if data[2] is not None:
-                if data[2] >= 0:
-                    break
-
+    global finished_all_
     now = datetime.datetime.now()
     timeStamp =  now.strftime('%Y-%m-%d_%H-%M-%S')
     mouseName = 'Mouse%s' % config.args_.name
@@ -292,13 +272,27 @@ def init( ):
     else:
         os.makedirs(config.save_dir_) 
 
+    # Get 4 lines from arduino, and check if arduino is sending legal data or
+    # just waiting for questions to be answered.
+    arduinoAlive = False
+    for i in range(20):
+        l = config.serial_port_.read_line( )
+        if 'please' in l.lower():
+            arduinoAlive = True
+            answer_questions(  )
+            break
+    if not arduinoAlive:
+        print( '[ERROR] Seems like arduino is not sending valid data ..' )
+        print( '\t I am going to quit ...' )
+        finished_all_ = True
+
+        
 def send_command( ):
     # all commands should be two characters long
     # This function must be last one after all the threads/processes have been
     # launched.
     global select_sent_
     global finished_all_
-    lock = None
     command = ""
     legalCommandsBeforeStart = [ "11", "22", "pp", "ss" ]
     legalCommandsAfterStart = [ "rr", "ww", "cc" ]
@@ -311,7 +305,7 @@ def send_command( ):
         if k in validStartChars:
             command += k
             if command in legalCommandsBeforeStart and not select_sent_:
-                _logger.info("[COMMAND] Sending command: %s" % command)
+                logging.info("[COMMAND] Sending command: %s" % command)
                 config.serial_port_.write_msg( command )
                 command = ""
             # Last two commands needs to be handled separately.
@@ -320,17 +314,17 @@ def send_command( ):
                 config.serial_port_.write_msg( command )
             elif command == 'rr':
                 # reboot. 
-                _logger.warn("Reboot in 2 seconds. You have to relaunch the app")
+                logging.warn("Reboot in 2 seconds. You have to relaunch the app")
                 config.serial_port_.write_msg( command )
                 finished_all_ = True
                 raise KeyboardInterrupt
             elif (command in legalCommandsAfterStart) and select_sent_:
-                _logger.info("[COMMAND] Sending command (after start): %s" % command)
+                logging.info("[COMMAND] Sending command (after start): %s" % command)
                 config.serial_port_.write_msg( command )
                 command = ""
             else:
                 if(len(command) == 2):
-                    _logger.info("Did not send :%s, select_sent_ %s" % (
+                    logging.info("Did not send :%s, select_sent_ %s" % (
                         command, select_sent_)
                         )
             if len(command) == 2:
@@ -342,14 +336,11 @@ def send_command( ):
 def init_serial( baudRate = 38400):
     if config.args_.port is None:
         config.args_.port = arduino.get_default_serial_port( )
-    _logger.info("Using port: %s" % config.args_.port)
+    logging.info( "Using port: %s" % config.args_.port )
     config.serial_port_ = arduino.ArduinoPort( config.args_.port, baudRate )
     config.serial_port_.open( wait = True )
 
 def line_to_data( line ):
-    global current_data_line_
-    now  = datetime.datetime.now( ).isoformat( )
-    current_data_line_.value = now + '|' + line
     if not line.strip():
         data = [None]*6
     try:
@@ -357,45 +348,9 @@ def line_to_data( line ):
     except Exception as e:
         data = [None]*6
     if len(data) != 6:
-        _logger.debug("Invalid line: %s" % line)
+        logging.debug("Invalid line: %s" % line)
         data = [None]*6
     return data
-
-def plot_data( lock ):
-    global q_
-    global running_trial_
-    global total_trials_
-    global cs_type_, next_probe_in_
-    ptstart = time.time()
-    while True:
-        if finished_all_ == 1:
-            return None
-        # Queue can become empty in ITI sessions.
-        qsize = q_.qsize( )
-        if qsize < 20:
-            # _logger.debug('Queue  size less than 20')
-            continue
-        # Get some elements from queue and plot them.
-        for i in range(10):
-            d = q_.get()
-            config.ybuff_.append( int(d[0]) )
-        
-        title = '%s %2.2f, Mouse: %s, Trial: %2d/%3d, CS: %s, next probe in: %s' % ( 
-                config.args_.port
-                , time.time() - ptstart 
-                , config.args_.name
-                , running_trial_
-                , total_trials_
-                , cs_type_
-                , next_probe_in_
-                )
-
-        gp.plot( np.asarray(config.ybuff_[-2000:]) 
-                , title = title
-                , terminal = 'x11'
-                , yrange = '200:800'
-                )
-
 
 def save_img_stack( index ):
     import tifffile
@@ -421,24 +376,15 @@ def poll_socket( ):
     return os.path.exists( sock_name_ )
 
 
-def arduino_client( ):
-    """Client for arduino
-
-    IT launches two threads, one listens to keyboard command and other for the
-    data. This also update a global variable current_data_line_ which is read by
-    camera client.
-    """
-    collect_data( )
-
 def show_frame( frame ):
     cv2.imshow( 'frame', frame )
     cv2.waitKey( 1 )
 
-def camera_client( ):
+def camera_client( writeTrial, trialIndex ):
     global finished_all_
-    global current_data_line_
     global img_, buf_
     global image_stack_
+    global data_line_
     s = socket.socket( socket.AF_UNIX, socket.SOCK_STREAM )
 
     while not finished_all_:
@@ -470,7 +416,10 @@ def camera_client( ):
                 img = np.frombuffer( buf[:frame_size_], dtype = np.uint8 )
                 img = np.reshape( img, img_shape_ )
                 if write_data_:
-                    cv2.putText( img, current_data_line_.value, (0, 10)
+                    now  = datetime.datetime.now( ).isoformat( )
+                    cv2.putText( img
+                            , now + '|' + data_line_
+                            , (0, 10)
                             , cv2.FONT_HERSHEY_SIMPLEX, 0.4, 0, 1
                             )
                 # print( img.shape, img.max(), img.min(), len(img) )
@@ -481,17 +430,15 @@ def camera_client( ):
                 buf = buf[frame_size_:]
             else:
                 pass
-
         except Exception as e:
-            print( 'No data available' )
-            break
+            print( 'No data available : %s' % e )
+            pass
 
-        if framesInStack == max_frames_in_trial :
+        if writeTrial or framesInStack >= max_frames_in_trial:
             framesInStack = 0
+            writeTrial = False
             tiff = image_stack_
-            print( "\nSize of image stack ", tiff.shape )
-            save_img_stack( trial_count )
-            trial_count += 1
+            save_img_stack( trialIndex )
             init_stack( )
 
 def main( ):
@@ -500,16 +447,22 @@ def main( ):
     # terminates.
     global finished_all_
 
-    init( );
+    init_arduino_client( );
     print( 'Initialized arduino board' )
 
-    cam = Process( target = camera_client, args=() )
-    cam.daemon = True
+    # Variables to share between processes.
+    writeTrial = False
+    trialIndex = 0
+
+    cam = Thread( target = camera_client
+            , args=( writeTrial, trialIndex)
+            )
     cam.start( )
     print( 'Camera client launched' )
 
-    arduinoP = Process( target = arduino_client, args=())
-    arduinoP.daemon = True
+    arduinoP = Thread( target = arduino_client
+            , args=(writeTrial, trialIndex)
+            )
     arduinoP.start( )
     print( "Arduino client launched" )
 
@@ -569,12 +522,9 @@ if __name__ == '__main__':
     parser.parse_args( namespace = config.args_ )
     init_serial( )
     # Intialize logger after intializing serial port.
-    config.init_logger( filename = 
-            'blink_%s.log' % config.args_.port.split('/')[-1]
-            )
     try:
         main( )
     except KeyboardInterrupt as e:
-        _logger.warn("Interrupt from keyboard.... Quitting after cleanup.")
+        logging.warn("Interrupt from keyboard.... Quitting after cleanup.")
         cleanup()
         quit( 1 )
