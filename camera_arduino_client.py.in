@@ -483,14 +483,8 @@ def camera_client( ):
                 pass
 
         except Exception as e:
-            err = e.args[0]
-            if err == errno.EAGAIN or err == errno.EWOULDBLOCK:
-                time.sleep( 0.1 )
-                print( 'No data available' )
-                continue
-            else:
-                print('No data : %s' % e )
-                break
+            print( 'No data available' )
+            break
 
         if framesInStack == max_frames_in_trial :
             framesInStack = 0

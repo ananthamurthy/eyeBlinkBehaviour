@@ -8,15 +8,15 @@ find_package( PythonInterp REQUIRED )
 
 if( NOT PORT )
 execute_process( 
-    COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/config/get_serial_ports.py 
+    COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/list_serial_ports.sh 
     OUTPUT_VARIABLE PORT 
     OUTPUT_STRIP_TRAILING_WHITESPACE
     )
 endif(NOT PORT)
 
 if (NOT PORT )
-    message(STATUS "**WARNING** 
-        Could not find a serial port automatically. You won't be able to upload
+    message(FATAL_ERROR 
+        "Could not find a serial port automatically. You won't be able to upload
         and run the arduino target. If you are sure that arduino board is
         connected and function, you should provide this information from command
         line: e.g. \n"
@@ -47,7 +47,7 @@ message(STATUS "List of arduino boards ${ARDUINO_DIR}")
 ################################################################################
 # Animal related options.
 ################################################################################
-if( NOT (ANIMAL_NAME OR SESSION_TYPE OR SESSION_NUM ) )
+if( (NOT ANIMAL_NAME) OR (NOT SESSION_TYPE) OR (NOT SESSION_NUM) )
     message( FATAL_ERROR 
         "Please pass ANIMAL_NAME, SESSION_NUM and SESSION_TYPE to cmake \n"
         "\te.g cmake -DANIMAL_NAME=k3 -DSESSION_NUM=1 -DSESSION_TYPE=1 \n"
@@ -58,8 +58,8 @@ set(FLIPPED 0)
 set(CS_FRACTION 10)
 
 
-configure_file( ${CMAKE_SOURCE_DIR}/Makefile.in
-    ${CMAKE_SOURCE_DIR}/Makefile 
+configure_file( ${CMAKE_SOURCE_DIR}/Makefile.arduino.in
+    ${CMAKE_SOURCE_DIR}/Makefile.arduino
     )
 
 set(ARDUINO_TARGET_NAME eyeBlinkBehaviour)
@@ -75,14 +75,14 @@ add_custom_target( build_arduino_hex  ALL
     )
 
 add_custom_command( OUTPUT ${ARDDUINO_OUT_HEX_FILE}
-    COMMAND $(MAKE) -f ${CMAKE_SOURCE_DIR}/Makefile
+    COMMAND $(MAKE) -f ${CMAKE_SOURCE_DIR}/Makefile.arduino
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     VERBATIM
     )
 
 add_custom_target( upload 
     DEPENDS build_arduino_hex 
-    COMMAND $(MAKE) upload 
+    COMMAND $(MAKE) -f ${CMAKE_SOURCE_DIR}/Makefile.arduino upload 
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     )
 
