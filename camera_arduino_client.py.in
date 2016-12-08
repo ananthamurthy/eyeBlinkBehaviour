@@ -406,8 +406,7 @@ def camera_client( readP, writeTrial, trialIndex ):
             # Creating a parallel process to save stack of images. Transfer the
             # data to this process and run it in daemon mode. Don't wait for
             # join.
-            saveStack = Process( 'save_img_stack'
-                , target = save_img_stack
+            saveStack = Process( target = save_img_stack
                 , args = ( image_stack_, trialIndex.value )
                 )
             saveStack.start( )
