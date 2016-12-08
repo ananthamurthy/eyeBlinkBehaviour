@@ -17,7 +17,6 @@
 
 set -o nounset                              # Treat unset variables as an error
 set -e 
-set -x
 
 COMMAND=`pwd`/cam_server
 
@@ -72,11 +71,20 @@ fi
 trap 'kill_acquition_from_point_grey ${ACQ_PID}' INT
 echo "Running acquition app , PID = ${ACQ_PID}"
 
-# Sleep for a second before launching python script.
-sleep 1;
+# Sleep for three seconds before launching python script.
+sleep 3;
+if pgrep $(basename $COMMAND)
+then
+    echo "Camera server is still running. Lets continue ..."
+else
+    echo "Camera server is not running. Won't continue ...."
+    exit;
+fi
 
+# Now check if camera server is still running. If not don't continue
 # Now run python script to acquire data. If user press Ctrl+c to stop it, we
 # must send ctrl+c to PID acquition_from_point_grey app as well.
+echo "Launching ardunio+camera client with options\n\t $@"
 python ./camera_arduino_client.py $@
 
 # If we have come here successfully, cleanup.
