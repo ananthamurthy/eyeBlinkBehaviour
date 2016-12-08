@@ -359,9 +359,6 @@ def camera_client( readP, writeTrial, trialIndex ):
             print( 'Could not find %s' % sock_name_ )
             time.sleep( 1 )
 
-    # print( s.getsockopt( socket.SOL_SOCKET, socket.SO_SNDBUF ) )
-    # Make it non-blocking.
-    # fcntl.fcntl( s, fcntl.F_SETFL, os.O_NONBLOCK )
     totalBytesRead = 0
     totalFrames = 0
     buf = ''
@@ -393,13 +390,12 @@ def camera_client( readP, writeTrial, trialIndex ):
                             , cv2.FONT_HERSHEY_SIMPLEX, 0.4, 0, 1
                             )
                 image_stack_[ framesInStack ] = img
-                Process( show_frame( img )
+                show_frame( img )
                 framesInStack += 1
                 buf = buf[frame_size_:]
-            else:
-                pass
         except Exception as e:
             # Keep reading.
+            print( e )
             continue
 
         if writeTrial.value == 1 or framesInStack >= max_frames_in_trial:
@@ -407,8 +403,6 @@ def camera_client( readP, writeTrial, trialIndex ):
             framesInStack = 0
             writeTrial.value = 0
             tiff = image_stack_
-
-
             # Creating a parallel process to save stack of images. Transfer the
             # data to this process and run it in daemon mode. Don't wait for
             # join.
@@ -416,7 +410,6 @@ def camera_client( readP, writeTrial, trialIndex ):
                 , target = save_img_stack
                 , args = ( image_stack_, trialIndex.value )
                 )
-            saveStack.deamon = True 
             saveStack.start( )
 
             # Following does the same as above in serial mode.
