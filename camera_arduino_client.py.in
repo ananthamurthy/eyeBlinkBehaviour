@@ -315,11 +315,10 @@ def line_to_data( line ):
         data = [None]*6
     return data
 
-def save_img_stack( index ):
+def save_img_stack( stack, index ):
     import tifffile
-    global image_stack_ 
     filename = os.path.join( data_dir_, 'stack_%03d.tif' % index )
-    tifffile.imsave( filename, image_stack_ )
+    tifffile.imsave( filename, stack )
     print( '[INFO] Saved to %s' % filename )
 
 def init_stack( ):
@@ -390,11 +389,11 @@ def camera_client( readP, writeTrial, trialIndex ):
                 img = np.vstack( (metadata, img ) )
                 if write_data_:
                     cv2.putText( img, txt.strip( )
-                            , (0, img_shape_[0]-10), cv2.FONT_HERSHEY_SIMPLEX, 0.4, 0, 1
+                            , (0, img_shape_[0]-10)
+                            , cv2.FONT_HERSHEY_SIMPLEX, 0.4, 0, 1
                             )
                 image_stack_[ framesInStack ] = img
-
-                show_frame( img )
+                Process( show_frame( img )
                 framesInStack += 1
                 buf = buf[frame_size_:]
             else:
@@ -408,7 +407,21 @@ def camera_client( readP, writeTrial, trialIndex ):
             framesInStack = 0
             writeTrial.value = 0
             tiff = image_stack_
-            save_img_stack( trialIndex.value )
+
+
+            # Creating a parallel process to save stack of images. Transfer the
+            # data to this process and run it in daemon mode. Don't wait for
+            # join.
+            saveStack = Process( 'save_img_stack'
+                , target = save_img_stack
+                , args = ( image_stack_, trialIndex.value )
+                )
+            saveStack.deamon = True 
+            saveStack.start( )
+
+            # Following does the same as above in serial mode.
+            # save_img_stack( image_stack_, trialIndex.value )
+
             init_stack( )
 
 def main( ):
