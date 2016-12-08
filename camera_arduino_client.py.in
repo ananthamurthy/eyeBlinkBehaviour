@@ -19,28 +19,26 @@ import time
 import errno
 import numpy as np
 import cv2
-from threading import Thread
+from multiprocessing import Process, Array, Value, Queue
 import datetime
 import re
 import config
 import arduino 
 import readchar
 from collections import defaultdict
-import Queue
 import logging
 
 logging.basicConfig( level = logging.INFO )
 
-running_data_line_ = 0
 total_trials_ = 0
 cs_type_ = None
 next_probe_in_ = -1
-flipped_ = 0
+flipped_ = -1
 
 select_sent_ = False
 
 # Our shared queue used in multiprocessing
-q_ = Queue.Queue()
+q_ = Queue()
 running_trial_ = 0
 finished_all_ = False
 
@@ -64,9 +62,8 @@ sock_name_ = sock
 img_shape_ = ( h, w )
 frame_size_ = img_shape_[0] * img_shape_[1]
 
-max_frames_in_trial = 3000
+max_frames_in_trial = 2000
 image_stack_ = None
-data_line_ = 'UNKNOWN'
 
 now = datetime.datetime.now().isoformat( )
 data_dir_ = 'videos_/%s' % now 
@@ -107,69 +104,38 @@ def send_press_select( reftime, interval ):
         sys.stdout.flush()
     return True
 
-def print_line( line, lock ):
-    global running_data_line_
-    global data_line_
-    ds = line.split(',')
-    if len(ds) != 4:
-        return 
-    hline = '-'.join([ '' for x in range( min(80, int(ds[1])/10) ) ])
-    # Only print if running data line is multiple of 10
-    if running_data_line_ % 20 == 0:
-        if lock:
-            lock.acquire()
-            logging.info("%3s - %10s\n" % (line, hline ))
-            lock.release()
-        else:
-            logging.info("%3s - %10s\n" % (line, hline ))
-
-
-def initialize_trial_file( trial_number ):
-    trialFile = trial_file_path( trial_number )
-    print('[INFO] Initializing a new trial file', end='')
-    with open( trialFile, "w") as f:
-        f.write("# Written on: %s\n" % datetime.datetime.now().isoformat())
-        f.write("# mouse name : %s\n" % config.args_.name)
-        f.write("# Session type : %s\n" % config.args_.session_type)
-        f.write("# Session num : %s\n" % config.args_.session_num)
-        f.write("# flipped : %s\n" % flipped_)
-    print(".... Done")
-
+def read_line( ):
+    now = datetime.datetime.now().isoformat( )
+    line = config.serial_port_.read_line( )
+    return now + ',' + line.replace( ' ', '' )
     
-def arduino_client( writeTrial, trialIndex ):
+def arduino_client( dataLine, writeTrial, trialIndex ):
     global q_
-    global running_data_line_
     global total_trials_
     global running_trial_
     global cs_type_ 
     global next_probe_in_
     global select_sent_ 
-    global data_line_
     global finished_all_
 
     tstart = time.time()
     runningTrial = 0
-    data_line_ = 'UNKNOWN'
+    dataLine.value = 'UNKNOWN'
 
+    # Till select is not sent.
     while not finished_all_:
-        running_data_line_ += 1
-        line = config.serial_port_.read_line( )
-        data_line_ = line
-
+        line = read_line( )
+        dataLine.value = line
+        q_.put( line )
         x, y, trialNum, totalTrials, cs, next_probe_in_ = line_to_data( line )
         total_trials_ = totalTrials
         if (x and y) is None:
             continue
-        try:
-            x, y = int(x), int(y)
-            q_.put((y,x))
-            config.trial_dict_[runningTrial].append((y,x))
-        except Exception as e:
-            pass
 
-        # Valid trial has started.
+        # Valid trial has already started, arduino says so.
         if trialNum != 0:
             break
+
         # All right. If we are here then we are waiting for SELECT to be
         # pressed. Let's press is by sending three ` to serialport after
         # some timeout.
@@ -179,29 +145,30 @@ def arduino_client( writeTrial, trialIndex ):
 
     # Either we have pressed the SELECT or we have sent the select command ss
     select_sent_ = True
-    logging.info('Out of first loop.')
+
+    # After select has been sent to arduino.
     while not finished_all_:
-        running_data_line_ += 1
         running_trial_ = runningTrial
-        line = config.serial_port_.read_line()
-        data_line_ = line
+        line = read_line()
+        dataLine.value = line
+        q_.put( line )
+        # print( line, dataLine.value )
         x, y, trialNum, totalTrials, cs_type_, next_probe_in_ = line_to_data(line)
         if (x and y) is None:
             continue
-        q_.put((y,x))
-        trialFile = trial_file_path( trialNum )
-        append_trial_data(trialFile, y, x, trialNum, cs_type_, next_probe_in_)
+        # trialFile = trial_file_path( trialNum )
+        # append_trial_data(trialFile, y, x, trialNum, cs_type_, next_probe_in_)
         total_trials_ = totalTrials
         if trialNum > runningTrial:
-            outfile = trial_file_path( runningTrial )
-            logging.info("|| Wrote previous trial to %s" % outfile)
-            logging.info('== New Trial: :%s/%s, cs: %s' % (trialNum, totalTrials, cs_type_)
-                )
+            # outfile = trial_file_path( runningTrial )
+            # logging.info("|| Wrote previous trial to %s" % outfile)
+            # logging.info('== New Trial: :%s/%s, cs: %s' % (trialNum, totalTrials, cs_type_)
+                # )
             # Also initialize the new trial file.
-            initialize_trial_file( trialNum )
-            runningTrial = trialNum
-            writeTrial = True
-            trialIndex = runningTrial
+            # initialize_trial_file( trialNum )
+            # runningTrial = trialNum
+            writeTrial.value = 1
+            trialIndex.value = trialNum
         if runningTrial == totalTrials:
             finished_all_ = True
 
@@ -276,7 +243,8 @@ def init_arduino_client( ):
     # just waiting for questions to be answered.
     arduinoAlive = False
     for i in range(20):
-        l = config.serial_port_.read_line( )
+        l = read_line( )
+        q_.put( l )
         if 'please' in l.lower():
             arduinoAlive = True
             answer_questions(  )
@@ -360,7 +328,6 @@ def save_img_stack( index ):
     tifffile.imsave( filename, image_stack_, metadata = metadata_ )
     print( '[INFO] Saved to %s' % filename )
 
-
 def init_stack( ):
     global image_stack_
     global img_shape_, max_frames_in_trial 
@@ -380,11 +347,11 @@ def show_frame( frame ):
     cv2.imshow( 'frame', frame )
     cv2.waitKey( 1 )
 
-def camera_client( writeTrial, trialIndex ):
+def camera_client( dataLine, writeTrial, trialIndex ):
     global finished_all_
     global img_, buf_
     global image_stack_
-    global data_line_
+    global q_
     s = socket.socket( socket.AF_UNIX, socket.SOCK_STREAM )
 
     while not finished_all_:
@@ -409,17 +376,17 @@ def camera_client( writeTrial, trialIndex ):
     framesInStack = 0
     trial_count = 0
     while not finished_all_:
+        now  = datetime.datetime.now( ).isoformat( )
         try:
             data = s.recv( frame_size_ )
             buf += data
-            if len( buf) >= frame_size_:
+            if len( buf ) >= frame_size_:
                 img = np.frombuffer( buf[:frame_size_], dtype = np.uint8 )
                 img = np.reshape( img, img_shape_ )
                 if write_data_:
-                    now  = datetime.datetime.now( ).isoformat( )
-                    cv2.putText( img
-                            , now + '|' + data_line_
-                            , (0, 10)
+                    txt = now + ',' + q_.get( False )
+                    # print( 'Writing ', txt, dataLine.value )
+                    cv2.putText( img, txt, (0, 10)
                             , cv2.FONT_HERSHEY_SIMPLEX, 0.4, 0, 1
                             )
                 # print( img.shape, img.max(), img.min(), len(img) )
@@ -431,14 +398,15 @@ def camera_client( writeTrial, trialIndex ):
             else:
                 pass
         except Exception as e:
-            print( 'No data available : %s' % e )
-            pass
+            # Keep reading.
+            continue
 
-        if writeTrial or framesInStack >= max_frames_in_trial:
+        if writeTrial.value == 1 or framesInStack >= max_frames_in_trial:
+            print( '[INFO] Saving frames' )
             framesInStack = 0
-            writeTrial = False
+            writeTrial.value = 0
             tiff = image_stack_
-            save_img_stack( trialIndex )
+            save_img_stack( trialIndex.value )
             init_stack( )
 
 def main( ):
@@ -451,18 +419,21 @@ def main( ):
     print( 'Initialized arduino board' )
 
     # Variables to share between processes.
-    writeTrial = False
-    trialIndex = 0
+    dataLine = Array( 'c',  'x' * 100 )
+    writeTrial = Value( 'd', 0 )
+    trialIndex = Value( 'd', 0 )
 
-    cam = Thread( target = camera_client
-            , args=( writeTrial, trialIndex)
+    cam = Process( target = camera_client
+            , args=(dataLine, writeTrial, trialIndex)
             )
+    # cam.daemon = True
     cam.start( )
     print( 'Camera client launched' )
 
-    arduinoP = Thread( target = arduino_client
-            , args=(writeTrial, trialIndex)
+    arduinoP = Process( target = arduino_client
+            , args=(dataLine, writeTrial, trialIndex)
             )
+    # arduinoP.daemon = True
     arduinoP.start( )
     print( "Arduino client launched" )
 
