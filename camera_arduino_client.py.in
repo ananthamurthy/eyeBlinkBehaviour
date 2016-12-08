@@ -19,7 +19,7 @@ import time
 import errno
 import numpy as np
 import cv2
-from multiprocessing import Process, Array, Value, Queue
+from multiprocessing import Process, Value, Pipe
 import datetime
 import re
 import config
@@ -37,8 +37,6 @@ flipped_ = -1
 
 select_sent_ = False
 
-# Our shared queue used in multiprocessing
-q_ = Queue()
 running_trial_ = 0
 finished_all_ = False
 
@@ -67,8 +65,6 @@ image_stack_ = None
 
 now = datetime.datetime.now().isoformat( )
 data_dir_ = 'videos_/%s' % now 
-
-metadata_ = { 'acquisition_datetime' : [ ] }
 
 # When True, put a small text on each frame.
 write_data_ = True
@@ -109,8 +105,7 @@ def read_line( ):
     line = config.serial_port_.read_line( )
     return now + ',' + line.replace( ' ', '' )
     
-def arduino_client( dataLine, writeTrial, trialIndex ):
-    global q_
+def arduino_client( writeP, writeTrial, trialIndex ):
     global total_trials_
     global running_trial_
     global cs_type_ 
@@ -120,13 +115,14 @@ def arduino_client( dataLine, writeTrial, trialIndex ):
 
     tstart = time.time()
     runningTrial = 0
-    dataLine.value = 'UNKNOWN'
 
     # Till select is not sent.
     while not finished_all_:
         line = read_line( )
-        dataLine.value = line
-        q_.put( line )
+        try:
+            writeP.send( line )
+        except Exception as e:
+            print( 'Could not write to pipe %s' % e )
         x, y, trialNum, totalTrials, cs, next_probe_in_ = line_to_data( line )
         total_trials_ = totalTrials
         if (x and y) is None:
@@ -150,9 +146,7 @@ def arduino_client( dataLine, writeTrial, trialIndex ):
     while not finished_all_:
         running_trial_ = runningTrial
         line = read_line()
-        dataLine.value = line
-        q_.put( line )
-        # print( line, dataLine.value )
+        writeP.send( line )
         x, y, trialNum, totalTrials, cs_type_, next_probe_in_ = line_to_data(line)
         if (x and y) is None:
             continue
@@ -244,7 +238,6 @@ def init_arduino_client( ):
     arduinoAlive = False
     for i in range(20):
         l = read_line( )
-        q_.put( l )
         if 'please' in l.lower():
             arduinoAlive = True
             answer_questions(  )
@@ -322,17 +315,14 @@ def line_to_data( line ):
 
 def save_img_stack( index ):
     import tifffile
-    global metadata_ 
     global image_stack_ 
     filename = os.path.join( data_dir_, 'stack_%03d.tif' % index )
-    tifffile.imsave( filename, image_stack_, metadata = metadata_ )
+    tifffile.imsave( filename, image_stack_ )
     print( '[INFO] Saved to %s' % filename )
 
 def init_stack( ):
     global image_stack_
     global img_shape_, max_frames_in_trial 
-    global metadata_ 
-    metadata_[ 'acquisition_datetime' ] = []
     image_stack_ = np.zeros( 
             shape=( max_frames_in_trial, img_shape_[0], img_shape_[1] )
             , dtype = np.uint8
@@ -347,11 +337,10 @@ def show_frame( frame ):
     cv2.imshow( 'frame', frame )
     cv2.waitKey( 1 )
 
-def camera_client( dataLine, writeTrial, trialIndex ):
+def camera_client( readP, writeTrial, trialIndex ):
     global finished_all_
     global img_, buf_
     global image_stack_
-    global q_
     s = socket.socket( socket.AF_UNIX, socket.SOCK_STREAM )
 
     while not finished_all_:
@@ -376,23 +365,25 @@ def camera_client( dataLine, writeTrial, trialIndex ):
     framesInStack = 0
     trial_count = 0
     while not finished_all_:
-        now  = datetime.datetime.now( ).isoformat( )
         try:
             data = s.recv( frame_size_ )
             buf += data
             if len( buf ) >= frame_size_:
+                now  = datetime.datetime.now( ).isoformat( )
                 img = np.frombuffer( buf[:frame_size_], dtype = np.uint8 )
                 img = np.reshape( img, img_shape_ )
                 if write_data_:
-                    txt = now + ',' + q_.get( False )
-                    # print( 'Writing ', txt, dataLine.value )
+                    txt = now
+                    # Read from PIPE but it should not be blocking.
+                    if readP.poll( ):
+                        txt += ',' +  readP.recv( )
+
                     cv2.putText( img, txt, (0, 10)
                             , cv2.FONT_HERSHEY_SIMPLEX, 0.4, 0, 1
                             )
                 # print( img.shape, img.max(), img.min(), len(img) )
                 show_frame( img )
                 image_stack_[ framesInStack ] = img
-                metadata_[ 'acquisition_datetime' ].append( now )
                 framesInStack += 1
                 buf = buf[frame_size_:]
             else:
@@ -419,21 +410,21 @@ def main( ):
     print( 'Initialized arduino board' )
 
     # Variables to share between processes.
-    dataLine = Array( 'c',  'x' * 100 )
     writeTrial = Value( 'd', 0 )
     trialIndex = Value( 'd', 0 )
 
+    readP, writeP = Pipe( duplex = False )
     cam = Process( target = camera_client
-            , args=(dataLine, writeTrial, trialIndex)
+            , args=(readP, writeTrial, trialIndex)
             )
-    # cam.daemon = True
+    cam.daemon = True
     cam.start( )
     print( 'Camera client launched' )
 
     arduinoP = Process( target = arduino_client
-            , args=(dataLine, writeTrial, trialIndex)
+            , args=(writeP, writeTrial, trialIndex)
             )
-    # arduinoP.daemon = True
+    arduinoP.daemon = True
     arduinoP.start( )
     print( "Arduino client launched" )
 
