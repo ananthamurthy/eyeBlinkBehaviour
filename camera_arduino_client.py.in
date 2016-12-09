@@ -150,10 +150,9 @@ def arduino_client( writeP, writeTrial, trialIndex ):
         # trialFile = trial_file_path( trialNum )
         # append_trial_data(trialFile, y, x, trialNum, cs_type_, next_probe_in_)
         total_trials_ = totalTrials
-        if trialNum > runningTrial:
+        if trialNum > trialIndex.value:
             writeTrial.value = 1
             trialIndex.value = trialNum
-            trialNum = runningTrial
 
         if runningTrial == totalTrials:
             finished_all_ = True
