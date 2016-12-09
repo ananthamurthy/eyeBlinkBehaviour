@@ -14,6 +14,7 @@ __status__ = "Development"
 import sys
 import os
 import socket
+import io
 import random
 import time
 import errno
@@ -313,7 +314,7 @@ def save_img_stack(stack, index):
     if tmpfile:
         tifffile.imsave(tmpfile, stack)
         # Use Popen to move the tmp file to desired location in background.
-        subprocess.Popen(["rsync", "-azv", tmpfile, filename])
+        subprocess.Popen([ "./copy_file.sh", tmpfile, filename])
     print('[INFO] Saved to %s' % filename)
 
 
