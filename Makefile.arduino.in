@@ -7,7 +7,7 @@ PROJECT_DIR       = @ARDUINO_PROJECT_DIR@
 # ARDMK_DIR
 # Path to the Arduino-Makefile directory.
 ARDMK_DIR         = $(PROJECT_DIR)/makefiles
-RESET_COMMAND 	  = $(ARDUINO_DIR)/bin/ard-reset-arduino
+#RESET_COMMAND 	  = $(ARDUINO_DIR)/bin/ard-reset-arduino
 
 # ARDUINO_DIR
 ARDUINO_BIN       = @ARDUINO_BIN@
