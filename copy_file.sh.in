@@ -25,15 +25,15 @@ to=$2
 # Wait for file to appear for a second.
 n=0
 while [ ! -f $from ]; do
-    sleep 0.01
+    sleep 0.5
     printf '.'
     n=$((n+1))
-    if [[ $n == 200 ]]; then
+    if [[ $n == 2 ]]; then
         echo "$from is not available. Timeout 1 sec. Cant copy"
         break
     fi
 done
 
 if [ -f $from ]; then
-    rsync -azv $from $to &
+    cp $from $to &
 fi

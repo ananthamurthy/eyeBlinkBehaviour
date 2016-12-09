@@ -33,6 +33,7 @@ import subprocess
 
 logging.basicConfig(level=logging.INFO)
 
+start_ = time.time()
 total_trials_ = 0
 cs_type_ = None
 next_probe_in_ = -1
@@ -68,7 +69,7 @@ frame_size_ = img_shape_[0] * img_shape_[1]
 # Maximum allowed frame in each trial. This is guard against RAM overflow in
 # case arduino failes to update trial count. After every 2000 frames, the data
 # will be flushed to disk.
-max_frames_in_trial = 2400
+max_frames_in_trial = 4200
 image_stack_ = None
 
 now = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -156,12 +157,11 @@ def arduino_client(writeP, writeTrial, trialIndex):
         # trialFile = trial_file_path( trialNum )
         # append_trial_data(trialFile, y, x, trialNum, cs_type_, next_probe_in_)
         if trialNum > currentTrialIndex:
-            print( 'WRITE TRIAL CONDITION MET', trialNum, currentTrialIndex )
-            print( '\tWrite data of previous trial' )
-            with trialIndex.get_lock( ):
+            print('WRITE TRIAL CONDITION MET', trialNum, currentTrialIndex)
+            print('\tWrite data of previous trial')
+            with trialIndex.get_lock():
                 trialIndex.value = currentTrialIndex
-            with writeTrial.get_lock( ):
-                writeTrial.value = 1
+            writeTrial.value = 1
             currentTrialIndex = trialNum
 
         if trialNum == totalTrials:
@@ -309,13 +309,16 @@ def line_to_data(line):
 
 
 def save_img_stack(stack, index):
+    global start_
     filename = os.path.join(data_dir_, 'stack_%03d.tif' % index)
     tmpfile = os.path.join('/mnt', 'ramdisk', 'tmp.tif')
     if tmpfile:
         tifffile.imsave(tmpfile, stack)
         # Use Popen to move the tmp file to desired location in background.
         subprocess.Popen([ "./copy_file.sh", tmpfile, filename])
-    print('[INFO] Saved to %s' % filename)
+    print('[INFO] Saved to %s after %s secs' %
+          (filename, time.time() - start_))
+    start_ = time.time()
 
 
 def init_stack():
@@ -404,11 +407,15 @@ def camera_client(readP, writeTrial, trialIndex):
             print(e)
             continue
 
-        if writeTrial.value == 1 or framesInStack >= max_frames_in_trial:
-            print('[INFO] Saving frames')
+        if framesInStack >= max_frames_in_trial:
             framesInStack = 0
-            with writeTrial.get_lock():
-                writeTrial.value = 0
+            print( '[INFO] Too many frames in buffer.. flusing ' )
+            save_img_stack(image_stack_, trialIndex.value)
+            init_stack( )
+
+        if writeTrial.value == 1:
+            framesInStack = 0
+            writeTrial.value = 0
             save_img_stack(image_stack_, trialIndex.value)
             init_stack()
 
