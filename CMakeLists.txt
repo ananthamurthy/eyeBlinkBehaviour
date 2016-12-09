@@ -120,7 +120,7 @@ add_custom_target( reset_boards
     )
 
 # Before run is executed, all scripts must be current binary directory.
-configure_file( ${CMAKE_SOURCE_DIR}/run.sh.in ${CMAKE_BINARY_DIR}/run.sh )
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/run.sh.in ${CMAKE_BINARY_DIR}/run.sh )
 configure_file( ${CMAKE_SOURCE_DIR}/camera_arduino_client.py.in 
     ${CMAKE_BINARY_DIR}/camera_arduino_client.py 
     )

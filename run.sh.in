@@ -68,7 +68,7 @@ then
     fi
 else
     echo "Lauching camera server"
-    $COMMAND &
+    $COMMAND > /dev/null 2>&1 &
     ACQ_PID=`echo $!`
 fi
 
