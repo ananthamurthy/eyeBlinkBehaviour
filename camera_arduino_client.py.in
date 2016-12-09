@@ -75,8 +75,6 @@ if not os.path.isdir( data_dir_ ):
     if write_data_:
         os.makedirs( data_dir_ )
 
-def trial_file_path( trialNum ):
-    return os.path.join( config.save_dir_, 'Trial%s.csv' % trialNum )
 
 def cleanup():
     global finished_all_
@@ -119,19 +117,16 @@ def arduino_client( writeP, writeTrial, trialIndex ):
     runningTrial = 0
 
     # Till select is not sent.
-    while not finished_all_:
+    while not finished_all_ and not select_sent_:
         line = read_line( )
-        try:
-            writeP.send( line )
-        except Exception as e:
-            print( 'Could not write to pipe %s' % e )
+        writeP.send( line )
         x, y, trialNum, totalTrials, cs, next_probe_in_ = line_to_data( line )
         total_trials_ = totalTrials
         if (x and y) is None:
             continue
 
         # Valid trial has already started, arduino says so.
-        if trialNum != 0:
+        if trialNum > 0:
             break
 
         # All right. If we are here then we are waiting for SELECT to be
@@ -145,8 +140,8 @@ def arduino_client( writeP, writeTrial, trialIndex ):
     select_sent_ = True
 
     # After select has been sent to arduino.
+    print( 'SELECT has been sent. Now acquiring data from valid trials' )
     while not finished_all_:
-        running_trial_ = runningTrial
         line = read_line()
         writeP.send( line )
         x, y, trialNum, totalTrials, cs_type_, next_probe_in_ = line_to_data(line)
@@ -156,15 +151,10 @@ def arduino_client( writeP, writeTrial, trialIndex ):
         # append_trial_data(trialFile, y, x, trialNum, cs_type_, next_probe_in_)
         total_trials_ = totalTrials
         if trialNum > runningTrial:
-            # outfile = trial_file_path( runningTrial )
-            # logging.info("|| Wrote previous trial to %s" % outfile)
-            # logging.info('== New Trial: :%s/%s, cs: %s' % (trialNum, totalTrials, cs_type_)
-                # )
-            # Also initialize the new trial file.
-            # initialize_trial_file( trialNum )
-            # runningTrial = trialNum
             writeTrial.value = 1
             trialIndex.value = trialNum
+            trialNum = runningTrial
+
         if runningTrial == totalTrials:
             finished_all_ = True
 
@@ -220,23 +210,6 @@ def init_arduino_client( ):
     probably answered.
     """
     global finished_all_
-    now = datetime.datetime.now()
-    timeStamp =  now.strftime('%Y-%m-%d_%H-%M-%S')
-    mouseName = 'Mouse%s' % config.args_.name
-    outdir = os.path.join( mouseName
-            , 'Mouse%s_SessionType%s_Session%s' % ( 
-                config.args_.name, config.args_.session_type, config.args_.session_num)
-            )
-
-    config.save_dir_ = os.path.join( config.save_dir_, outdir )
-    if os.path.exists(config.save_dir_):
-        config.save_dir_ = os.path.join(config.save_dir_, timeStamp)
-        os.makedirs(config.save_dir_)
-    else:
-        os.makedirs(config.save_dir_) 
-
-    # Get 4 lines from arduino, and check if arduino is sending legal data or
-    # just waiting for questions to be answered.
     arduinoAlive = False
     for i in range(20):
         l = read_line( )
@@ -304,10 +277,13 @@ def init_serial( baudRate = 38400):
     config.serial_port_.open( wait = True )
 
 def line_to_data( line ):
-    if not line.strip():
+    """First element is timestamp, rest the data etc.
+    """
+    line = line.split( ',')[1:]
+    if not line:
         data = [None]*6
     try:
-        data = [ int(x) for x in line.split(',') ]
+        data = [ int(x) for x in  line ]
     except Exception as e:
         data = [None]*6
     if len(data) != 6:
@@ -424,6 +400,7 @@ def main( ):
     # terminates.
     global finished_all_
 
+    config.init_logger( config.args_.port.replace( '/', '_' ) )
     init_arduino_client( );
     print( 'Initialized arduino board' )
 
