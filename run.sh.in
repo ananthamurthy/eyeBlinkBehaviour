@@ -100,4 +100,4 @@ python ./camera_arduino_client.py $@
 killall $(basename $COMMAND) || echo "Nothing to kill"
 
 # Reset boards
-make reset
+make reset_boards
