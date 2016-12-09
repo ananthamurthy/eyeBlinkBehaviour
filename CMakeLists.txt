@@ -101,8 +101,8 @@ add_custom_command( OUTPUT ${ARDDUINO_OUT_HEX_FILE}
 
 add_custom_target( upload 
     DEPENDS build_arduino_hex 
-    COMMAND $(MAKE) -f ${CMAKE_SOURCE_DIR}/Makefile.arduino upload 
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMAND $(MAKE) -f ${CMAKE_CURRENT_SOURCE_DIR}/Makefile.arduino upload 
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
 
 # make miniterm will launch the miniterm.py .

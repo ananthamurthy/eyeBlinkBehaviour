@@ -1424,12 +1424,6 @@ error_on_caterina:
 		$(ERROR_ON_CATERINA)
 
 
-# Use submake so we can guarantee the reset happens
-# before the upload, even with make -j
-upload:		$(TARGET_HEX) verify_size
-		$(MAKE) reset
-		$(MAKE) do_upload
-
 raw_upload:	$(TARGET_HEX) verify_size
 		$(MAKE) error_on_caterina
 		$(MAKE) do_upload
@@ -1453,6 +1447,12 @@ raw_eeprom:	$(TARGET_HEX) verify_size
 reset:
 		$(call arduino_output,Resetting Arduino...)
 		$(RESET_CMD)
+
+# Use submake so we can guarantee the reset happens
+# before the upload, even with make -j
+upload:		$(TARGET_HEX) verify_size
+		$(MAKE) reset
+		$(MAKE) do_upload
 
 # stty on MacOS likes -F, but on Debian it likes -f redirecting
 # stdin/out appears to work but generates a spurious error on MacOS at
