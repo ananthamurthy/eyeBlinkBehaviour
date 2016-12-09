@@ -30,14 +30,34 @@ endif (NOT PORT)
 
 # Options related to Arduino board.
 # Set the board tag
+set(ARDUINO_PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+
+# Extra paths to search for headers.
+set(ARDUINO_EXTRA_CXXFLAGS "")
+
 set(BOARD_TAG   uno)
 set(BAUD_RATE   38400)
 find_program(ARDUINO_BIN arduino )
 
 set(ARDUINO_BOARD_FILE hardware/arduino/boards.txt)
-find_path( ARDUINO_DIR ${ARDUINO_BOARD_FILE}
+find_path( ARDUINO_DIR 
+    NAMES ${ARDUINO_BOARD_FILE} 
     PATHS /usr/share/arduino /opt
     )
+find_path( ARDUINO_LIQUID_LIB_DIRS 
+    NAMES LiquidCrystal.h 
+    PATHS /usr/share/arduino /opt
+    PATH_SUFFIXES libraries/LiquidCrystal
+    )
+
+# Find directory where LiquidCrystal is installed.
+message( STATUS "Liquid crystal library ${ARDUINO_LIQUID_LIB_DIRS}" )
+if( ARDUINO_LIQUID_LIB_DIRS )
+    set(ARDUINO_EXTRA_CXXFLAGS 
+        "${ARDUINO_EXTRA_CXXFLAGS} -I${ARDUINO_LIQUID_LIB_DIRS}"
+    )
+endif( )
+
 
 if(NOT ARDUINO_DIR)
     message(FATAL_ERROR "Arduino board list not found")
@@ -69,8 +89,7 @@ set(ARDDUINO_OUT_HEX_FILE
     ${CMAKE_SOURCE_DIR}/${BOARD_NAME}/${ARDUINO_TARGET_NAME}/${ARDUINO_TARGET_NAME}.hex 
     )
 
-add_custom_target( build_arduino_hex  ALL
-    DEPENDS ${ARDDUINO_OUT_HEX_FILE}
+add_custom_target( build_arduino_hex  ALL DEPENDS ${ARDDUINO_OUT_HEX_FILE}
     VERBATIM 
     )
 
@@ -94,7 +113,7 @@ add_custom_target( miniterm
     )
 
 # Reset all attached boards.
-add_custom_target( reset
+add_custom_target( reset_boards
     COMMAND bash scripts/reset_all_boards.sh
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     VERBATIM

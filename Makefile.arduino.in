@@ -2,7 +2,7 @@ UNAME_S := $(shell uname -s)
 
 ### PROJECT_DIR
 ### This is the path to where you have created/cloned your project
-PROJECT_DIR       = .
+PROJECT_DIR       = @ARDUINO_PROJECT_DIR@
 
 ### ARDMK_DIR
 ### Path to the Arduino-Makefile directory.
@@ -30,7 +30,7 @@ CXXFLAGS_STD      = -std=gnu++11
 
 ### CXXFLAGS
 ### Flags you might want to set for debugging purpose. Comment to stop.
-CXXFLAGS         += -pedantic -Wall -Wextra
+CXXFLAGS         += -pedantic -Wall -Wextra @ARDUINO_EXTRA_CXXFLAGS@
 
 ### MONITOR_PORT
 ### The port your board is connected to. Using an '*' tries all the ports and finds the right one.
@@ -40,8 +40,6 @@ MONITOR_PORT      = $(shell bash $(PROJECT_DIR)/scripts/list_serial_ports.sh)
 ### Do not touch - used for binaries path
 CURRENT_DIR       = $(shell basename $(CURDIR))
 
-ARDUINO_LIBS 	  = LiquidCrystal
-
 ### OBJDIR
 ### This is where you put the binaries you just compile using 'make'
 OBJDIR            = $(PROJECT_DIR)/bin/$(BOARD_TAG)/$(CURRENT_DIR)
@@ -49,15 +47,15 @@ OBJDIR            = $(PROJECT_DIR)/bin/$(BOARD_TAG)/$(CURRENT_DIR)
 ## INO file and other cpp files
 LOCAL_INO_SRCS     = $(PROJECT_DIR)/src/eye_blink_main.ino 
 LOCAL_CPP_SRCS     = $(PROJECT_DIR)/src/TriggerImaging.cpp \
-		$(PROJECT_DIR)/src/Solenoid.cpp \
-		$(PROJECT_DIR)/src/PhaseChangeRoutine.cpp \
-		$(PROJECT_DIR)/src/main.cpp \
-		$(PROJECT_DIR)/src/LocalLibrary.cpp \
-		$(PROJECT_DIR)/src/LCDRelated.cpp \
-		$(PROJECT_DIR)/src/Initialize.cpp \
-		$(PROJECT_DIR)/src/DetectMotion.cpp \
-		$(PROJECT_DIR)/src/Globals.cpp \
-		$(PROJECT_DIR)/src/ChangePhase.cpp
+			$(PROJECT_DIR)/src/Solenoid.cpp \
+			$(PROJECT_DIR)/src/PhaseChangeRoutine.cpp \
+			$(PROJECT_DIR)/src/main.cpp \
+			$(PROJECT_DIR)/src/LocalLibrary.cpp \
+			$(PROJECT_DIR)/src/LCDRelated.cpp \
+			$(PROJECT_DIR)/src/Initialize.cpp \
+			$(PROJECT_DIR)/src/DetectMotion.cpp \
+			$(PROJECT_DIR)/src/Globals.cpp \
+			$(PROJECT_DIR)/src/ChangePhase.cpp
 
 ### Do not touch - the path to Arduino.mk, inside the ARDMK_DIR
 include $(ARDMK_DIR)/Arduino.mk
