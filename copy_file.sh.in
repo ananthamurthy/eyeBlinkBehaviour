@@ -35,5 +35,5 @@ while [ ! -f $from ]; do
 done
 
 if [ -f $from ]; then
-    mv $from $to
+    rsync -azv $from $to &
 fi
