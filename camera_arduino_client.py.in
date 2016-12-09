@@ -315,7 +315,10 @@ def save_img_stack(stack, index):
     if tmpfile:
         tifffile.imsave(tmpfile, stack)
         # Use Popen to move the tmp file to desired location in background.
-        subprocess.Popen([ "./copy_file.sh", tmpfile, filename])
+        t = time.time()
+        subprocess.Popen([ "./copy_file.sh", tmpfile, filename ])
+        print( 'Launched background process to copy data in %f' % ( time.time()
+            - t ) )
     print('[INFO] Saved to %s after %s secs' %
           (filename, time.time() - start_))
     start_ = time.time()
