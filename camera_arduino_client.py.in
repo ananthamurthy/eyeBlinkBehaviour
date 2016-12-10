@@ -397,12 +397,13 @@ def camera_client(readP, writeTrial, trialIndex):
                 # server.
                 metadata = np.array(map(ord, txt), dtype=np.uint8)
                 img = np.vstack((metadata, img))
-                if write_data_:
-                    cv2.putText(img, txt.strip(), (0, h_ - 10),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.4, 0, 1
+                cv2.putText(img, txt.strip(), (0, h_ - 10),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.4, 0, 1
                                 )
                 image_stack_[framesInStack] = img
-                if framesInStack % 10 == 0:
+
+                # Show every 13th frame. Why 13th?
+                if framesInStack % 13 == 0:
                     show_frame(img)
                 framesInStack += 1
                 buf = buf[frame_size_:]
