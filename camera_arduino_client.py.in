@@ -402,7 +402,8 @@ def camera_client(readP, writeTrial, trialIndex):
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.4, 0, 1
                                 )
                 image_stack_[framesInStack] = img
-                show_frame(img)
+                if framesInStack % 10 == 0:
+                    show_frame(img)
                 framesInStack += 1
                 buf = buf[frame_size_:]
         except Exception as e:
