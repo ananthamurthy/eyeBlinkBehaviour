@@ -21,7 +21,7 @@ set -o nounset                              # Treat unset variables as an error
 
 
 if [ $# -lt 3 ]; then
-    echo "USAGE: $0 mouse_name session_num session_type
+    echo "USAGE: $0 mouse_name session_num session_type"
     exit
 fi
 
