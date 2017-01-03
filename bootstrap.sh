@@ -21,6 +21,7 @@ if [ ! -f /etc/udev/rules.d/40-pgr.rules ]; then
 fi
 
 sudo mkdir -p /mnt/ramdisk
+sudo chmod a+w /mnt/ramdisk
 
 echo "All done. You may like to reboot/logout"
 echo "You may like mount a slice of ram to /mnt/ramdisk"
