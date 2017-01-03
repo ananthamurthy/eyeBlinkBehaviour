@@ -11,4 +11,10 @@ sudo apt install -y  gnuplot
 sudo apt install -y  python-tifffile python-pillow  python-matplotlib
 sudo -E pip install gnuplotlib readchar  
 
-
+echo "Now adding user to all the cool groups"
+sudo gpasswd -a $USER dialout
+if [ ! -f /etc/udev/rules.d/40-pgr.rules ]; then
+    echo "Configuring for camera"
+    bash ./PointGreyCamera/external/spin-conf
+fi
+echo "All done. You may like to reboot/logout"
