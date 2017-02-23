@@ -26,7 +26,8 @@ void detectMotion() //(unsigned long currentTime)
 	{        
 		motion1 = digitalRead(motion1_di);
 		motion2 = digitalRead(motion2_di);
-        write_data_line( motion, currentPhaseTime % 10000 ); //requires edit!
+        write_data_line( motion1, currentPhaseTime % 10000 );
+        write_data_line( motion2, currentPhaseTime % 10000 );
         lastTime += sampleInterval;
     }
 }
