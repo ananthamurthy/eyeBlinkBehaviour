@@ -52,7 +52,8 @@ unsigned int tcnt2; // used to store timer value
 
 // Globals:
 int motion                     = 0;
-const int motion_ai            = A5;        // pin that reads the treadmill motion
+const int motion1_di           = 4;        // First pin that reads treadmill motion
+const int motion2_di           = 7;        // Second pin that reads treadmill motion
 const int imagingTrigger_do    = 13;        // pin that triggers imaging
 const int videoTrigger_do      = 10;        // !!NOT USED!! pin that triggers video recording of behaviour
 const int puff_do              = 11;

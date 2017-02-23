@@ -47,7 +47,8 @@
 #define SESSION_END_MARKER ">"
 
 extern int motion;
-extern const int motion_ai;    // pin that reads the treadmill motion
+extern const int motion1_di;    // First pin that reads the treadmill motion
+extern const int motion2_di;    // Second pin that reads the treadmill motion
 extern int blinkCount;
 extern const int puff_do; // pin that drives the eye-puff solenoid
 extern const int tonePin_do; // pin that drives tone output
