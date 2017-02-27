@@ -23,11 +23,8 @@
 void detectMotion() //(unsigned long currentTime)
 {
     if ( currentPhaseTime - lastTime > sampleInterval )
-	{        
-		motion1 = digitalRead(motion1_di);
-		motion2 = digitalRead(motion2_di);
-        write_data_line( motion1, currentPhaseTime % 10000 );
-        write_data_line( motion2, currentPhaseTime % 10000 );
+    {        
+        write_data_line( currentPhaseTime % 10000 );
         lastTime += sampleInterval;
     }
 }

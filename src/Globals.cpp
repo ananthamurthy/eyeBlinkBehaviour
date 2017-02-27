@@ -24,9 +24,12 @@ void reset_watchdog( )
         wdt_reset();
 }
 
-void write_data_line( int data, unsigned long timestamp )
+void write_data_line( unsigned long timestamp )
 {
     char msg[40];
+
+    int motion1 = digitalRead(motion1_di);
+    int motion2 = digitalRead(motion2_di);
 
     prevTwoTrials[0] = prevTwoTrials[1];
     prevTwoTrials[1] = trialNum;
@@ -36,8 +39,8 @@ void write_data_line( int data, unsigned long timestamp )
     if( prevTwoTrials[1] > prevTwoTrials[0] && CS_plus )
         nextProbeIn -= 1;
 
-    sprintf(msg, "%6lu,%5d,%3d,%3d,%2d,%2d", timestamp, data, trialNum
-            , totalTrials , CS_plus, nextProbeIn
+    sprintf(msg, "%6lu,%5d,%5d,%3d,%3d,%2d,%2d", timestamp, motion1,motion2
+            , trialNum , totalTrials , CS_plus, nextProbeIn
             );
     Serial.println(msg);
     //Serial.print(status + ":" + msg);
