@@ -39,7 +39,7 @@ void write_data_line( unsigned long timestamp )
     if( prevTwoTrials[1] > prevTwoTrials[0] && CS_plus )
         nextProbeIn -= 1;
 
-    sprintf(msg, "%6lu,%5d,%5d,%3d,%3d,%2d,%2d", timestamp, motion1,motion2
+    sprintf(msg, "%6lu,%d,%d,%3d,%3d,%2d,%2d", timestamp, motion1,motion2
             , trialNum , totalTrials , CS_plus, nextProbeIn
             );
     Serial.println(msg);
