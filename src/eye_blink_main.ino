@@ -43,7 +43,7 @@ unsigned int tcnt2; // used to store timer value
 #include "DetectMotion.h"
 #include "Solenoid.h"
 #include "ChangePhase.h"
-#include "VideoTrigger.h"
+#include "TriggerVideo.h"
 #include "TriggerImaging.h"
 
 #ifdef ENABLE_LCD
@@ -55,7 +55,7 @@ int motion                     = 0;
 const int motion1_di           = 4;        // First pin that reads treadmill motion
 const int motion2_di           = 7;        // Second pin that reads treadmill motion
 const int imagingTrigger_do    = 13;        // pin that triggers imaging
-const int videoTrigger_do      = 10;        // !!NOT USED!! pin that triggers video recording of behaviour
+const int videoTrigger_do      = 10;
 const int puff_do              = 11;
 const int tonePin_do           = 2;         // changed this on 20150807
 const int ledPin_do            = 3;         // added on 20160127
@@ -69,7 +69,6 @@ extern int traceTime;                              // in ms
 extern int postTime;
 extern int totalTrials;
 int shutterDelay               = 60;        // in ms
-
 boolean profilingDataDump      = 0;         // For dumping profiling data
 
 // Protocol Information
@@ -78,6 +77,8 @@ const int CSTime               = 50;        // in ms
 const int puffTime             = 50;        // in ms
 const int minITI               = 15000;     // in ms
 const int randITI              = 5000;      // in ms
+const int startVideo           = (preTime - 500)  //in ms
+const int stopVideo            = 500        //in ms
 
 // Miscellaneous Initialisations
 int condition                  = 0;
@@ -202,7 +203,11 @@ void loop()
             case 0:                                                 // Pre
                 PF((condition+1));
                 detectMotion();
-                if (currentPhaseTime >= preTime)
+                if (currentPhaseTime >= startVideo)
+		{
+			triggerVideo(videoTrigger_do, HIGH);
+		}
+		if (currentPhaseTime >= preTime)
                 {
                     // If sessionType_ind does not involve an LED
                     if (sessionType_ind % 2 == 0)
@@ -335,7 +340,11 @@ void loop()
             case 6:                                                 //Post-Stim
                 PF((condition+1));
                 detectMotion();
-                if (currentPhaseTime >= postTime)
+                if (currentPhaseTime >= stopVideo)
+		{
+			triggerVideo(videoTrigger_do, LOW)
+		}
+		if (currentPhaseTime >= postTime)
                 {   
                     triggerImaging(imagingTrigger_do, LOW);         // Switch OFF the imaging trigger
                     interTrialTime = minITI + random( randITI );
