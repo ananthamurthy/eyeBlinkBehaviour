@@ -342,7 +342,7 @@ void loop()
                 detectMotion();
                 if (currentPhaseTime >= stopVideo)
 		{
-			triggerVideo(videoTrigger_do, LOW)
+			triggerVideo(videoTrigger_do, LOW);
 		}
 		if (currentPhaseTime >= postTime)
                 {   
