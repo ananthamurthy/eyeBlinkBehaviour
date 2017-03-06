@@ -77,8 +77,8 @@ const int CSTime               = 50;        // in ms
 const int puffTime             = 50;        // in ms
 const int minITI               = 15000;     // in ms
 const int randITI              = 5000;      // in ms
-const int startVideo           = (preTime - 500)  //in ms
-const int stopVideo            = 500        //in ms
+const int startVideo           = (preTime - 500);  //in ms
+const int stopVideo            = 500;        //in ms
 
 // Miscellaneous Initialisations
 int condition                  = 0;
