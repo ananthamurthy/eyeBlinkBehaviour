@@ -189,7 +189,7 @@ int initialize()
             // Since this is not timestamped data, send 0 as timestamp.
             // NOTE: Can't use -1 since it is unsigned long.
 
-            write_data_line(0,0);
+            write_data_line( 0 );
             startT = millis();
         }
         // Read the character and decide what to do.

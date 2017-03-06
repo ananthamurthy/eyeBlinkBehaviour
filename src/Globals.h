@@ -93,7 +93,7 @@ extern String status;
 
 void reset_watchdog( );
 
-void write_data_line( int analog_read, unsigned long timestamp );
+void write_data_line( unsigned long timestamp );
 
 bool is_command_read( char* command , bool consume = false);
 

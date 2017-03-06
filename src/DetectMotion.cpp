@@ -24,7 +24,7 @@ void detectMotion() //(unsigned long currentTime)
 {
     if ( currentPhaseTime - lastTime > sampleInterval )
     {        
-        write_data_line( 0,currentPhaseTime % 10000 );
+        write_data_line( currentPhaseTime % 10000 );
         lastTime += sampleInterval;
     }
 }
