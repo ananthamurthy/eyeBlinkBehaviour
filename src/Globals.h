@@ -54,6 +54,7 @@ extern const int puff_do; // pin that drives the eye-puff solenoid
 extern const int tonePin_do; // pin that drives tone output
 extern const int ledPin_do;  // pint that drives LED output
 extern const int videoTrigger_do; // pin that triggers video recording of behaviour
+extern const int imagingTrigger_do; // pin that triggers the microscope
 extern unsigned long startT;
 extern unsigned long currentPhaseTime;
 extern unsigned long lastTime;
