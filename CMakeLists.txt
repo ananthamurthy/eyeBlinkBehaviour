@@ -77,6 +77,10 @@ set(SELECT_AFTER 600000000)
 set(FLIPPED 0)
 set(CS_FRACTION 10)
 
+# Data directory for given session and animal
+set(DATADIR "$ENV{HOME}/DATA/${ANIMAL_NAME}_${SESSION_TYPE}_${SESSION_NUM}")
+file(MAKE_DIRECTORY ${DATADIR})
+
 
 configure_file( ${CMAKE_SOURCE_DIR}/Makefile.arduino.in
     ${CMAKE_SOURCE_DIR}/Makefile.arduino
