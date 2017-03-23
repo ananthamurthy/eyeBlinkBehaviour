@@ -137,11 +137,16 @@ SET(RUN_ARGS
      " -f ${FLIPPED} -cf ${CS_FRACTION} -sa ${SELECT_AFTER}" 
      )
 
+file(COPY ${CMAKE_SOURCE_DIR}/eye-blink-detector/extract.py 
+        ${CMAKE_SOURCE_DIR}/blinky.py
+        DESTINATION ${CMAKE_BINARY_DIR}
+     )
+
 add_custom_target( run  
     DEPENDS cam_server
     COMMAND ${CMAKE_COMMAND} -E copy_directory 
         ${CMAKE_SOURCE_DIR}/pyblink ${CMAKE_BINARY_DIR}
-        COMMAND bash -x ./run.sh ${RUN_ARGS}
+    COMMAND bash -x ./run.sh ${RUN_ARGS}
     COMMENT "Run arduino client and camera client"
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     VERBATIM

@@ -4,3 +4,6 @@
 [submodule "PointGreyCamera"]
 	path = PointGreyCamera
 	url = https://github.com/BhallaLab/PointGreyCamera
+[submodule "eye-blink-detector"]
+	path = eye-blink-detector
+	url = git@github.com:dilawar/eye-blink-detector
