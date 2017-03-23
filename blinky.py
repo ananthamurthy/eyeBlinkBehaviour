@@ -53,6 +53,9 @@ def process_frame(frame):
     edges = cv2.Canny(frame, 50, 250)
     cnts = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_TC89_KCOS)
     cntImg = np.ones(frame.shape)
+    if not cnts:
+        return frame, None, 0, 0
+
     merge_contours(cnts[0], cntImg)
 
     # cool, find the contour again and convert again. Sum up their area.

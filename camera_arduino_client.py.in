@@ -42,12 +42,11 @@ next_probe_in_ = -1
 flipped_ = -1
 
 # Frame and main window.
-current_frame_ = None
 bbox_ = [ ]
 title_ = 'Aninal'
 
 def onmouse(event, x, y, flags, params):
-    global current_frame_, bbox_
+    global bbox_
     # Draw Rectangle
     if event == cv2.EVENT_LBUTTONDOWN:
         bbox_ = []
@@ -55,7 +54,6 @@ def onmouse(event, x, y, flags, params):
 
     elif event == cv2.EVENT_LBUTTONUP:
         bbox_.append((x, y))
-        cv2.rectangle(current_frame_, bbox_[0], (x,y), 0,2)
         print( '[INFO] Current box %s' % bbox_ )
 
 window_ = cv2.namedWindow( title_ )
@@ -440,17 +438,16 @@ def camera_client(readP, writeTrial, trialIndex):
                 if len(bbox_) == 2:
                     (x0, y0), (x1, y1) = bbox_
                     gray = img[y0:y1,x0:x1]
-                    infile, outfile, res, s = blinky.process_frame(gray)
+                    infile, outfile, res, sss = blinky.process_frame(gray)
                     blinks_.append( res )
 
                 if framesInStack % 13 == 0:
                     show_frame(img)
                     if len(bbox_) == 2:
                         if len( blinks_ ) > 10:
-                            print( blinks_ )
-                            #gnuplotlib.plot( 
-                            #        np.array( blinks_[-100:] )
-                            #        , terminal = 'x11' )
+                            gnuplotlib.plot( 
+                                   np.array( blinks_[-100:] )
+                                   , terminal = 'x11' )
                 framesInStack += 1
                 buf = buf[frame_size_:]
 
