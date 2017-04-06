@@ -42,8 +42,9 @@ next_probe_in_ = -1
 flipped_ = -1
 
 # Frame and main window.
-bbox_ = [ ]
-title_ = 'Aninal'
+bbox_ = [ (255,131), (521, 288) ]
+title_ = 'Animal Window'
+
 
 def onmouse(event, x, y, flags, params):
     global bbox_
@@ -434,19 +435,30 @@ def camera_client(readP, writeTrial, trialIndex):
                                 )
                 image_stack_[framesInStack] = img
 
-                # Show every 13th frame. Why 13th?
                 if len(bbox_) == 2:
-                    (x0, y0), (x1, y1) = bbox_
-                    gray = img[y0:y1,x0:x1]
-                    infile, outfile, res, sss = blinky.process_frame(gray)
-                    blinks_.append( res )
+                    # print( 'Bounding box has been drawn : %s' % str(bbox_) )
+                    cv2.rectangle( img, bbox_[0], bbox_[1], 128 )
+                    try:
+                        (x0, y0), (x1, y1) = bbox_
+                        roi = img[y0:y1,x0:x1]
+                        infile, outfile, res, sss = blinky.process_frame(roi)
+                        cv2.putText( 
+                                img, '%.2f' % res, (0, 10 )
+                                 , cv2.FONT_HERSHEY_SIMPLEX, 0.4, 255, 2
+                                 )
+                        blinks_.append( res )
+                    except Exception as e:
+                        print( "Failed to compute blink %s" % e  )
+                else:
+                    blinks_.append( -1 )
 
-                if framesInStack % 13 == 0:
+                # Show every 10th frame.
+                if framesInStack % 10 == 0:
                     show_frame(img)
                     if len(bbox_) == 2:
                         if len( blinks_ ) > 10:
                             gnuplotlib.plot( 
-                                   np.array( blinks_[-100:] )
+                                   np.array( blinks_[-500:] )
                                    , terminal = 'x11' )
                 framesInStack += 1
                 buf = buf[frame_size_:]
