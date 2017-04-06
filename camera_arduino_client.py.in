@@ -454,12 +454,19 @@ def camera_client(readP, writeTrial, trialIndex):
 
                 # Show every 10th frame.
                 if framesInStack % 10 == 0:
-                    show_frame(img)
-                    if len(bbox_) == 2:
-                        if len( blinks_ ) > 10:
-                            gnuplotlib.plot( 
-                                   np.array( blinks_[-500:] )
-                                   , terminal = 'x11' )
+                    show_frame( img )
+                    # show_frame( np.vstack( (infile, outfile )) )
+
+                    # Enable the following if you want to see the blink data on
+                    # separate plot window. Slows down frame rate a bit ~ 10 to
+                    # 20 FPS.
+
+                    #if len(bbox_) == 2:
+                    #    if len( blinks_ ) > 10:
+                    #        gnuplotlib.plot( 
+                    #               np.array( blinks_[-500:] )
+                    #               , terminal = 'x11' )
+
                 framesInStack += 1
                 buf = buf[frame_size_:]
 
