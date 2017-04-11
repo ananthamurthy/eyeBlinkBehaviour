@@ -256,6 +256,7 @@ void configure_experiment( )
             Serial.println( incoming_byte_ - '0' );
             delay( 100 );
         }
+#endif
     }
 }
 
