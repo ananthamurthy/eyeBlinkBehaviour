@@ -142,6 +142,15 @@ file(COPY ${CMAKE_SOURCE_DIR}/eye-blink-detector/extract.py
         DESTINATION ${CMAKE_BINARY_DIR}
      )
 
+add_custom_target( test
+    DEPENDS upload 
+    COMMAND miniterm.py ${PORT} ${BAUD_RATE}
+    COMMENT "Testing arduino"
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    VERBATIM
+    )
+
+
 add_custom_target( run  
     DEPENDS cam_server
     COMMAND ${CMAKE_COMMAND} -E copy_directory 
