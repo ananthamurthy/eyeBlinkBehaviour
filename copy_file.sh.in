@@ -1,0 +1,39 @@
+#!/bin/bash - 
+#===============================================================================
+#
+#          FILE: copy_file.sh
+# 
+#         USAGE: ./copy_file.sh 
+# 
+#   DESCRIPTION: Copy one file from one place to another, wait for file to
+#   appear.
+# 
+#       OPTIONS: ---
+#  REQUIREMENTS: ---
+#          BUGS: ---
+#         NOTES: ---
+#        AUTHOR: Dilawar Singh (), dilawars@ncbs.res.in
+#  ORGANIZATION: NCBS Bangalore
+#       CREATED: Friday 09 December 2016 05:31:39  IST
+#      REVISION:  ---
+#===============================================================================
+
+set -o nounset                              # Treat unset variables as an error
+from=$1
+to=$2
+
+# Wait for file to appear for a second.
+n=0
+while [ ! -f $from ]; do
+    sleep 0.5
+    printf '.'
+    n=$((n+1))
+    if [[ $n == 2 ]]; then
+        echo "$from is not available. Timeout 1 sec. Cant copy"
+        break
+    fi
+done
+
+if [ -f $from ]; then
+    cp $from $to &
+fi

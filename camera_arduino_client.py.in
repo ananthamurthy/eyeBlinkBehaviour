@@ -1,0 +1,590 @@
+#!/usr/bin/env python
+
+from __future__ import print_function
+
+__author__ = "Dilawar Singh"
+__copyright__ = "Copyright 2016, Dilawar Singh"
+__credits__ = ["NCBS Bangalore"]
+__license__ = "GNU GPL"
+__version__ = "1.0.0"
+__maintainer__ = "Dilawar Singh"
+__email__ = ""
+__status__ = "Development"
+
+import sys
+import os
+import socket
+import io
+import random
+import time
+import errno
+import numpy as np
+import cv2
+from multiprocessing import Process, Value, Pipe
+import datetime
+import re
+import config
+import arduino
+import readchar
+from collections import defaultdict
+import logging
+import tifffile
+import subprocess
+import blinky
+import gnuplotlib
+
+logging.basicConfig(level=logging.INFO)
+
+start_ = time.time()
+total_trials_ = 0
+cs_type_ = None
+next_probe_in_ = -1
+flipped_ = -1
+
+# Frame and main window.
+bbox_ = [ (255,131), (521, 288) ]
+title_ = 'Animal Window'
+
+
+def onmouse(event, x, y, flags, params):
+    global bbox_
+    # Draw Rectangle
+    if event == cv2.EVENT_LBUTTONDOWN:
+        bbox_ = []
+        bbox_.append((x, y))
+
+    elif event == cv2.EVENT_LBUTTONUP:
+        bbox_.append((x, y))
+        print( '[INFO] Current box %s' % bbox_ )
+
+window_ = cv2.namedWindow( title_ )
+cv2.setMouseCallback( title_, onmouse )
+
+select_sent_ = False
+
+running_trial_ = 0
+finished_all_ = False
+
+script_dir = os.path.dirname(os.path.realpath(__file__))
+config_file = os.path.join(script_dir, 'config.h')
+
+if not os.path.isfile(config_file):
+    print("I can't find %s. Make sure it is available" % config_file)
+    print(" Did you run cmake? ")
+    quit()
+
+h_, w_ = -1, -1
+with open(config_file, "r") as cf:
+    configText = cf.read()
+    h = re.search(r'#define\s+FRAME_HEIGHT\s+(\d+)', configText).group(1)
+    w = re.search(r'#define\s+FRAME_WIDTH\s+(\d+)', configText).group(1)
+    sock = re.search(r'#define\s+SOCK_PATH\s+\"(.+?)\"', configText).group(1)
+    h_, w_ = int(h), int(w)
+    assert sock, "Can't read socket path from configuration file"
+
+sock_name_ = sock
+
+img_shape_ = (h_, w_)
+frame_size_ = img_shape_[0] * img_shape_[1]
+
+# Maximum allowed frame in each trial. This is guard against RAM overflow in
+# case arduino failes to update trial count. After every 2000 frames, the data
+# will be flushed to disk.
+max_frames_in_trial = 4200
+image_stack_ = None
+
+now = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+
+# When True, put a small text on each frame.
+write_data_ = True
+data_dir_ = "@DATADIR@"
+if not os.path.isdir(data_dir_):
+    if write_data_:
+        os.makedirs(data_dir_)
+
+# Arduino data storate
+def trial_file_path( trialNum ):
+    return os.path.join( data_dir_, '%s.dat' % trialNum )
+
+def cleanup():
+    global finished_all_
+    finished_all_ = True
+    config.serial_port_.write_msg('rr')
+    print("+++++++++++++++++++++++++++++ All over")
+
+
+def append_trial_data(outfile, value, time, trialNum, cs, nextProbeIn):
+    with open(outfile, 'a') as f:
+        f.write('%s,%s,%s,%s\n' % (value, time, cs, nextProbeIn))
+
+
+def send_press_select(reftime, interval):
+    if time.time() - reftime < interval:
+        return False
+    logging.info('Sending SELECT to board')
+    config.serial_port_.write_msg("ss\r")
+    time.sleep(0.5)
+    logging.info('[INFO] Waiting for Board to respond .', end='')
+    sys.stdout.flush()
+    while '>>>Recieved' not in config.serial_port_.read_line():
+        print('.', end='')
+        sys.stdout.flush()
+    return True
+
+
+def read_line():
+    now = datetime.datetime.now().isoformat()
+    line = config.serial_port_.read_line()
+    return now + ',' + line.replace(' ', '')
+
+
+def arduino_client(writeP, writeTrial, trialIndex):
+    global running_trial_
+    global cs_type_
+    global next_probe_in_
+    global select_sent_
+    global finished_all_
+
+    tstart = time.time()
+    currentTrialIndex = 0
+
+    # Till select is not sent.
+    while not (finished_all_ or select_sent_):
+        line = read_line()
+        # print( '[DEBUG] 0: %s' % line )
+        writeP.send(line)
+        x, y, trialNum, totalTrials, cs, next_probe_in_ = line_to_data(line)
+        if (x and y) is None:
+            continue
+
+        # Valid trial has already started, arduino says so.
+        if trialNum > 0:
+            break
+
+        # All right. If we are here then we are waiting for SELECT to be
+        # pressed. Let's press is by sending three ` to serialport after
+        # some timeout.
+        if send_press_select(tstart, config.args_.select_after):
+            logging.info("SELECT sent")
+            break
+
+    # Either we have pressed the SELECT or we have sent the select command ss
+    select_sent_ = True
+
+    # After select has been sent to arduino.
+    print('SELECT has been sent. Now acquiring data from valid trials')
+    while not finished_all_:
+        line = read_line()
+        # print( '[DEBUG] 1: %s' % line )
+        writeP.send(line)
+        x, y, trialNum, totalTrials, cs_type_, next_probe_in_ = line_to_data(
+            line)
+
+        if (x and y) is None:
+            continue
+
+        # NOTE: Write arduino data separately
+        trialFile = trial_file_path( trialNum )
+        append_trial_data(trialFile, y, x, trialNum, cs_type_, next_probe_in_)
+        if trialNum > currentTrialIndex:
+            print('WRITE TRIAL CONDITION MET', trialNum, currentTrialIndex)
+            print('\tWrite data of previous trial')
+            with trialIndex.get_lock():
+                trialIndex.value = currentTrialIndex
+            writeTrial.value = 1
+            currentTrialIndex = trialNum
+
+        if trialNum == totalTrials:
+            finished_all_ = True
+
+
+def answer_questions(numbers=5):
+    # All great UI have four questions. Yes we have to, they all starts with
+    # Please. Not three. Four. Sorry.
+    questionsAnswered = []
+    for i in range(20):
+        l = arduino.read_until('?? Please', timeout=1)
+        if 'mouse name' in l:
+            logging.info('[ANSW] %s = %s' % (l, config.args_.name))
+            config.serial_port_.write_msg('%s\r' % config.args_.name)
+            time.sleep(0.5)
+            if l not in questionsAnswered:
+                questionsAnswered.append(l)
+        elif 'session type' in l:
+            logging.info('[ANSW] %s = %s' % (l, config.args_.session_type))
+            config.serial_port_.write_msg('%s\r' % config.args_.session_type)
+            time.sleep(0.5)
+            if l not in questionsAnswered:
+                questionsAnswered.append(l)
+        elif 'session number' in l:
+            logging.info('[ANSW] %s = %s' % (l, config.args_.session_num))
+            config.serial_port_.write_msg('%s\r' % config.args_.session_num)
+            time.sleep(0.5)
+            if l not in questionsAnswered:
+                questionsAnswered.append(l)
+        elif 'want to flip' in l:
+            logging.info('[ANSW] %s = %s' % (l, config.args_.flipped))
+            config.serial_port_.write_msg('%s\r' % config.args_.flipped)
+            time.sleep(0.5)
+            flipped_ = 1
+            if l not in questionsAnswered:
+                questionsAnswered.append(l)
+        elif 'CS Fraction' in l:
+            logging.info("[ANSW] %s = %s " % (l, config.args_.cs_fraction))
+            config.serial_port_.write_msg('%s\r' % config.args_.cs_fraction)
+            time.sleep(0.5)
+            if l not in questionsAnswered:
+                questionsAnswered.append(l)
+        else:
+            pass
+
+        if len(questionsAnswered) == numbers:
+            logging.info('[INFO] All questions are answered')
+            return
+
+
+def init_arduino_client():
+    """
+    Wait for first four questions to appear which requires writing to serial
+    port. If serial port is sending legal data then continue, questions are
+    probably answered.
+    """
+    global finished_all_
+    arduinoAlive = False
+    for i in range(20):
+        l = read_line()
+        if 'please' in l.lower():
+            arduinoAlive = True
+            answer_questions()
+            break
+    if not arduinoAlive:
+        print('[ERROR] Seems like arduino is not sending valid data ..')
+        print('\t I am going to quit ...')
+        finished_all_ = True
+
+
+def send_command():
+    # all commands should be two characters long
+    # This function must be last one after all the threads/processes have been
+    # launched.
+    global select_sent_
+    global finished_all_
+    command = ""
+    legalCommandsBeforeStart = ["11", "22", "pp", "ss"]
+    legalCommandsAfterStart = ["rr", "ww", "cc"]
+    validCommands = legalCommandsAfterStart + legalCommandsBeforeStart
+    validStartChars = ''.join([x[0] for x in validCommands])
+    print('Executing send command loop')
+    while True:
+        # This is blocking.
+        k = readchar.readkey()
+        if k in validStartChars:
+            command += k
+            if command in legalCommandsBeforeStart and not select_sent_:
+                logging.info("[COMMAND] Sending command: %s" % command)
+                config.serial_port_.write_msg(command)
+                command = ""
+            # Last two commands needs to be handled separately.
+            elif command == 'ss' and (not select_sent_):
+                select_sent_ = True
+                config.serial_port_.write_msg(command)
+            elif command == 'rr':
+                # reboot.
+                logging.warn(
+                    "Reboot in 2 seconds. You have to relaunch the app")
+                config.serial_port_.write_msg(command)
+                finished_all_ = True
+                raise KeyboardInterrupt
+            elif (command in legalCommandsAfterStart) and select_sent_:
+                logging.info(
+                    "[COMMAND] Sending command (after start): %s" %
+                    command)
+                config.serial_port_.write_msg(command)
+                command = ""
+            else:
+                if(len(command) == 2):
+                    logging.info("Did not send :%s, select_sent_ %s" % (
+                        command, select_sent_)
+                    )
+            if len(command) == 2:
+                command = ""
+        elif k in ['\x03', '\x04', '\x1a']:
+            finished_all_ = True
+            break
+
+
+def init_serial(baudRate=38400):
+    if config.args_.port is None:
+        config.args_.port = arduino.get_default_serial_port()
+    logging.info("Using port: %s" % config.args_.port)
+    config.serial_port_ = arduino.ArduinoPort(config.args_.port, baudRate)
+    config.serial_port_.open(wait=True)
+
+
+def line_to_data(line):
+    """First element is timestamp, rest the data etc.
+    """
+    # print( line )
+    line = line.split(',')[1:]
+    if not line:
+        data = [None] * 6
+    try:
+        data = [int(x) for x in line]
+    except Exception as e:
+        data = [None] * 6
+    if len(data) != 6:
+        logging.debug("Invalid line: %s" % line)
+        data = [None] * 6
+    return data
+
+
+def save_img_stack(stack, index):
+    global start_
+    filename = os.path.join(data_dir_, 'stack_%03d.tif' % index)
+    tmpfile = os.path.join('/mnt', 'ramdisk', 'tmp.tif')
+    if tmpfile:
+        tifffile.imsave(tmpfile, stack)
+        # Use Popen to move the tmp file to desired location in background.
+        t = time.time()
+        subprocess.Popen([ "./copy_file.sh", tmpfile, filename ])
+        print( 'Launched background process to copy data in %f' % ( time.time()
+            - t ) )
+    print('[INFO] Saved to %s after %s secs' %
+          (filename, time.time() - start_))
+    start_ = time.time()
+
+
+def init_stack():
+    """
+    Set height to be 1 more than what is sent by camera for we'll add dataline
+    recieved from arduino board as the first row of frame.
+    """
+    global image_stack_
+    global h_, w_
+    global max_frames_in_trial
+    image_stack_ = np.zeros(
+        shape=(max_frames_in_trial, h_ + 1, w_), dtype=np.uint8
+    )
+
+
+def poll_socket():
+    return os.path.exists(sock_name_)
+
+
+def show_frame(frame, outfile=None):
+    global title_
+    cv2.imshow( title_, frame)
+    cv2.waitKey(1)
+    if outfile:
+        cv2.imsave(outfile, frame)
+
+
+def camera_client(readP, writeTrial, trialIndex):
+    global finished_all_
+    global img_, buf_
+    global image_stack_
+    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+
+    # Connect to socket. Try only for 5 seconds.
+    now = time.time()
+    while not finished_all_:
+        if time.time() - now > 5:
+            print('[INFO] Timeout in connecting socket. Quitting')
+            finished_all_ = True
+            break
+        if os.path.exists(sock_name_):
+            try:
+                s.connect(sock_name_)
+                break
+            except Exception as e:
+                print('Error connecting %s' % e)
+                time.sleep(1)
+        else:
+            print('Could not find %s' % sock_name_)
+            time.sleep(1)
+
+    totalBytesRead = 0
+    totalFrames = 0
+    buf = ''
+    init_stack()
+    framesInStack = 0
+    trial_count = 0
+    blinks_ = []
+    while not finished_all_:
+        try:
+            data = s.recv(frame_size_)
+            buf += data
+            if len(buf) >= frame_size_:
+                now = datetime.datetime.now().isoformat()
+                img = np.frombuffer(buf[:frame_size_], dtype=np.uint8)
+                img = np.reshape(img, img_shape_)
+                txt = now
+                # Read from PIPE but it should not be blocking.
+                if readP.poll():
+                    txt += ',' + readP.recv()
+
+                # Fill txt to have its length equal to frame width
+                txt += ' ' * (img_shape_[1] - len(txt))
+                # Convert txt to binary and prefix to the img we got from camera
+                # server.
+                metadata = np.array(map(ord, txt), dtype=np.uint8)
+                img = np.vstack((metadata, img))
+                if write_data_:
+                    cv2.putText(img, txt.strip(), (0, h_ - 10),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.4, 128, 1
+                                )
+                image_stack_[framesInStack] = img
+
+                if len(bbox_) == 2:
+                    # print( 'Bounding box has been drawn : %s' % str(bbox_) )
+                    cv2.rectangle( img, bbox_[0], bbox_[1], 128 )
+                    try:
+                        (x0, y0), (x1, y1) = bbox_
+                        roi = img[y0:y1,x0:x1]
+                        infile, outfile, res, sss = blinky.process_frame(roi)
+                        cv2.putText( 
+                                img, '%.2f' % res, (0, 10 )
+                                 , cv2.FONT_HERSHEY_SIMPLEX, 0.4, 255, 2
+                                 )
+                        blinks_.append( res )
+                    except Exception as e:
+                        print( "Failed to compute blink %s" % e  )
+                else:
+                    blinks_.append( -1 )
+
+                # Show every 10th frame.
+                if framesInStack % 10 == 0:
+                    show_frame( img )
+                    # show_frame( np.vstack( (infile, outfile )) )
+
+                    # Enable the following if you want to see the blink data on
+                    # separate plot window. Slows down frame rate a bit ~ 10 to
+                    # 20 FPS.
+
+                    #if len(bbox_) == 2:
+                    #    if len( blinks_ ) > 10:
+                    #        gnuplotlib.plot( 
+                    #               np.array( blinks_[-500:] )
+                    #               , terminal = 'x11' )
+
+                framesInStack += 1
+                buf = buf[frame_size_:]
+
+        except Exception as e:
+            # Keep reading.
+            print(e)
+            continue
+
+        if framesInStack >= max_frames_in_trial:
+            framesInStack = 0
+            print( '[INFO] Too many frames in buffer.. flusing ' )
+            save_img_stack(image_stack_, trialIndex.value)
+            init_stack( )
+
+        if writeTrial.value == 1:
+            framesInStack = 0
+            writeTrial.value = 0
+            save_img_stack(image_stack_, trialIndex.value)
+            init_stack()
+
+
+def main():
+    # Lock so that only one process prints to console at a time.
+    # When daemon is set to True, all threads will exit (ungracefully) when main
+    # terminates.
+    global finished_all_
+
+    config.init_logger(config.args_.port.replace('/', '_'))
+    init_arduino_client()
+    print('Initialized arduino board')
+
+    # Variables to share between processes.
+    writeTrial = Value('d', 0)
+    trialIndex = Value('d', 0)
+
+    readP, writeP = Pipe(duplex=False)
+    cam = Process(target=camera_client, args=(readP, writeTrial, trialIndex)
+                  )
+    cam.daemon = True
+    cam.start()
+    print('Camera client launched')
+
+    arduinoP = Process(
+        target=arduino_client,
+        args=(
+            writeP,
+            writeTrial,
+            trialIndex))
+    arduinoP.daemon = True
+    arduinoP.start()
+    print("Arduino client launched")
+
+    try:
+        send_command()
+    except Exception as e:
+        print('Got %s in send_comamnd' % e)
+        finished_all_ = True
+        raise KeyboardInterrupt
+
+    arduinoP.join()
+    cam.join()
+    print('All done')
+
+if __name__ == '__main__':
+    import argparse
+    description = '''Recieve data from serial port and camera as well.'''
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument(
+        '--name',
+        '-n',
+        required=True,
+        type=str,
+        help='Mouse name (string)')
+    parser.add_argument(
+        '--session-type',
+        '-st',
+        required=True,
+        type=int,
+        help='Seession Type [0 to 11]')
+    parser.add_argument(
+        '--session-num',
+        '-sn',
+        required=True,
+        type=int,
+        help='Session number (positive integer)')
+    parser.add_argument(
+        '--port',
+        '-p',
+        required=False,
+        default=None,
+        help='Serial port [full path]')
+    parser.add_argument(
+        '--select_after',
+        '-sa',
+        required=False,
+        default=60000000.0,
+        type=float,
+        help='Press SELECT after time. Default 600 sec.')
+    parser.add_argument(
+        '--flipped',
+        '-f',
+        required=False,
+        default=0,
+        type=int,
+        help='Wheather CS+/CS- are to be flipped (0/1 (False,True)')
+    parser.add_argument(
+        '--cs_fraction',
+        '-cf',
+        required=False,
+        default=10,
+        type=int,
+        help='CS fraction')
+    parser.parse_args(namespace=config.args_)
+    init_serial()
+    # Intialize logger after intializing serial port.
+    try:
+        main()
+    except KeyboardInterrupt as e:
+        logging.warn("Interrupt from keyboard.... Quitting after cleanup.")
+        cleanup()
+        quit(1)

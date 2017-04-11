@@ -1,13 +1,11 @@
 /***
  *       Filename:  main.ino
  *
- *    Description:  Anamika Protocol for EyeBlinkConditioning.
+ *    Description:  Protocol for EyeBlinkConditioning.
  *
  *        Version:  0.0.1
- *        Created:  2016-09-29
+ *        Created:  2017-04-11
 
- *       Revision:  none
- *
  *         Author:  Dilawar Singh <dilawars@ncbs.res.in>
  *   Organization:  NCBS Bangalore
  *
@@ -16,20 +14,39 @@
 
 #include <avr/wdt.h>
 
-#define         DRY_RUN         1
+#define         DRY_RUN                     1
+
 // Pins etc.
-#define         TONE_PIN        2
-#define         LED_PIN         3
-#define         PUFF_PIN        11
-#define         SENSOR_PIN      A5
-#define         TONE_FREQ       4500
-#define         PUFF_DURATION  50
+#define         TONE_PIN                    2
+#define         LED_PIN                     3
+#define         MOTION1_PIN                 4
+#define         MOTION2_PIN                 7
+#define         CAMERA_TTL_PIN              10
+#define         PUFF_PIN                    11
+#define         SENSOR_PIN                  A5
+#define         IMAGING_TRIGGER_PIN         13
+
+/*-----------------------------------------------------------------------------
+ *  Change parameters here.
+ *-----------------------------------------------------------------------------*/
+#define         TONE_FREQ                   4500
+#define         TONE_START_TIME             5000 
+#define         TONE_END_TIME               5350
+#define         PUFF_START_TIME             5600
+#define         PUFF_END_TIME               5650
+#define         TRIAL_DURATION             11000
+
 
 unsigned long stamp_ = 0;
 unsigned dt_ = 2;
 unsigned write_dt_ = 2;
 unsigned trial_count_ = 0;
-char msg_[40];
+unsigned motion1 = 0;
+unsigned motion2 = 0;
+unsigned camera = 0;
+unsigned microscope = 0;
+
+char msg_[80];
 
 unsigned long trial_start_time_ = 0;
 unsigned long trial_end_time_ = 0;
@@ -37,7 +54,7 @@ unsigned long trial_end_time_ = 0;
 /**
  * @brief Duration of each trial.
  */
-const unsigned trial_duration_ = 18000;
+const unsigned trial_duration_ = 11000;
 
 char trial_state_[5] = "PRE_";
 
@@ -125,17 +142,21 @@ bool is_command_read( char command, bool consume = true )
 void write_data_line( )
 {
     reset_watchdog( );
-    int data = analogRead( SENSOR_PIN );
+
+    int puff = digitalRead( PUFF_PIN );
+    int led = digitalRead( LED_PIN );
+
     int tone = analogRead( TONE_PIN );
-    int puff = analogRead( PUFF_PIN );
-    int led = analogRead( LED_PIN );
+
+    int microscope = digitalRead( IMAGING_TRIGGER_PIN );
+    unsigned camera = digitalRead( CAMERA_TTL_PIN );
+
     unsigned long timestamp = millis() - trial_start_time_;
     
     sprintf(msg_  
-            , "%lu,%d,%d,%d,%d,%d,%s"
-            , timestamp, data, trial_count_
-            , tone, puff, led
-            , trial_state_
+            , "%lu,%d,%d,%d,%d,%d,%d,%d,%d,%s"
+            , timestamp, trial_count_, puff, tone, led
+            , motion1, motion2, camera, microscope, trial_state_
             );
     Serial.println(msg_);
     Serial.flush( );
@@ -202,9 +223,11 @@ void configure_experiment( )
 {
     // While this is not answered, keep looping 
     Serial.println( "?? Please configure your experiment" );
-    Serial.println( "Session type: Press 0 for 0.5 sec trace, 1 for 1 sec trace ? " );
+    Serial.println( "NOTE: This has been disabled" );
     while( true )
     {
+        break;
+#if 0
         incoming_byte_ = Serial.read( ) - '0';
         if( incoming_byte_ < 0 )
         {
@@ -242,7 +265,7 @@ void configure_experiment( )
  */
 void wait_for_start( )
 {
-    sprintf( trial_state_, "INVA" , 4);
+    sprintf( trial_state_, "INVA" );
     while( true )
     {
         write_data_line( );
@@ -254,7 +277,12 @@ void wait_for_start( )
         else if( is_command_read( 'p', true ) ) 
         {
             Serial.println( ">>> Playing puff" );
-            play_puff( PUFF_DURATION );
+            play_puff( PUFF_END_TIME - PUFF_START_TIME );
+        }
+        else if( is_command_read( 't', true ) ) 
+        {
+            Serial.println( ">>> Playing tone" );
+            play_tone( TONE_END_TIME - TONE_START_TIME, 1.0);
         }
         else
         {
@@ -276,15 +304,31 @@ void setup()
 
     pinMode( TONE_PIN, OUTPUT );
     pinMode( PUFF_PIN, OUTPUT );
+    pinMode( CAMERA_TTL_PIN, OUTPUT );
+    pinMode( IMAGING_TRIGGER_PIN, OUTPUT );
+
+    // When HIGH, imaging starts, when LOW imaging stops.
+    pinMode( IMAGING_TRIGGER_PIN, OUTPUT);
 
     digitalWrite( PUFF_PIN, LOW );
-    digitalWrite( TONE_PIN, LOW );
+    digitalWrite( IMAGING_TRIGGER_PIN, LOW);
+
+    tone( TONE_PIN, 0 );
 
     configure_experiment( );
     Serial.println( ">>> Waiting for 's' to be pressed" );
     wait_for_start( );
 }
 
+void do_zero_trial( )
+{
+    return;
+}
+
+void do_first_trial( )
+{
+    return;
+}
 
 /**
  * @brief Do a single trial.
@@ -292,7 +336,7 @@ void setup()
  * @param trial_num. Index of the trial.
  * @param ttype. Type of the trial.
  */
-void do_trial( unsigned int trial_num, trial_type_t_ ttype)
+void do_trial( unsigned int trial_num, trial_type_t_ ttype, bool play_tone = false )
 {
     reset_watchdog( );
     check_for_reset( );
@@ -302,52 +346,63 @@ void do_trial( unsigned int trial_num, trial_type_t_ ttype)
     /*-----------------------------------------------------------------------------
      *  PRE
      *-----------------------------------------------------------------------------*/
-    sprintf( trial_state_, "PRE_", 4 );
+    unsigned duration = 500;
+    unsigned endBlockTime = 0;
+
+    sprintf( trial_state_, "PRE_" );
+    digitalWrite( IMAGING_TRIGGER_PIN, HIGH);
+
     write_data_line( );
-    while( millis( ) - trial_start_time_ <= 5000 )
+    while( millis( ) - trial_start_time_ < duration ) /* PRE_ time */
         write_data_line( );
 
     /*-----------------------------------------------------------------------------
-     *  TONE
+     *  CS: 50 ms duration. No tone is played here. Write LED pin to HIGH.
      *-----------------------------------------------------------------------------*/
-    unsigned toneDuration = 1000 * (3 + random( 5 ));
-    stamp_ = millis();
-    sprintf( trial_state_, "TONE", 4);
-    while( millis( ) - stamp_ <= toneDuration )
-        play_tone( 100, 0.5 );
+    endBlockTime = millis( );
+    duration = 50;
+    while( millis( ) -  endBlockTime <= duration )
+    {
+        check_for_reset( );
+        write_data_line( );
+        digitalWrite( LED_PIN, HIGH );
+    }
+    endBlockTime = millis( );
+
 
     /*-----------------------------------------------------------------------------
-     *  TRACE
+     *  TRACE. The duration of trace varies from trial to trial.
      *-----------------------------------------------------------------------------*/
-    unsigned traceDuration = 500;
-    if( tsubtype_ == second )
-        unsigned traceDuration = 1000;
+    if( 6 <= trial_num <= 7 )
+        duration = 0;
+    else if( 10 <= trial_num <= 11 )
+        duration = 350;
+    else if( 12 <= trial_num <= 13 )
+        duration = 450;
+    else
+        duration = 250;
 
-    stamp_ = millis( );
-    sprintf( trial_state_, "TRAC", 4 );
-    while( millis( ) - stamp_ < traceDuration )
+    sprintf( trial_state_, "TRAC" );
+    while( millis( ) - endBlockTime <= duration )
     {
         check_for_reset( );
         write_data_line( );
     }
+    endBlockTime = millis( );
 
     /*-----------------------------------------------------------------------------
-     *  PUFF, only when ttype is not probe
+     *  PUFF for 50 ms.
      *-----------------------------------------------------------------------------*/
-    if( probe != ttype  )
-    {
-        //Serial.println( "PUFF" );
-        sprintf( trial_state_, "PUFF", 4 );
-        play_puff( PUFF_DURATION );
-        delay( 1 );
-    }
+    duration = 50;
+    sprintf( trial_state_, "PUFF" );
+    play_puff( duration );
+    endBlockTime = millis( );
     
     /*-----------------------------------------------------------------------------
      *  POST, flexible duration till trial is over.
      *-----------------------------------------------------------------------------*/
     // Last phase is post. If we are here just spend rest of time here.
-    sprintf( trial_state_, "POST", 4 );
-    stamp_ = millis( );
+    sprintf( trial_state_, "POST" );
     while( millis( ) - trial_start_time_ <= trial_duration_ )
     {
         check_for_reset( );
@@ -359,6 +414,7 @@ void do_trial( unsigned int trial_num, trial_type_t_ ttype)
      *-----------------------------------------------------------------------------*/
     if( millis() - trial_start_time_ >= trial_duration_ )
     {
+        digitalWrite( IMAGING_TRIGGER_PIN, LOW ); /* Shut down the imaging. */
         Serial.print( ">>END Trial " );
         Serial.print( trial_count_ );
         Serial.println( " is over. Starting new");
@@ -370,14 +426,27 @@ void loop()
 {
     reset_watchdog( );
 
-    for (size_t i = 0; i <= 100; i++) 
+    do_zero_trial( );
+
+    do_first_trial( );
+
+    for (size_t i = 2; i <= 100; i++) 
     {
         reset_watchdog( );
-        if( i % 10 == 0 )
-            do_trial( i, probe );
-        else
-            do_trial( i, type );
+        do_trial( i, probe );
+
+        
+        /*-----------------------------------------------------------------------------
+         *  ITI.
+         *-----------------------------------------------------------------------------*/
+        unsigned long duration = random( 5000, 10001);
+        unsigned long stamp_ = millis( );
+        sprintf( trial_state_, "ITI_" );
+        while( millis( ) - stamp_ <= duration )
+            write_data_line( );
+        
     }
+
     // We are done with all trials. Nothing to do.
     reset_watchdog( );
     Serial.println( "All done. Party!" );

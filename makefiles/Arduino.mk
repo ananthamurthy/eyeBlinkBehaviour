@@ -1426,15 +1426,14 @@ error_on_caterina:
 
 # Use submake so we can guarantee the reset happens
 # before the upload, even with make -j
-upload:		$(TARGET_HEX) verify_size
-		$(MAKE) reset
-		$(MAKE) do_upload
+upload:		$(TARGET_HEX) verify_size do_upload
+	echo "Uploaded"
 
 raw_upload:	$(TARGET_HEX) verify_size
 		$(MAKE) error_on_caterina
 		$(MAKE) do_upload
 
-do_upload:
+do_upload: reset
 		$(AVRDUDE) $(AVRDUDE_COM_OPTS) $(AVRDUDE_ARD_OPTS) \
 			$(AVRDUDE_UPLOAD_HEX)
 

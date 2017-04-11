@@ -107,7 +107,7 @@ def initialize_trial_file( trial_number ):
     print('[INFO] Initializing a new trial file', end='')
     with open( trialFile, "w") as f:
         f.write("# Written on: %s\n" % datetime.datetime.now().isoformat())
-        f.write("# mouse id  : %s\n" % config.args_.name)
+        f.write("# mouse name : %s\n" % config.args_.name)
         f.write("# Session type : %s\n" % config.args_.session_type)
         f.write("# Session num : %s\n" % config.args_.session_num)
         f.write("# flipped : %s\n" % flipped_)
@@ -232,13 +232,49 @@ def plot_data( lock ):
                                         # Auto-scale y-range automatically.
                 )
 
-def answer_questions( numbers = 1):
-    l = config.serial_port_.read_line( )
-    if 'session type' in l.lower():
-        _logger.info('[ANSW] %s = %s' % (l, config.args_.session_type))
-        config.serial_port_.write_msg('%s' % config.args_.session_type )
-        time.sleep(0.5)
-    print( '[INFO] Configuration done' )
+def answer_questions( numbers = 5):
+    # All great UI have four questions. Yes we have to, they all starts with
+    # Please. Not three. Four. Sorry.
+    questionsAnswered = [ ]
+    for i in range( 20 ):
+        l = arduino.read_until('?? Please', timeout = 1)
+        if 'mouse name' in l:
+            _logger.info('[ANSW] %s = %s' % (l, config.args_.name))
+            config.serial_port_.write_msg('%s\r' % config.args_.name )
+            time.sleep(0.5)
+            if l not in questionsAnswered:
+                questionsAnswered.append(l)
+        elif 'session type' in l:
+            _logger.info('[ANSW] %s = %s' % (l, config.args_.session_type))
+            config.serial_port_.write_msg( '%s\r' % config.args_.session_type )
+            time.sleep(0.5)
+            if l not in questionsAnswered:
+                questionsAnswered.append(l)
+        elif 'session number' in l:
+            _logger.info('[ANSW] %s = %s' % (l, config.args_.session_num))
+            config.serial_port_.write_msg('%s\r' % config.args_.session_num )
+            time.sleep(0.5)
+            if l not in questionsAnswered:
+                questionsAnswered.append(l)
+        elif  'want to flip' in l:
+            _logger.info('[ANSW] %s = %s' % (l, config.args_.flipped))
+            config.serial_port_.write_msg('%s\r' % config.args_.flipped)
+            time.sleep(0.5)
+            flipped_ = 1
+            if l not in questionsAnswered:
+                questionsAnswered.append( l )
+        elif 'CS Fraction' in l:
+            _logger.info("[ANSW] %s = %s " % (l, config.args_.cs_fraction))
+            config.serial_port_.write_msg( '%s\r' % config.args_.cs_fraction)
+            time.sleep( 0.5 )
+            if l not in questionsAnswered:
+                questionsAnswered.append( l )
+        else:
+                pass
+
+        if len(questionsAnswered) == numbers:
+            _logger.info('[INFO] All questions are answered')
+            return 
 
 
 def init( ):
@@ -267,9 +303,15 @@ def init( ):
 
     now = datetime.datetime.now()
     timeStamp =  now.strftime('%Y-%m-%d_%H-%M-%S')
+<<<<<<< HEAD:python/arduino_live
     mouseName = 'MouseS%s' % config.args_.name
     outdir = os.path.join( mouseName
             , 'MouseS%s_SessionType%s_Session%s' % ( 
+=======
+    mouseName = 'Mouse%s' % config.args_.name
+    outdir = os.path.join( mouseName
+            , 'Mouse%s_SessionType%s_Session%s' % ( 
+>>>>>>> master:pyblink/arduino_live
                 config.args_.name, config.args_.session_type, config.args_.session_num)
             )
 
@@ -329,8 +371,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('--name', '-n'
         , required = True
-        , type = int
-        , help = 'Mouse index (positive integers)'
+        , type = str
+        , help = 'Mouse name (string)'
         )
     parser.add_argument('--session-type', '-st'
         , required = True
@@ -347,6 +389,27 @@ if __name__ == '__main__':
         , default = None
         , help = 'Serial port [full path]'
         )
+<<<<<<< HEAD:python/arduino_live
+=======
+    parser.add_argument('--select_after', '-sa'
+        , required = False
+        , default = 60000000.0
+        , type = float
+        , help = 'Press SELECT after time. Default 600 sec.'
+        )
+    parser.add_argument('--flipped', '-f'
+        , required = False
+        , default = 0
+        , type = int
+        , help = 'Wheather CS+/CS- are to be flipped (0/1 (False,True)'
+        )
+    parser.add_argument('--cs_fraction', '-cf'
+        , required = False
+        , default = 10
+        , type = int
+        , help = 'CS fraction'
+        )
+>>>>>>> master:pyblink/arduino_live
     parser.parse_args( namespace = config.args_ )
     init_serial()
     # Intialize logger after intializing serial port.

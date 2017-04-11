@@ -23,3 +23,15 @@ mice, using assorted solenoids and an eye-blink sensor.
 The code reports the current state on LCD screen, pushes output through a
 simple solenoid driver circuit and transfers data to a serial port.
 
+
+                        Wednesday 07 December 2016 01:17:04 PM IST, Dilawar Singh
+
+Python script camera_arduino_client.py.in is used by cmake to generate a
+combined client script ./camera_arduino_client.py which is launched after camera
+server has started. 
+
+0. It connectes to arduino first. Answer whatever is asked. As soon as arduino
+starts giving video file. It display them in a window. Each trial gets its own
+tiff file. 0th trial means data before trial has started.
+
+    

@@ -45,13 +45,6 @@ tstart = time.time()
 ybuff_, xbuff_ = [ 0 ], [ 1 ]
 stary_, startx_ = [], []
 
-save_dir_ = os.path.join( 
-        os.environ['HOME']
-        , 'Desktop'
-        , 'Work'
-        , 'Behaviour'
-        )
-
 DATA_BEGIN_MARKER = '['
 DATA_END_MARKER = ']'
 COMMENT_MARKER = '#'
