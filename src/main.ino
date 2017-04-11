@@ -30,11 +30,10 @@
  *  Change parameters here.
  *-----------------------------------------------------------------------------*/
 #define         TONE_FREQ                   4500
-#define         TONE_START_TIME             5000 
-#define         TONE_END_TIME               5350
-#define         PUFF_START_TIME             5600
-#define         PUFF_END_TIME               5650
-#define         TRIAL_DURATION             11000
+#define         TONE_DURATION                 50
+
+#define         PUFF_DURATION                 50
+#define         TRIAL_DURATION              2250
 
 
 unsigned long stamp_ = 0;
@@ -51,10 +50,6 @@ char msg_[80];
 unsigned long trial_start_time_ = 0;
 unsigned long trial_end_time_ = 0;
 
-/**
- * @brief Duration of each trial.
- */
-const unsigned trial_duration_ = 11000;
 
 char trial_state_[5] = "PRE_";
 
@@ -146,7 +141,7 @@ void write_data_line( )
     int puff = digitalRead( PUFF_PIN );
     int led = digitalRead( LED_PIN );
 
-    int tone = analogRead( TONE_PIN );
+    int tone = digitalRead( TONE_PIN );
 
     int microscope = digitalRead( IMAGING_TRIGGER_PIN );
     unsigned camera = digitalRead( CAMERA_TTL_PIN );
@@ -278,12 +273,12 @@ void wait_for_start( )
         else if( is_command_read( 'p', true ) ) 
         {
             Serial.println( ">>> Playing puff" );
-            play_puff( PUFF_END_TIME - PUFF_START_TIME );
+            play_puff( PUFF_DURATION );
         }
         else if( is_command_read( 't', true ) ) 
         {
             Serial.println( ">>> Playing tone" );
-            play_tone( TONE_END_TIME - TONE_START_TIME, 1.0);
+            play_tone( TONE_DURATION, 1.0);
         }
         else
         {
@@ -404,7 +399,7 @@ void do_trial( unsigned int trial_num, trial_type_t_ ttype, bool play_tone = fal
      *-----------------------------------------------------------------------------*/
     // Last phase is post. If we are here just spend rest of time here.
     sprintf( trial_state_, "POST" );
-    while( millis( ) - trial_start_time_ <= trial_duration_ )
+    while( millis( ) - trial_start_time_ <= TRIAL_DURATION )
     {
         check_for_reset( );
         write_data_line( );
@@ -413,7 +408,7 @@ void do_trial( unsigned int trial_num, trial_type_t_ ttype, bool play_tone = fal
     /*-----------------------------------------------------------------------------
      *  End trial.
      *-----------------------------------------------------------------------------*/
-    if( millis() - trial_start_time_ >= trial_duration_ )
+    if( millis() - trial_start_time_ >= TRIAL_DURATION )
     {
         digitalWrite( IMAGING_TRIGGER_PIN, LOW ); /* Shut down the imaging. */
         Serial.print( ">>END Trial " );
