@@ -201,46 +201,7 @@ def arduino_client(writeP, writeTrial, trialIndex):
 def answer_questions(numbers=5):
     # All great UI have four questions. Yes we have to, they all starts with
     # Please. Not three. Four. Sorry.
-    questionsAnswered = []
-    for i in range(20):
-        l = arduino.read_until('?? Please', timeout=1)
-        if 'mouse name' in l:
-            logging.info('[ANSW] %s = %s' % (l, config.args_.name))
-            config.serial_port_.write_msg('%s\r' % config.args_.name)
-            time.sleep(0.5)
-            if l not in questionsAnswered:
-                questionsAnswered.append(l)
-        elif 'session type' in l:
-            logging.info('[ANSW] %s = %s' % (l, config.args_.session_type))
-            config.serial_port_.write_msg('%s\r' % config.args_.session_type)
-            time.sleep(0.5)
-            if l not in questionsAnswered:
-                questionsAnswered.append(l)
-        elif 'session number' in l:
-            logging.info('[ANSW] %s = %s' % (l, config.args_.session_num))
-            config.serial_port_.write_msg('%s\r' % config.args_.session_num)
-            time.sleep(0.5)
-            if l not in questionsAnswered:
-                questionsAnswered.append(l)
-        elif 'want to flip' in l:
-            logging.info('[ANSW] %s = %s' % (l, config.args_.flipped))
-            config.serial_port_.write_msg('%s\r' % config.args_.flipped)
-            time.sleep(0.5)
-            flipped_ = 1
-            if l not in questionsAnswered:
-                questionsAnswered.append(l)
-        elif 'CS Fraction' in l:
-            logging.info("[ANSW] %s = %s " % (l, config.args_.cs_fraction))
-            config.serial_port_.write_msg('%s\r' % config.args_.cs_fraction)
-            time.sleep(0.5)
-            if l not in questionsAnswered:
-                questionsAnswered.append(l)
-        else:
-            pass
-
-        if len(questionsAnswered) == numbers:
-            logging.info('[INFO] All questions are answered')
-            return
+    return True
 
 
 def init_arduino_client():
@@ -249,18 +210,7 @@ def init_arduino_client():
     port. If serial port is sending legal data then continue, questions are
     probably answered.
     """
-    global finished_all_
-    arduinoAlive = False
-    for i in range(20):
-        l = read_line()
-        if 'please' in l.lower():
-            arduinoAlive = True
-            answer_questions()
-            break
-    if not arduinoAlive:
-        print('[ERROR] Seems like arduino is not sending valid data ..')
-        print('\t I am going to quit ...')
-        finished_all_ = True
+    return True
 
 
 def send_command():

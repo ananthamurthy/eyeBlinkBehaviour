@@ -53,24 +53,6 @@ unsigned long trial_end_time_ = 0;
 
 char trial_state_[5] = "PRE_";
 
-/**
- * @brief There are 4 types of trail. Table is below.
- *  --------------------------------------------------------+
- *  Puff (present or absent) | Trace period | name          |
- *  -------------------------+--------------+---------------+
- *  1                        | 0.5          | type, first   |
- *  1                        | 1.0          | type, second  |
- *  0                        | 0.5          | probe, first  |
- *  0                        | 1.0          | probe, second |
- *  -------------------------+--------------+---------------+
- */
-enum trial_type_t_ { type, probe };
-trial_type_t_ ttype_ = type;
-
-enum trial_subtype_t_ { first, second };
-trial_subtype_t_ tsubtype_ = first;
-
-
 /*-----------------------------------------------------------------------------
  *  User response
  *-----------------------------------------------------------------------------*/
@@ -332,7 +314,7 @@ void do_first_trial( )
  * @param trial_num. Index of the trial.
  * @param ttype. Type of the trial.
  */
-void do_trial( unsigned int trial_num, trial_type_t_ ttype, bool play_tone = false )
+void do_trial( unsigned int trial_num, bool play_tone = false )
 {
     reset_watchdog( );
     check_for_reset( );
@@ -429,7 +411,7 @@ void loop()
     for (size_t i = 2; i <= 100; i++) 
     {
         reset_watchdog( );
-        do_trial( i, probe );
+        do_trial( i, false );
 
         
         /*-----------------------------------------------------------------------------
