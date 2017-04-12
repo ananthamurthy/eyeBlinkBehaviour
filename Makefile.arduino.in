@@ -2,7 +2,7 @@ UNAME_S := $(shell uname -s)
 
 # PROJECT_DIR
 # This is the path to where you have created/cloned your project
-PROJECT_DIR       = /home/dilawars/Work/ANANTH/eyeBlinkBehaviour
+PROJECT_DIR       = .
 
 # ARDMK_DIR
 # Path to the Arduino-Makefile directory.

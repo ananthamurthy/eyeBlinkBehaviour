@@ -21,6 +21,8 @@
 #define         LED_PIN                     3
 #define         MOTION1_PIN                 4
 #define         MOTION2_PIN                 7
+
+// These pins are more than 7.
 #define         CAMERA_TTL_PIN              10
 #define         PUFF_PIN                    11
 #define         IMAGING_TRIGGER_PIN         13
@@ -36,24 +38,24 @@
 #define         PUFF_DURATION                 50
 
 
-unsigned long stamp_ = 0;
-unsigned dt_ = 2;
-unsigned write_dt_ = 2;
-unsigned trial_count_ = 0;
+unsigned long stamp_            = 0;
+unsigned dt_                    = 2;
+unsigned write_dt_              = 2;
+unsigned trial_count_           = 0;
 
 char msg_[80];
 
 unsigned long trial_start_time_ = 0;
-unsigned long trial_end_time_ = 0;
+unsigned long trial_end_time_   = 0;
 
 
-char trial_state_[5] = "PRE_";
+char trial_state_[5]            = "PRE_";
 
 /*-----------------------------------------------------------------------------
  *  User response
  *-----------------------------------------------------------------------------*/
-int incoming_byte_ = 0;
-bool reboot_ = false;
+int incoming_byte_              = 0;
+bool reboot_                    = false;
 
 unsigned long currentTime( )
 {
@@ -117,12 +119,12 @@ void write_data_line( )
     reset_watchdog( );
 
     // Just read the registers where pin data is saved.
-    int puff = bitRead( PORTD, PUFF_PIN );
-    int tone = bitRead( PORTD, TONE_PIN );
-    int led = bitRead( PORTD, LED_PIN );
+    int tone = digitalRead( TONE_PIN );
+    int led = digitalRead( LED_PIN ); 
 
-    int microscope = bitRead( PORTD, IMAGING_TRIGGER_PIN );
-    int camera = bitRead( PORTD, CAMERA_TTL_PIN );
+    int puff = digitalRead( PUFF_PIN ); 
+    int microscope = digitalRead( IMAGING_TRIGGER_PIN);
+    int camera = digitalRead( CAMERA_TTL_PIN ); 
 
     unsigned long timestamp = millis() - trial_start_time_;
 
@@ -198,6 +200,7 @@ void led_on( unsigned int duration )
         digitalWrite( LED_PIN, HIGH );
         write_data_line( );
     }
+
     digitalWrite( LED_PIN, LOW );
 }
 
@@ -346,6 +349,7 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
     sprintf( trial_state_, "PRE_" );
     digitalWrite( IMAGING_TRIGGER_PIN, HIGH);   /* Start imaging. */
     digitalWrite( CAMERA_TTL_PIN, LOW );
+    digitalWrite( LED_PIN, LOW );
 
     while( millis( ) - trial_start_time_ < duration ) /* PRE_ time */
     {
