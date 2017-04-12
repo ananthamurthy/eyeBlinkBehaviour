@@ -31,19 +31,14 @@
  *-----------------------------------------------------------------------------*/
 #define         TONE_FREQ                   4500
 #define         TONE_DURATION                 50
-
+#define         LED_DURATION                  50
 #define         PUFF_DURATION                 50
-#define         TRIAL_DURATION              2250
 
 
 unsigned long stamp_ = 0;
 unsigned dt_ = 2;
 unsigned write_dt_ = 2;
 unsigned trial_count_ = 0;
-unsigned motion1 = 0;
-unsigned motion2 = 0;
-unsigned camera = 0;
-unsigned microscope = 0;
 
 char msg_[80];
 
@@ -120,14 +115,18 @@ void write_data_line( )
 {
     reset_watchdog( );
 
-    int puff = digitalRead( PUFF_PIN );
-    int led = digitalRead( LED_PIN );
-    int tone = digitalRead( TONE_PIN );
+    // Just read the registers where pin data is saved.
+    int puff = bitRead( PORTD, PUFF_PIN );
+    int tone = bitRead( PORTD, TONE_PIN );
+    int led = bitRead( PORTD, LED_PIN );
 
-    int microscope = digitalRead( IMAGING_TRIGGER_PIN );
-    unsigned camera = digitalRead( CAMERA_TTL_PIN );
+    int microscope = bitRead( PORTD, IMAGING_TRIGGER_PIN );
+    int camera = bitRead( PORTD, CAMERA_TTL_PIN );
 
     unsigned long timestamp = millis() - trial_start_time_;
+
+    int motion1 = analogRead( MOTION1_PIN );
+    int motion2 = analogRead( MOTION2_PIN );
     
     sprintf(msg_  
             , "%lu,%d,%d,%d,%d,%d,%d,%d,%d,%s"
@@ -188,7 +187,17 @@ void play_puff( unsigned long duration )
         write_data_line( );
     }
     digitalWrite( PUFF_PIN, LOW );
-    write_data_line( );
+}
+
+void led_on( unsigned int duration )
+{
+    stamp_ = millis( );
+    while( millis() - stamp_ <= duration )
+    {
+        digitalWrite( LED_PIN, HIGH );
+        write_data_line( );
+    }
+    digitalWrite( LED_PIN, LOW );
 }
 
 
@@ -265,12 +274,16 @@ void wait_for_start( )
         else if( is_command_read( 'l', true ) ) 
         {
             Serial.println( ">>> LED ON" );
-            digitalWrite( LED_PIN, HIGH );
+            led_on( LED_DURATION );
         }
         else
         {
-            Serial.print( ">>> Unknown command : " );
-            Serial.println( Serial.read( ) );
+            char c = Serial.read( );
+            if( c != -1 )
+            {
+                Serial.print( ">>> Unknown command : " );
+                Serial.println( c );
+            }
         }
     }
 }
@@ -290,10 +303,9 @@ void setup()
     pinMode( CAMERA_TTL_PIN, OUTPUT );
     pinMode( IMAGING_TRIGGER_PIN, OUTPUT );
 
-
-    digitalWrite( PUFF_PIN, LOW );
-    digitalWrite( CAMERA_TTL_PIN, LOW );
-    digitalWrite( IMAGING_TRIGGER_PIN, LOW);
+    /*  Pins set by sensors */
+    pinMode( MOTION1_PIN, INPUT );
+    pinMode( MOTION2_PIN, INPUT );
 
     configure_experiment( );
     Serial.println( ">>> Waiting for 's' to be pressed" );
@@ -361,11 +373,11 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
     /*-----------------------------------------------------------------------------
      *  TRACE. The duration of trace varies from trial to trial.
      *-----------------------------------------------------------------------------*/
-    if( 6 <= trial_num <= 7 )
+    if( 6 <= trial_num || trial_num <= 7 )
         duration = 0;
-    else if( 10 <= trial_num <= 11 )
+    else if( 10 <= trial_num || trial_num <= 11 )
         duration = 350;
-    else if( 12 <= trial_num <= 13 )
+    else if( 12 <= trial_num || trial_num <= 13 )
         duration = 450;
     else
         duration = 250;
