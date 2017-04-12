@@ -116,9 +116,9 @@ def cleanup():
     print("+++++++++++++++++++++++++++++ All over")
 
 
-def append_trial_data(outfile, value, time, trialNum, cs, nextProbeIn):
+def append_trial_data(outfile, line ):
     with open(outfile, 'a') as f:
-        f.write('%s,%s,%s,%s\n' % (value, time, cs, nextProbeIn))
+        f.write('%s\n' %  line )
 
 
 def send_press_select(reftime, interval):
@@ -156,9 +156,10 @@ def arduino_client(writeP, writeTrial, trialIndex):
         line = read_line()
         # print( '[DEBUG] 0: %s' % line )
         writeP.send(line)
-        x, y, trialNum, totalTrials, cs, next_probe_in_ = line_to_data(line)
-        if (x and y) is None:
+        data = line_to_data(line)
+        if len(data) < 6:
             continue
+        trialNum = data[2]
 
         # Valid trial has already started, arduino says so.
         if trialNum > 0:
@@ -180,15 +181,15 @@ def arduino_client(writeP, writeTrial, trialIndex):
         line = read_line()
         # print( '[DEBUG] 1: %s' % line )
         writeP.send(line)
-        x, y, trialNum, totalTrials, cs_type_, next_probe_in_ = line_to_data(
-            line)
-
-        if (x and y) is None:
+        data = line_to_data( line )
+        if len( data ) < 6:
             continue
+
+        trialNum = data[2]
 
         # NOTE: Write arduino data separately
         trialFile = trial_file_path( trialNum )
-        append_trial_data(trialFile, y, x, trialNum, cs_type_, next_probe_in_)
+        append_trial_data(trialFile, line )
         if trialNum > currentTrialIndex:
             print('WRITE TRIAL CONDITION MET', trialNum, currentTrialIndex)
             print('\tWrite data of previous trial')
@@ -197,7 +198,7 @@ def arduino_client(writeP, writeTrial, trialIndex):
             writeTrial.value = 1
             currentTrialIndex = trialNum
 
-        if trialNum == totalTrials:
+        if trialNum >= 100:
             finished_all_ = True
 
 
@@ -252,17 +253,13 @@ def init_serial(baudRate=38400):
 def line_to_data(line):
     """First element is timestamp, rest the data etc.
     """
-    # print( line )
-    line = line.split(',')[1:]
-    if not line:
-        data = [None] * 6
-    try:
-        data = [int(x) for x in line]
-    except Exception as e:
-        data = [None] * 6
-    if len(data) != 6:
-        logging.debug("Invalid line: %s" % line)
-        data = [None] * 6
+    line = line.split(',')
+    data = [ ]
+    for x in line:
+        try:
+            data.append( int(x) )
+        except ValueError as e:
+            data.append( x )
     return data
 
 
