@@ -295,6 +295,7 @@ void setup()
 
     configure_experiment( );
     Serial.println( ">>> Waiting for 's' to be pressed" );
+
     wait_for_start( );
 }
 
@@ -314,7 +315,7 @@ void do_first_trial( )
  * @param trial_num. Index of the trial.
  * @param ttype. Type of the trial.
  */
-void do_trial( unsigned int trial_num, bool play_tone = false )
+void do_trial( unsigned int trial_num, bool isporobe = false )
 {
     reset_watchdog( );
     check_for_reset( );
@@ -372,8 +373,17 @@ void do_trial( unsigned int trial_num, bool play_tone = false )
      *  PUFF for 50 ms.
      *-----------------------------------------------------------------------------*/
     duration = 50;
-    sprintf( trial_state_, "PUFF" );
-    play_puff( duration );
+    if( isporobe )
+    {
+        sprintf( trial_state_, "PROBE" );
+        while( millis( ) - endBlockTime <= duration )
+            write_data_line( );
+    }
+    else
+    {
+        sprintf( trial_state_, "PUFF" );
+        play_puff( duration );
+    }
     endBlockTime = millis( );
     
     /*-----------------------------------------------------------------------------
@@ -404,14 +414,26 @@ void loop()
 {
     reset_watchdog( );
 
-    do_zero_trial( );
+    // The probe trial occurs every 10th trial with +/- of 2 trials.
+    unsigned numProbeTrials = 0;
+    unsigned nextProbbeTrialIndex = random(8, 13);
 
-    do_first_trial( );
-
-    for (size_t i = 2; i <= 100; i++) 
+    for (size_t i = 1; i <= 100; i++) 
     {
         reset_watchdog( );
-        do_trial( i, false );
+
+        // Probe trial.
+        if( i == nextProbbeTrialIndex )
+        {
+            do_trial( i, true );
+            numProbeTrials +=1 ;
+            nextProbbeTrialIndex = random( 
+                    (numProbeTrials+1)*10-2, (numProbeTrials+1)*10+3
+                    );
+        }
+        else
+            do_trial( i, false );
+
 
         
         /*-----------------------------------------------------------------------------
