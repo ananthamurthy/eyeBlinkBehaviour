@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+s!/usr/bin/env python
 
 from __future__ import print_function
 
@@ -122,7 +122,7 @@ def send_press_select(reftime, interval):
     if time.time() - reftime < interval:
         return False
     logging.info('Sending SELECT to board')
-    config.serial_port_.write_msg("ss\r")
+    config.serial_port_.write_msg("s\r")
     time.sleep(0.5)
     logging.info('[INFO] Waiting for Board to respond .', end='')
     sys.stdout.flush()
@@ -220,45 +220,20 @@ def send_command():
     global select_sent_
     global finished_all_
     command = ""
-    legalCommandsBeforeStart = ["11", "22", "pp", "ss"]
-    legalCommandsAfterStart = ["rr", "ww", "cc"]
+    legalCommandsBeforeStart = [ "t", "s", "p" ]
+    legalCommandsAfterStart = [ ]
     validCommands = legalCommandsAfterStart + legalCommandsBeforeStart
     validStartChars = ''.join([x[0] for x in validCommands])
     print('Executing send command loop')
     while True:
         # This is blocking.
         k = readchar.readkey()
-        if k in validStartChars:
-            command += k
+        if k in validCommands:
+            command = k
             if command in legalCommandsBeforeStart and not select_sent_:
                 logging.info("[COMMAND] Sending command: %s" % command)
                 config.serial_port_.write_msg(command)
-                command = ""
-            # Last two commands needs to be handled separately.
-            elif command == 'ss' and (not select_sent_):
-                select_sent_ = True
-                config.serial_port_.write_msg(command)
-            elif command == 'rr':
-                # reboot.
-                logging.warn(
-                    "Reboot in 2 seconds. You have to relaunch the app")
-                config.serial_port_.write_msg(command)
-                finished_all_ = True
-                raise KeyboardInterrupt
-            elif (command in legalCommandsAfterStart) and select_sent_:
-                logging.info(
-                    "[COMMAND] Sending command (after start): %s" %
-                    command)
-                config.serial_port_.write_msg(command)
-                command = ""
-            else:
-                if(len(command) == 2):
-                    logging.info("Did not send :%s, select_sent_ %s" % (
-                        command, select_sent_)
-                    )
-            if len(command) == 2:
-                command = ""
-        elif k in ['\x03', '\x04', '\x1a']:
+        elif k in [ '\x03', '\x04', '\x1a']:
             finished_all_ = True
             break
 

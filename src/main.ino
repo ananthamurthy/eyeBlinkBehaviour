@@ -264,8 +264,8 @@ void wait_for_start( )
         }
         else
         {
-            //Serial.print( "Got this character " );
-            Serial.print( Serial.read( ) );
+            Serial.print( "Invalid command: got this character " );
+            Serial.println( Serial.read( ) );
         }
     }
 }
