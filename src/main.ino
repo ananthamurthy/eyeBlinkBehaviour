@@ -23,8 +23,9 @@
 #define         MOTION2_PIN                 7
 #define         CAMERA_TTL_PIN              10
 #define         PUFF_PIN                    11
-#define         SENSOR_PIN                  A5
 #define         IMAGING_TRIGGER_PIN         13
+
+#define         SENSOR_PIN                  A5
 
 /*-----------------------------------------------------------------------------
  *  Change parameters here.
@@ -340,18 +341,21 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
      *  PRE. Start imaging for 10 seconds.
      *-----------------------------------------------------------------------------*/
     unsigned duration = 10000;
-    unsigned endBlockTime = 0;
+    unsigned endBlockTime = millis( );
 
     sprintf( trial_state_, "PRE_" );
     digitalWrite( IMAGING_TRIGGER_PIN, HIGH);   /* Start imaging. */
     digitalWrite( CAMERA_TTL_PIN, LOW );
+
     while( millis( ) - trial_start_time_ < duration ) /* PRE_ time */
     {
         // 500 ms before the PRE_ ends, start camera pin high. We start
         // recording as well.
 
-        if( millis( ) - trial_start_time_ >= (duration - 500 ) )
+        if( millis( ) - endBlockTime >= (duration - 500 ) )
             digitalWrite( CAMERA_TTL_PIN, HIGH );
+        else
+            digitalWrite( CAMERA_TTL_PIN, LOW );
 
         write_data_line( );
     }
@@ -360,15 +364,8 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
      *  CS: 50 ms duration. No tone is played here. Write LED pin to HIGH.
      *-----------------------------------------------------------------------------*/
     endBlockTime = millis( );
-    duration = 50;
-    while( millis( ) -  endBlockTime <= duration )
-    {
-        check_for_reset( );
-        write_data_line( );
-        digitalWrite( LED_PIN, HIGH );
-    }
+    led_on( LED_DURATION );
     endBlockTime = millis( );
-
 
     /*-----------------------------------------------------------------------------
      *  TRACE. The duration of trace varies from trial to trial.
