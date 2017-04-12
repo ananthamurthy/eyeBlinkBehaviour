@@ -1,15 +1,15 @@
-s!/usr/bin/env python
+#!/usr/bin/env python
 
 from __future__ import print_function
 
-__author__ = "Dilawar Singh"
-__copyright__ = "Copyright 2016, Dilawar Singh"
-__credits__ = ["NCBS Bangalore"]
-__license__ = "GNU GPL"
-__version__ = "1.0.0"
+__author__     = "Dilawar Singh"
+__copyright__  = "Copyright 2016, Dilawar Singh"
+__credits__    = ["NCBS Bangalore"]
+__license__    = "GNU GPL"
+__version__    = "1.0.0"
 __maintainer__ = "Dilawar Singh"
-__email__ = ""
-__status__ = "Development"
+__email__      = ""
+__status__     = "Development"
 
 import sys
 import os
@@ -23,7 +23,7 @@ import cv2
 from multiprocessing import Process, Value, Pipe
 import datetime
 import re
-import config
+import config                           # in pyblink/config.py
 import arduino
 import readchar
 from collections import defaultdict
@@ -104,7 +104,10 @@ if not os.path.isdir(data_dir_):
 
 # Arduino data storate
 def trial_file_path( trialNum ):
-    return os.path.join( data_dir_, '%s.dat' % trialNum )
+    filename = "name=%s_st=%s_sn=%s.dat" % (
+        config.args_.name, config.args_.session_type, config.args_.session_num
+            )
+    return os.path.join( data_dir_, filename )
 
 def cleanup():
     global finished_all_
@@ -220,7 +223,7 @@ def send_command():
     global select_sent_
     global finished_all_
     command = ""
-    legalCommandsBeforeStart = [ "t", "s", "p" ]
+    legalCommandsBeforeStart = [ "t", "s", "p", "l" ]
     legalCommandsAfterStart = [ ]
     validCommands = legalCommandsAfterStart + legalCommandsBeforeStart
     validStartChars = ''.join([x[0] for x in validCommands])

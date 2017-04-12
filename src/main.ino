@@ -122,7 +122,6 @@ void write_data_line( )
 
     int puff = digitalRead( PUFF_PIN );
     int led = digitalRead( LED_PIN );
-
     int tone = digitalRead( TONE_PIN );
 
     int microscope = digitalRead( IMAGING_TRIGGER_PIN );
@@ -170,6 +169,7 @@ void play_tone( unsigned long period, double duty_cycle = 0.5 )
         else
             noTone( TONE_PIN );
     }
+    noTone( TONE_PIN );
 }
 
 
@@ -250,7 +250,7 @@ void wait_for_start( )
         if( is_command_read( 's', true ) )
         {
             Serial.println( ">>> Start" );
-            break;
+            break;                              /* Only START can break the loop */
         }
         else if( is_command_read( 'p', true ) ) 
         {
@@ -262,9 +262,14 @@ void wait_for_start( )
             Serial.println( ">>> Playing tone" );
             play_tone( TONE_DURATION, 1.0);
         }
+        else if( is_command_read( 'l', true ) ) 
+        {
+            Serial.println( ">>> LED ON" );
+            digitalWrite( LED_PIN, HIGH );
+        }
         else
         {
-            Serial.print( "Invalid command: got this character " );
+            Serial.print( ">>> Unknown command : " );
             Serial.println( Serial.read( ) );
         }
     }
@@ -285,13 +290,10 @@ void setup()
     pinMode( CAMERA_TTL_PIN, OUTPUT );
     pinMode( IMAGING_TRIGGER_PIN, OUTPUT );
 
-    // When HIGH, imaging starts, when LOW imaging stops.
-    pinMode( IMAGING_TRIGGER_PIN, OUTPUT);
 
     digitalWrite( PUFF_PIN, LOW );
+    digitalWrite( CAMERA_TTL_PIN, LOW );
     digitalWrite( IMAGING_TRIGGER_PIN, LOW);
-
-    tone( TONE_PIN, 0 );
 
     configure_experiment( );
     Serial.println( ">>> Waiting for 's' to be pressed" );
@@ -323,17 +325,24 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
     trial_start_time_ = millis( );
 
     /*-----------------------------------------------------------------------------
-     *  PRE
+     *  PRE. Start imaging for 10 seconds.
      *-----------------------------------------------------------------------------*/
-    unsigned duration = 500;
+    unsigned duration = 10000;
     unsigned endBlockTime = 0;
 
     sprintf( trial_state_, "PRE_" );
-    digitalWrite( IMAGING_TRIGGER_PIN, HIGH);
-
-    write_data_line( );
+    digitalWrite( IMAGING_TRIGGER_PIN, HIGH);   /* Start imaging. */
+    digitalWrite( CAMERA_TTL_PIN, LOW );
     while( millis( ) - trial_start_time_ < duration ) /* PRE_ time */
+    {
+        // 500 ms before the PRE_ ends, start camera pin high. We start
+        // recording as well.
+
+        if( millis( ) - trial_start_time_ >= (duration - 500 ) )
+            digitalWrite( CAMERA_TTL_PIN, HIGH );
+
         write_data_line( );
+    }
 
     /*-----------------------------------------------------------------------------
      *  CS: 50 ms duration. No tone is played here. Write LED pin to HIGH.
@@ -387,12 +396,17 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
     endBlockTime = millis( );
     
     /*-----------------------------------------------------------------------------
-     *  POST, flexible duration till trial is over.
+     *  POST, flexible duration till trial is over. It is 10 second long.
      *-----------------------------------------------------------------------------*/
     // Last phase is post. If we are here just spend rest of time here.
+    duration = 10000;
     sprintf( trial_state_, "POST" );
-    while( millis( ) - trial_start_time_ <= TRIAL_DURATION )
+    while( millis( ) - endBlockTime <= duration )
     {
+        // Switch camera OFF after 500 ms into POST.
+        if( millis() - endBlockTime >= 500 )
+            digitalWrite( CAMERA_TTL_PIN, LOW );
+
         check_for_reset( );
         write_data_line( );
     }
@@ -400,14 +414,11 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
     /*-----------------------------------------------------------------------------
      *  End trial.
      *-----------------------------------------------------------------------------*/
-    if( millis() - trial_start_time_ >= TRIAL_DURATION )
-    {
-        digitalWrite( IMAGING_TRIGGER_PIN, LOW ); /* Shut down the imaging. */
-        Serial.print( ">>END Trial " );
-        Serial.print( trial_count_ );
-        Serial.println( " is over. Starting new");
-        trial_count_ += 1;
-    }
+    digitalWrite( IMAGING_TRIGGER_PIN, LOW ); /* Shut down the imaging. */
+    Serial.print( ">>END Trial " );
+    Serial.print( trial_count_ );
+    Serial.println( " is over. Starting new");
+    trial_count_ += 1;
 }
 
 void loop()

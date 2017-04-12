@@ -53,3 +53,5 @@ LOCAL_INO_SRCS     = $(PROJECT_DIR)/src/main.ino
 ### Do not touch - the path to Arduino.mk, inside the ARDMK_DIR
 include $(ARDMK_DIR)/Arduino.mk
 
+run :
+	miniterm.py /dev/ttyACM0 38400

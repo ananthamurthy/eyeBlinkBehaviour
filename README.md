@@ -1,25 +1,28 @@
 # eyeBlinkBehaviour
 
-All codes related to Arduino programming and data saving for the Eye-Blink
-Conditioning Tasks
+Camera server (PointGrey) and arduino based behaviour setup. Everything is
+automated using cmake.
 
 To build and upload to arduino   
 
-    $ make 
-    $ make upload 
+    $ mkdir _build 
+    $ cd _build
+    $ cmake ..
+    $ make run              # to run the whole setup, or
+    $ make miniterm         # Just to test arduino board. 
 
 
 # Dependencies
 
+- cmake 
 - gnuplot-x11
 - pip install readchar
 
+
 # Commands
 
-- __Puff__ : pp
-- __CS1__ : 11
-- __CS2__ : 22
-- __Select__ : ss (mimic SELECT button on LCD/Start trials).
-- __Reboot__ : rr
-- __Pause__ : ww
-- __Unpause__ : cc
+- __Puff__ : p
+- __Tone__ : t
+- __Led__ : l
+- __Select__ : s 
+- __Reboot__ : ctrl+c
