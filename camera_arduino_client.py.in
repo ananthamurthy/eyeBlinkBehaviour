@@ -98,16 +98,22 @@ now = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
 # When True, put a small text on each frame.
 write_data_ = True
 data_dir_ = "@DATADIR@"
+trial_file_ = ''
 if not os.path.isdir(data_dir_):
     if write_data_:
         os.makedirs(data_dir_)
 
 # Arduino data storate
-def trial_file_path( trialNum ):
+def trial_file_path( ):
+    global trial_file_ 
+    if trial_file_:
+        return trial_file_
+
     filename = "name=%s_st=%s_sn=%s.dat" % (
         config.args_.name, config.args_.session_type, config.args_.session_num
             )
-    return os.path.join( data_dir_, filename )
+    trial_file_ = os.path.join( data_dir_, filename )
+    return trial_file_
 
 def cleanup():
     global finished_all_
@@ -159,8 +165,8 @@ def arduino_client(writeP, writeTrial, trialIndex):
         data = line_to_data(line)
         if len(data) < 6:
             continue
-        trialNum = data[2]
 
+        trialNum = data[2]
         # Valid trial has already started, arduino says so.
         if trialNum > 0:
             break
@@ -186,18 +192,10 @@ def arduino_client(writeP, writeTrial, trialIndex):
             continue
 
         trialNum = data[2]
+        trialIndex.value = int( trialNum )
 
-        # NOTE: Write arduino data separately
-        trialFile = trial_file_path( trialNum )
-        append_trial_data(trialFile, line )
-        if trialNum > currentTrialIndex:
-            print('WRITE TRIAL CONDITION MET', trialNum, currentTrialIndex)
-            print('\tWrite data of previous trial')
-            with trialIndex.get_lock():
-                trialIndex.value = currentTrialIndex
-            writeTrial.value = 1
-            currentTrialIndex = trialNum
-
+        # NOTE: Write arduino data separately in a single file.
+        append_trial_data(trial_file_path( ), line )
         if trialNum >= 100:
             finished_all_ = True
 
