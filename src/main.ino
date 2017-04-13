@@ -350,6 +350,7 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
 
     sprintf( trial_state_, "PRE_" );
     digitalWrite( IMAGING_TRIGGER_PIN, HIGH);   /* Start imaging. */
+
     digitalWrite( CAMERA_TTL_PIN, LOW );
     digitalWrite( LED_PIN, LOW );
 
