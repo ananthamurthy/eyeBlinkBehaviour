@@ -137,7 +137,7 @@ SET(RUN_ARGS
      " -f ${FLIPPED} -cf ${CS_FRACTION} -sa ${SELECT_AFTER}" 
      )
 
-file(COPY ${CMAKE_SOURCE_DIR}/eye-blink-detector/extract.py 
+file(COPY ${CMAKE_SOURCE_DIR}/eyeblinkdetector/extract.py 
         ${CMAKE_SOURCE_DIR}/blinky.py
         DESTINATION ${CMAKE_BINARY_DIR}
      )
