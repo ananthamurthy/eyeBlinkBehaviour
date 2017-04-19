@@ -32,7 +32,8 @@
 /*-----------------------------------------------------------------------------
  *  Change parameters here.
  *-----------------------------------------------------------------------------*/
-#define         TONE_FREQ                   4500
+#define         TONE_FREQ_LOW                 4500
+#define         TONE_FREQ_HIGH                7500
 #define         TONE_DURATION                 50
 #define         LED_DURATION                  50
 #define         PUFF_DURATION                 50
@@ -158,7 +159,7 @@ void check_for_reset( void )
  * @param period
  * @param duty_cycle
  */
-void play_tone( unsigned long period, double duty_cycle = 0.5 )
+void play_tone( unsigned long period, unsigned freq, double duty_cycle = 0.5 )
 {
     reset_watchdog( );
     check_for_reset( );
@@ -167,7 +168,7 @@ void play_tone( unsigned long period, double duty_cycle = 0.5 )
     {
         write_data_line();
         if( millis() - toneStart <= (period * duty_cycle) )
-            tone( TONE_PIN, TONE_FREQ );
+            tone( TONE_PIN, freq );
         else
             noTone( TONE_PIN );
     }
@@ -273,7 +274,7 @@ void wait_for_start( )
         else if( is_command_read( 't', true ) ) 
         {
             Serial.println( ">>> Playing tone" );
-            play_tone( TONE_DURATION, 1.0);
+            play_tone( TONE_DURATION, TONE_FREQ_HIGH, 1.0);
         }
         else if( is_command_read( 'l', true ) ) 
         {
@@ -345,7 +346,6 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
     /*-----------------------------------------------------------------------------
      *  PRE. Start imaging for 10 seconds.
      *-----------------------------------------------------------------------------*/
-    unsigned duration = 10000;
     unsigned endBlockTime = millis( );
 
     sprintf( trial_state_, "PRE_" );
@@ -354,38 +354,31 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
     digitalWrite( CAMERA_TTL_PIN, LOW );
     digitalWrite( LED_PIN, LOW );
 
+    unsigned duration = 5000;
     while( millis( ) - trial_start_time_ < duration ) /* PRE_ time */
     {
         // 500 ms before the PRE_ ends, start camera pin high. We start
         // recording as well.
-
-        if( millis( ) - endBlockTime >= (duration - 500 ) )
+        if( millis( ) - endBlockTime >= duration - 500 ) 
             digitalWrite( CAMERA_TTL_PIN, HIGH );
         else
             digitalWrite( CAMERA_TTL_PIN, LOW );
 
         write_data_line( );
     }
+    endBlockTime = millis( );
 
     /*-----------------------------------------------------------------------------
-     *  CS: 50 ms duration. No tone is played here. Write LED pin to HIGH.
+     *  CS: 350 ms duration. Tone is played here.
      *-----------------------------------------------------------------------------*/
-    endBlockTime = millis( );
-    led_on( LED_DURATION );
+    duration = 350;
+    play_tone( duration, TONE_FREQ_HIGH, 1.0 );
     endBlockTime = millis( );
 
     /*-----------------------------------------------------------------------------
      *  TRACE. The duration of trace varies from trial to trial.
      *-----------------------------------------------------------------------------*/
-    if( 6 <= trial_num || trial_num <= 7 )
-        duration = 0;
-    else if( 10 <= trial_num || trial_num <= 11 )
-        duration = 350;
-    else if( 12 <= trial_num || trial_num <= 13 )
-        duration = 450;
-    else
-        duration = 250;
-
+    duration = 250;
     sprintf( trial_state_, "TRAC" );
     while( millis( ) - endBlockTime <= duration )
     {
@@ -395,9 +388,9 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
     endBlockTime = millis( );
 
     /*-----------------------------------------------------------------------------
-     *  PUFF for 50 ms.
+     *  PUFF for 100 ms.
      *-----------------------------------------------------------------------------*/
-    duration = 50;
+    duration = 100;
     if( isporobe )
     {
         sprintf( trial_state_, "PROBE" );
@@ -415,7 +408,7 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
      *  POST, flexible duration till trial is over. It is 10 second long.
      *-----------------------------------------------------------------------------*/
     // Last phase is post. If we are here just spend rest of time here.
-    duration = 10000;
+    duration = 5000;
     sprintf( trial_state_, "POST" );
     while( millis( ) - endBlockTime <= duration )
     {
