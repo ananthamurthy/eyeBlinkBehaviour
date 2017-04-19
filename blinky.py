@@ -48,12 +48,20 @@ def accept_contour_as_possible_eye( contour, threshold = 0.1 ):
         return False
 
 def find_blinks_using_pixals( frame ):
+    # Blur the frame to remove hair etc.
+    frame = cv2.GaussianBlur( frame, (13, 13), 1 )
+
     x, y = frame.shape
     newframe = np.zeros( shape = frame.shape )
     m, s = frame.mean(), frame.std()
-    thres = max( 10, m - 1.5 * s )
+    thres = max( 0, m - 1 * s )
     newframe[ frame < thres ] = 255
-    return frame, newframe, np.sum( newframe )/ (x*y), -1
+
+    # Read the signal from half of the boundbox.
+    rs, cs = newframe.shape
+    r0, c0 = rs / 2, cs / 2
+    signal = np.sum( newframe[r0-rs/4:r0+rs/4,c0-cs/4:c0+cs/4] )
+    return frame, newframe, signal / (rs*cs/4), -1
 
 
 def process_frame(frame, method = 0):

@@ -33,6 +33,10 @@ import subprocess
 import blinky
 import gnuplotlib
 
+gnuplot_ = gnuplotlib.gnuplotlib( title = 'Blink readout'
+        , terminal = 'x11' 
+        )
+
 logging.basicConfig(level=logging.INFO)
 
 start_ = time.time()
@@ -364,8 +368,10 @@ def camera_client(readP, writeTrial, trialIndex):
                     try:
                         (x0, y0), (x1, y1) = bbox_
                         roi = img[y0:y1,x0:x1]
-                        infile, outfile, res, sss = blinky.process_frame(roi)
-                        cv2.imshow( 'algo', np.vstack((infile,outfile) ) )
+                        # Equalize histogram
+                        roi = cv2.equalizeHist( roi )
+                        infile, outfile, res, sss = blinky.process_frame(roi, 0)
+                        cv2.imshow( 'algo', outfile )
                         cv2.putText( 
                                 img, '%.2f' % res, (0, 10 )
                                  , cv2.FONT_HERSHEY_SIMPLEX, 0.4, 255, 2
@@ -387,9 +393,7 @@ def camera_client(readP, writeTrial, trialIndex):
 
                     if len(bbox_) == 2:
                         if len( blinks_ ) > 10:
-                            gnuplotlib.plot( 
-                                   np.array( blinks_[-500:] )
-                                   , terminal = 'x11' )
+                            gnuplot_.plot( np.array( blinks_[-2000:] ))
 
                 framesInStack += 1
                 buf = buf[frame_size_:]
