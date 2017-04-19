@@ -33,6 +33,8 @@ import subprocess
 import blinky
 import gnuplotlib
 
+user_ = os.environ[ 'USER' ]
+
 gnuplot_ = gnuplotlib.gnuplotlib( title = 'Blink readout'
         , terminal = 'x11' 
         )
@@ -268,7 +270,7 @@ def line_to_data(line):
 def save_img_stack(stack, index):
     global start_
     filename = os.path.join(data_dir_, 'stack_%03d.tif' % index)
-    tmpfile = os.path.join('/mnt', 'ramdisk', 'tmp.tif')
+    tmpfile = os.path.join('/mnt', 'ramdisk', 'tmp_%s.tif' % user_ )
     if tmpfile:
         tifffile.imsave(tmpfile, stack)
         # Use Popen to move the tmp file to desired location in background.
