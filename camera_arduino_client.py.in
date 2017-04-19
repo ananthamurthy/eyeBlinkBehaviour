@@ -36,7 +36,7 @@ import gnuplotlib
 user_ = os.environ[ 'USER' ]
 
 gnuplot_ = gnuplotlib.gnuplotlib( title = 'Blink readout'
-        , terminal = 'x11' 
+        , terminal = 'x11 noraise' 
         )
 
 logging.basicConfig(level=logging.INFO)
