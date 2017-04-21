@@ -366,12 +366,14 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
 
         write_data_line( );
     }
+    endBlockTime = millis( );
 
     /*-----------------------------------------------------------------------------
      *  CS: 50 ms duration. No tone is played here. Write LED pin to HIGH.
      *-----------------------------------------------------------------------------*/
+    duration = 50;
     endBlockTime = millis( );
-    led_on( LED_DURATION );
+    led_on( 50 );
     endBlockTime = millis( );
 
     /*-----------------------------------------------------------------------------
@@ -454,12 +456,11 @@ void loop()
         else
             do_trial( i, false );
 
-
         
         /*-----------------------------------------------------------------------------
          *  ITI.
          *-----------------------------------------------------------------------------*/
-        unsigned long duration = random( 5000, 10001);
+        unsigned long duration = random( 10000, 15001);
         unsigned long stamp_ = millis( );
         sprintf( trial_state_, "ITI_" );
         while( millis( ) - stamp_ <= duration )
