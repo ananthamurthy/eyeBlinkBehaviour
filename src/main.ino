@@ -373,6 +373,7 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
      *-----------------------------------------------------------------------------*/
     duration = 50;
     endBlockTime = millis( );
+    sprintf( trial_state_, "CS+" );
     led_on( 50 );
     endBlockTime = millis( );
 
