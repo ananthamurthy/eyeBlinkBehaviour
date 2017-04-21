@@ -377,14 +377,7 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
     /*-----------------------------------------------------------------------------
      *  TRACE. The duration of trace varies from trial to trial.
      *-----------------------------------------------------------------------------*/
-    if( 6 <= trial_num || trial_num <= 7 )
-        duration = 0;
-    else if( 10 <= trial_num || trial_num <= 11 )
-        duration = 350;
-    else if( 12 <= trial_num || trial_num <= 13 )
-        duration = 450;
-    else
-        duration = 250;
+    duration = 250;
 
     sprintf( trial_state_, "TRAC" );
     while( millis( ) - endBlockTime <= duration )
