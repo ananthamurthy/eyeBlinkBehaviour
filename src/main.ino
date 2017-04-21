@@ -380,7 +380,6 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
      *  TRACE. The duration of trace varies from trial to trial.
      *-----------------------------------------------------------------------------*/
     duration = 250;
-
     sprintf( trial_state_, "TRAC" );
     while( millis( ) - endBlockTime <= duration )
     {
@@ -395,7 +394,7 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
     duration = 50;
     if( isporobe )
     {
-        sprintf( trial_state_, "PROBE" );
+        sprintf( trial_state_, "PROB" );
         while( millis( ) - endBlockTime <= duration )
             write_data_line( );
     }
