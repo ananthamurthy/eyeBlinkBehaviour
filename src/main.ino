@@ -355,11 +355,11 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
     digitalWrite( LED_PIN, LOW );
 
     unsigned duration = 5000;
-    while( millis( ) - trial_start_time_ < duration ) /* PRE_ time */
+    while( (millis( ) - trial_start_time_) < duration ) /* PRE_ time */
     {
         // 500 ms before the PRE_ ends, start camera pin high. We start
         // recording as well.
-        if( millis( ) - endBlockTime >= duration - 500 ) 
+        if( (millis( ) - endBlockTime) >= (duration - 500 ) )
             digitalWrite( CAMERA_TTL_PIN, HIGH );
         else
             digitalWrite( CAMERA_TTL_PIN, LOW );
@@ -380,7 +380,7 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
      *-----------------------------------------------------------------------------*/
     duration = 250;
     sprintf( trial_state_, "TRAC" );
-    while( millis( ) - endBlockTime <= duration )
+    while( (millis( ) - endBlockTime) <= duration )
     {
         check_for_reset( );
         write_data_line( );
@@ -394,7 +394,7 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
     if( isporobe )
     {
         sprintf( trial_state_, "PROBE" );
-        while( millis( ) - endBlockTime <= duration )
+        while( (millis( ) - endBlockTime) <= duration )
             write_data_line( );
     }
     else
@@ -410,10 +410,10 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
     // Last phase is post. If we are here just spend rest of time here.
     duration = 5000;
     sprintf( trial_state_, "POST" );
-    while( millis( ) - endBlockTime <= duration )
+    while( (millis( ) - endBlockTime) <= duration )
     {
         // Switch camera OFF after 500 ms into POST.
-        if( millis() - endBlockTime >= 500 )
+        if( (millis() - endBlockTime) >= 500 )
             digitalWrite( CAMERA_TTL_PIN, LOW );
 
         check_for_reset( );
