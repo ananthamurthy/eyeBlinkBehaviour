@@ -420,8 +420,14 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
 
 void loop()
 {
-    reset_watchdog( );
+    // Dont' do anything if trial count has exceedeed 100.
+    if( trial_count_ > 100 )
+    {
+        reset_watchdog( );
+        return;
+    }
 
+    reset_watchdog( );
     // The probe trial occurs every 10th trial with +/- of 2 trials.
     unsigned numProbeTrials = 0;
     unsigned nextProbbeTrialIndex = random(8, 13);
