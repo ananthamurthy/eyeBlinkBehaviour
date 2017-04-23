@@ -14,8 +14,6 @@
 
 #include <avr/wdt.h>
 
-#define         DRY_RUN                     1
-
 // Pins etc.
 #define         TONE_PIN                    2
 #define         LED_PIN                     3
@@ -29,13 +27,11 @@
 
 #define         SENSOR_PIN                  A5
 
-/*-----------------------------------------------------------------------------
- *  Change parameters here.
- *-----------------------------------------------------------------------------*/
 #define         TONE_FREQ                   4500
-#define         TONE_DURATION                 50
-#define         LED_DURATION                  50
-#define         PUFF_DURATION                 50
+
+#define         PUFF_DURATION               50
+#define         TONE_DURATION               50
+#define         LED_DURATION               50
 
 
 unsigned long stamp_            = 0;
@@ -46,7 +42,6 @@ unsigned trial_count_           = 0;
 char msg_[80];
 
 unsigned long trial_start_time_ = 0;
-unsigned long trial_end_time_   = 0;
 
 
 char trial_state_[5]            = "PRE_";
@@ -57,10 +52,6 @@ char trial_state_[5]            = "PRE_";
 int incoming_byte_              = 0;
 bool reboot_                    = false;
 
-unsigned long currentTime( )
-{
-    return millis() - trial_start_time_;
-}
 
 /*-----------------------------------------------------------------------------
  *  WATCH DOG
@@ -299,7 +290,7 @@ void setup()
     // setup watchdog. If not reset in 2 seconds, it reboots the system.
     wdt_enable( WDTO_2S );
     wdt_reset();
-    stamp_ = 0;
+    stamp_ = millis( );
 
     pinMode( TONE_PIN, OUTPUT );
     pinMode( PUFF_PIN, OUTPUT );
@@ -345,7 +336,7 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
      *  PRE. Start imaging for 10 seconds.
      *-----------------------------------------------------------------------------*/
     unsigned duration = 5000;
-    unsigned endBlockTime = millis( );
+    stamp_ = millis( );
 
     sprintf( trial_state_, "PRE_" );
     digitalWrite( IMAGING_TRIGGER_PIN, HIGH);   /* Start imaging. */
@@ -353,46 +344,46 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
     digitalWrite( CAMERA_TTL_PIN, LOW );
     digitalWrite( LED_PIN, LOW );
 
-    while( millis( ) - trial_start_time_ <= duration ) /* PRE_ time */
+    while( (millis( ) - trial_start_time_ ) <= duration ) /* PRE_ time */
     {
         // 500 ms before the PRE_ ends, start camera pin high. We start
         // recording as well.
 
-        if( millis( ) - endBlockTime >= (duration - 500 ) )
+        if( (millis( ) - stamp_) >= (duration - 500 ) )
             digitalWrite( CAMERA_TTL_PIN, HIGH );
         else
             digitalWrite( CAMERA_TTL_PIN, LOW );
 
         write_data_line( );
     }
-    endBlockTime = millis( );
+    stamp_ = millis( );
 
     /*-----------------------------------------------------------------------------
      *  CS: 50 ms duration. No tone is played here. Write LED pin to HIGH.
      *-----------------------------------------------------------------------------*/
-    duration = 50;
-    endBlockTime = millis( );
+    duration = LED_DURATION;
+    stamp_ = millis( );
     sprintf( trial_state_, "CS+" );
     led_on( duration );
-    endBlockTime = millis( );
+    stamp_ = millis( );
 
     /*-----------------------------------------------------------------------------
      *  TRACE. The duration of trace varies from trial to trial.
      *-----------------------------------------------------------------------------*/
     duration = 250;
     sprintf( trial_state_, "TRAC" );
-    while( millis( ) - endBlockTime <= duration )
+    while( (millis( ) - stamp_) <= duration )
         write_data_line( );
-    endBlockTime = millis( );
+    stamp_ = millis( );
 
     /*-----------------------------------------------------------------------------
      *  PUFF for 50 ms.
      *-----------------------------------------------------------------------------*/
-    duration = 50;
+    duration = PUFF_DURATION;
     if( isporobe )
     {
         sprintf( trial_state_, "PROB" );
-        while( millis( ) - endBlockTime <= duration )
+        while( (millis( ) - stamp_) <= duration )
             write_data_line( );
     }
     else
@@ -400,7 +391,7 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
         sprintf( trial_state_, "PUFF" );
         play_puff( duration );
     }
-    endBlockTime = millis( );
+    stamp_ = millis( );
     
     /*-----------------------------------------------------------------------------
      *  POST, flexible duration till trial is over. It is 10 second long.
@@ -408,12 +399,13 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
     // Last phase is post. If we are here just spend rest of time here.
     duration = 5000;
     sprintf( trial_state_, "POST" );
-    while( millis( ) - endBlockTime <= duration )
+    while( (millis( ) - stamp_) <= duration )
     {
-        // Switch camera OFF after 500 ms into POST.
-        if( millis() - endBlockTime >= 500 )
-            digitalWrite( CAMERA_TTL_PIN, LOW );
         write_data_line( );
+        // Switch camera OFF after 500 ms into POST.
+        if( (millis() - stamp_) >= 500 )
+            digitalWrite( CAMERA_TTL_PIN, LOW );
+
     }
 
     /*-----------------------------------------------------------------------------
@@ -438,6 +430,7 @@ void loop()
     {
         reset_watchdog( );
 
+#if 0
         // Probe trial.
         if( i == nextProbbeTrialIndex )
         {
@@ -448,16 +441,18 @@ void loop()
                     );
         }
         else
+#endif
             do_trial( i, false );
+
 
         
         /*-----------------------------------------------------------------------------
          *  ITI.
          *-----------------------------------------------------------------------------*/
-        unsigned long duration = random( 10000, 15001);
-        unsigned long stamp_ = millis( );
+        unsigned long rduration = random( 1000, 1501);
+        stamp_ = millis( );
         sprintf( trial_state_, "ITI_" );
-        while( millis( ) - stamp_ <= duration )
+        while((millis( ) - stamp_) <= rduration )
             write_data_line( );
         
     }
