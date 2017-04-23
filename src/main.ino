@@ -353,7 +353,7 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
     digitalWrite( CAMERA_TTL_PIN, LOW );
     digitalWrite( LED_PIN, LOW );
 
-    while( millis( ) - trial_start_time_ < duration ) /* PRE_ time */
+    while( millis( ) - trial_start_time_ <= duration ) /* PRE_ time */
     {
         // 500 ms before the PRE_ ends, start camera pin high. We start
         // recording as well.
