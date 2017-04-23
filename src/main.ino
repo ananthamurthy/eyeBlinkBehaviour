@@ -449,7 +449,7 @@ void loop()
         /*-----------------------------------------------------------------------------
          *  ITI.
          *-----------------------------------------------------------------------------*/
-        unsigned long rduration = random( 1000, 1501);
+        unsigned long rduration = random( 10000, 15001);
         stamp_ = millis( );
         sprintf( trial_state_, "ITI_" );
         while((millis( ) - stamp_) <= rduration )
