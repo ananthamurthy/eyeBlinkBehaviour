@@ -26,3 +26,11 @@ To build and upload to arduino
 - __Led__ : l
 - __Select__ : s 
 - __Reboot__ : ctrl+c
+
+# Print data line 
+
+    sprintf(msg_  
+            , "%lu,%d,%d,%d,%d,%d,%d,%d,%d,%s"
+            , timestamp, trial_count_, puff, tone, led
+            , motion1, motion2, camera, microscope, trial_state_
+            );
