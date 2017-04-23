@@ -3,7 +3,7 @@
 	url = https://github.com/sudar/Arduino-Makefile.git
 [submodule "PointGreyCamera"]
 	path = PointGreyCamera
-	url = https://github.com/BhallaLab/PointGreyCamera
+	url = git@github.com:BhallaLab/PointGreyCamera
 [submodule "eye-blink-detector"]
 	path = eye-blink-detector
 	url = git@github.com:dilawar/eye-blink-detector

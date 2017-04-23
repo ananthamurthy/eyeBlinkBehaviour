@@ -200,7 +200,6 @@ void led_on( unsigned int duration )
         digitalWrite( LED_PIN, HIGH );
         write_data_line( );
     }
-
     digitalWrite( LED_PIN, LOW );
 }
 
@@ -345,7 +344,7 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
     /*-----------------------------------------------------------------------------
      *  PRE. Start imaging for 10 seconds.
      *-----------------------------------------------------------------------------*/
-    unsigned duration = 10000;
+    unsigned duration = 5000;
     unsigned endBlockTime = millis( );
 
     sprintf( trial_state_, "PRE_" );
@@ -374,7 +373,7 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
     duration = 50;
     endBlockTime = millis( );
     sprintf( trial_state_, "CS+" );
-    led_on( 50 );
+    led_on( duration );
     endBlockTime = millis( );
 
     /*-----------------------------------------------------------------------------
@@ -383,10 +382,7 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
     duration = 250;
     sprintf( trial_state_, "TRAC" );
     while( millis( ) - endBlockTime <= duration )
-    {
-        check_for_reset( );
         write_data_line( );
-    }
     endBlockTime = millis( );
 
     /*-----------------------------------------------------------------------------
@@ -410,15 +406,13 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
      *  POST, flexible duration till trial is over. It is 10 second long.
      *-----------------------------------------------------------------------------*/
     // Last phase is post. If we are here just spend rest of time here.
-    duration = 10000;
+    duration = 5000;
     sprintf( trial_state_, "POST" );
     while( millis( ) - endBlockTime <= duration )
     {
         // Switch camera OFF after 500 ms into POST.
         if( millis() - endBlockTime >= 500 )
             digitalWrite( CAMERA_TTL_PIN, LOW );
-
-        check_for_reset( );
         write_data_line( );
     }
 
