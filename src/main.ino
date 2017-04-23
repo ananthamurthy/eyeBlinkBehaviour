@@ -430,7 +430,6 @@ void loop()
     {
         reset_watchdog( );
 
-#if 0
         // Probe trial.
         if( i == nextProbbeTrialIndex )
         {
@@ -441,7 +440,6 @@ void loop()
                     );
         }
         else
-#endif
             do_trial( i, false );
 
 
