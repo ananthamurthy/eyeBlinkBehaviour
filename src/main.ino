@@ -415,7 +415,6 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
     Serial.print( ">>END Trial " );
     Serial.print( trial_count_ );
     Serial.println( " is over. Starting new");
-    trial_count_ += 1;
 }
 
 void loop()
@@ -448,6 +447,8 @@ void loop()
         else
             do_trial( i, false );
 
+
+        trial_count_ += 1;
 
         
         /*-----------------------------------------------------------------------------
