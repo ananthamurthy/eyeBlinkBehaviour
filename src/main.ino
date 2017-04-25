@@ -473,6 +473,5 @@ void loop()
     reset_watchdog( );
     Serial.println( "All done. Party!" );
     Serial.flush( );
-    delay( 100 );
-    exit( 0 );
+    return;
 }
