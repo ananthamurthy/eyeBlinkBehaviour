@@ -427,7 +427,9 @@ void loop()
     // Dont' do anything if trial count has exceedeed 100.
     if( trial_count_ > 100 )
     {
+        reboot_ = false;
         reset_watchdog( );
+        Serial.println( "Session over" );
         return;
     }
 
