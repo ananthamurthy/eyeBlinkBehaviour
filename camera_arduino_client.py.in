@@ -47,18 +47,27 @@ flipped_ = -1
 
 # Frame and main window.
 bbox_ = [ (255,131), (521, 288) ]
+default_bbox_ = bbox_ 
+
 title_ = 'Animal Window'
 
 
 def onmouse(event, x, y, flags, params):
     global bbox_
+    global default_bbox_ 
     # Draw Rectangle
     if event == cv2.EVENT_LBUTTONDOWN:
         bbox_ = []
         bbox_.append((x, y))
 
     elif event == cv2.EVENT_LBUTTONUP:
-        bbox_.append((x, y))
+        if abs( x - bbox_[0][0] ) > 10 and abs( y - bbox_[0][1] ) >  10:
+            bbox_.append((x, y))
+            default_bbox_ = bbox_ 
+        else:
+            bbox_ = default_bbox_
+            return 
+
         print( '[INFO] Current box %s' % bbox_ )
 
 window_ = cv2.namedWindow( title_ )
@@ -431,8 +440,7 @@ def main():
     trialIndex = Value('d', 0)
 
     readP, writeP = Pipe(duplex=False)
-    cam = Process(target=camera_client, args=(readP, writeTrial, trialIndex)
-                  )
+    cam = Process(target=camera_client, args=(readP, writeTrial, trialIndex))
     cam.daemon = True
     cam.start()
     print('Camera client launched')
@@ -486,27 +494,6 @@ if __name__ == '__main__':
         required=False,
         default=None,
         help='Serial port [full path]')
-    parser.add_argument(
-        '--select_after',
-        '-sa',
-        required=False,
-        default=60000000.0,
-        type=float,
-        help='Press SELECT after time. Default 600 sec.')
-    parser.add_argument(
-        '--flipped',
-        '-f',
-        required=False,
-        default=0,
-        type=int,
-        help='Wheather CS+/CS- are to be flipped (0/1 (False,True)')
-    parser.add_argument(
-        '--cs_fraction',
-        '-cf',
-        required=False,
-        default=10,
-        type=int,
-        help='CS fraction')
     parser.parse_args(namespace=config.args_)
     init_serial()
     # Intialize logger after intializing serial port.
