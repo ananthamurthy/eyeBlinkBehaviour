@@ -142,7 +142,7 @@ file(COPY ${CMAKE_SOURCE_DIR}/eyeblinkdetector/extract.py
      )
 
 add_custom_target( run  
-    DEPENDS cam_server
+    DEPENDS cam_server upload
     COMMAND ${CMAKE_COMMAND} -E copy_directory 
         ${CMAKE_SOURCE_DIR}/pyblink ${CMAKE_BINARY_DIR}
     COMMAND bash -x ./run.sh ${RUN_ARGS}
