@@ -135,7 +135,7 @@ void check_for_reset( void )
 {
     if( is_command_read( 'r', true ) )
     {
-        Serial.println( ">>> Reboot in 2 seconds" );
+        Serial.println( ">>>Received r. Reboot in 2 seconds" );
         reboot_ = true;
     }
 }
@@ -249,25 +249,30 @@ void wait_for_start( )
     sprintf( trial_state_, "INVA" );
     while( true )
     {
+
+        /*-----------------------------------------------------------------------------
+         *  Make sure each after reading command, we send >>>Received to serial
+         *  port. The python client waits for it.
+         *-----------------------------------------------------------------------------*/
         write_data_line( );
         if( is_command_read( 's', true ) )
         {
-            Serial.println( ">>> Start" );
+            Serial.println( ">>>Received r. Start" );
             break;                              /* Only START can break the loop */
         }
         else if( is_command_read( 'p', true ) ) 
         {
-            Serial.println( ">>> Playing puff" );
+            Serial.println( ">>>Received p. Playing puff" );
             play_puff( PUFF_DURATION );
         }
         else if( is_command_read( 't', true ) ) 
         {
-            Serial.println( ">>> Playing tone" );
+            Serial.println( ">>>Received t. Playing tone" );
             play_tone( TONE_DURATION, 1.0);
         }
         else if( is_command_read( 'l', true ) ) 
         {
-            Serial.println( ">>> LED ON" );
+            Serial.println( ">>>Received l. LED ON" );
             led_on( LED_DURATION );
         }
         else

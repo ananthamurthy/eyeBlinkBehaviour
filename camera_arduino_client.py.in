@@ -131,7 +131,7 @@ def trial_file_path( ):
 def cleanup():
     global finished_all_
     finished_all_ = True
-    config.serial_port_.write_msg('rr')
+    config.serial_port_.write_msg('r')
     print("+++++++++++++++++++++++++++++ All over")
 
 
@@ -184,12 +184,6 @@ def arduino_client(writeP, writeTrial, trialIndex):
         if trialNum > 0:
             break
 
-        # All right. If we are here then we are waiting for SELECT to be
-        # pressed. Let's press is by sending three ` to serialport after
-        # some timeout.
-        if send_press_select(tstart, config.args_.select_after):
-            logging.info("SELECT sent")
-            break
 
     # Either we have pressed the SELECT or we have sent the select command ss
     select_sent_ = True
