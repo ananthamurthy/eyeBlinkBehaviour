@@ -140,20 +140,6 @@ def append_trial_data(outfile, line ):
         f.write('%s\n' %  line )
 
 
-def send_press_select(reftime, interval):
-    if time.time() - reftime < interval:
-        return False
-    logging.info('Sending SELECT to board')
-    config.serial_port_.write_msg("s\r")
-    time.sleep(0.5)
-    logging.info('[INFO] Waiting for Board to respond .', end='')
-    sys.stdout.flush()
-    while '>>>Recieved' not in config.serial_port_.read_line():
-        print('.', end='')
-        sys.stdout.flush()
-    return True
-
-
 def read_line():
     now = datetime.datetime.now().isoformat()
     line = config.serial_port_.read_line()
@@ -183,10 +169,6 @@ def arduino_client(writeP, writeTrial, trialIndex):
         # Valid trial has already started, arduino says so.
         if trialNum > 0:
             break
-
-
-    # Either we have pressed the SELECT or we have sent the select command ss
-    select_sent_ = True
 
     # After select has been sent to arduino.
     print('SELECT has been sent. Now acquiring data from valid trials')
@@ -236,13 +218,15 @@ def send_command():
     print('Executing send command loop')
     while True:
         # This is blocking.
-        k = readchar.readkey()
-        if k in validCommands:
-            command = k
+        command = readchar.readkey()
+        if command in validCommands:
             if command in legalCommandsBeforeStart and not select_sent_:
                 logging.info("[COMMAND] Sending command: %s" % command)
                 config.serial_port_.write_msg(command)
-        elif k in [ '\x03', '\x04', '\x1a']:
+                if command == 's':
+                    select_sent_ = True
+                    
+        elif command in [ '\x03', '\x04', '\x1a']:
             finished_all_ = True
             break
 
