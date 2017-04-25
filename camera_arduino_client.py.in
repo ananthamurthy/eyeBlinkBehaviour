@@ -117,16 +117,13 @@ if not os.path.isdir(data_dir_):
         os.makedirs(data_dir_)
 
 # Arduino data storate
-def trial_file_path( ):
-    global trial_file_ 
-    if trial_file_:
-        return trial_file_
-
-    filename = "name=%s_st=%s_sn=%s.dat" % (
+def trial_file_path( trial = 0 ):
+    filename = "name=%s_st=%s_sn=%s" % (
         config.args_.name, config.args_.session_type, config.args_.session_num
             )
+    filename += 'trial=%d.dat' % trial
     trial_file_ = os.path.join( data_dir_, filename )
-    return trial_file_
+    return trial_file_ 
 
 def cleanup():
     global finished_all_
@@ -184,7 +181,7 @@ def arduino_client(writeP, writeTrial, trialIndex):
         trialIndex.value = int( trialNum )
 
         # NOTE: Write arduino data separately in a single file.
-        append_trial_data(trial_file_path( ), line )
+        append_trial_data(trial_file_path( trialNum ), line )
         if trialNum >= 100:
             finished_all_ = True
 
