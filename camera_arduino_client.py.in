@@ -104,7 +104,7 @@ frame_size_ = img_shape_[0] * img_shape_[1]
 
 # Maximum allowed frame in each trial. This is guard against RAM overflow in
 # case arduino failes to update trial count. 
-max_frames_in_trial = 6200
+max_frames_in_trial = 3200
 image_stack_ = None
 
 now = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -364,7 +364,7 @@ def camera_client(readP, writeTrial, trialIndex, cameraPinValue):
                         if cameraPinValue.value > 0:
                             msg = '%.2f ( ON)'  % res
                         else:
-                            msg = '%.2f (OFF)'  % res
+                            msg = '%.2f'  % res
 
                         cv2.putText( 
                                 img, msg, (0, 10 )
