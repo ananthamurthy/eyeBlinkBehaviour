@@ -143,10 +143,12 @@ def read_line():
     """
     now = datetime.datetime.now().isoformat()
     line = config.serial_port_.read_line()
-    return now + ',' + line.replace(' ', '')
+    line = now + ',' + line.replace(' ', '')
+    # print( line )
+    return line
 
 
-def arduino_client(writeP, writeTrial, trialIndex, cameraPinValue):
+def arduino_client(writeP, trialIndex, cameraPinValue):
     global running_trial_
     global cs_type_
     global next_probe_in_
@@ -156,22 +158,6 @@ def arduino_client(writeP, writeTrial, trialIndex, cameraPinValue):
     tstart = time.time()
     currentTrialIndex = 0
 
-    # Till select is not sent.
-    while not (finished_all_ or select_sent_):
-        line = read_line()
-        # print( '[DEBUG] 0: %s' % line )
-        writeP.send(line)
-        data = line_to_data(line)
-        if len(data) < 10:
-            continue
-
-        trialNum = int(data[2])
-        # Valid trial has already started, arduino says so.
-        if trialNum > 0:
-            break
-
-    # After select has been sent to arduino.
-    print('SELECT has been sent. Now acquiring data from valid trials')
     while not finished_all_:
         line = read_line()
         # print( '[DEBUG] 1: %s' % line )
@@ -180,21 +166,21 @@ def arduino_client(writeP, writeTrial, trialIndex, cameraPinValue):
         if len( data ) < 10:
             continue
 
-        trialNum = data[2]
+        trialNum = int( data[2] )
+        if trialNum < 1:
+            continue 
+
         trialIndex.value = int( trialNum )
 
         # 3rd last value in data line is camera.
-        cameraPinValue.value = int( data[-3] )
+        with cameraPinValue.get_lock( ):
+            cameraPinValue.value = int( data[-3] )
+            assert( cameraPinValue.value in [ 0, 1 ] )
+
         # NOTE: Write arduino data separately in a single file.
         append_trial_data(trial_file_path( trialNum ), line )
         if trialNum >= 100:
             finished_all_ = True
-
-
-def answer_questions(numbers=5):
-    # All great UI have four questions. Yes we have to, they all starts with
-    # Please. Not three. Four. Sorry.
-    return True
 
 
 def init_arduino_client():
@@ -244,6 +230,9 @@ def init_serial(baudRate=38400):
 def line_to_data(line):
     """First element is timestamp, rest the data etc.
     """
+    if '>' in line:
+        return [ ]
+
     line = filter(None, line.split(',') )
     data = [ ]
     for x in line:
@@ -295,7 +284,7 @@ def show_frame(frame, outfile=None):
         cv2.imsave(outfile, frame)
 
 
-def camera_client(readP, writeTrial, trialIndex, cameraPinValue):
+def camera_client(readP, trialIndex, cameraPinValue):
     global finished_all_
     global img_, buf_
     global image_stack_
@@ -326,6 +315,8 @@ def camera_client(readP, writeTrial, trialIndex, cameraPinValue):
     framesInStack = 0
     trial_count = 0
     blinks_ = []
+    writeTrial_ = False
+    startRecording_ = False
     while not finished_all_:
         try:
             data = s.recv(frame_size_)
@@ -361,10 +352,16 @@ def camera_client(readP, writeTrial, trialIndex, cameraPinValue):
                         roi = cv2.equalizeHist( roi )
                         infile, outfile, res, sss = blinky.process_frame(roi, 0)
                         #cv2.imshow( 'algo', outfile )
-                        if cameraPinValue.value > 0:
+
+                        # When camera pin goes HIGH, start writing trial.
+                        if cameraPinValue.value == 1:
                             msg = '%.2f ( ON)'  % res
+                            startRecording_ = True
                         else:
                             msg = '%.2f'  % res
+                            if startRecording_:
+                                writeTrial_ = True
+                                startRecording_ = False
 
                         cv2.putText( 
                                 img, msg, (0, 10 )
@@ -403,9 +400,9 @@ def camera_client(readP, writeTrial, trialIndex, cameraPinValue):
             save_img_stack(image_stack_, trialIndex.value)
             init_stack( )
 
-        if writeTrial.value == 1:
+        if writeTrial_:
             framesInStack = 0
-            writeTrial.value = 0
+            writeTrial_ = False
             save_img_stack(image_stack_, trialIndex.value)
             init_stack()
 
@@ -421,29 +418,23 @@ def main():
     print('Initialized arduino board')
 
     # Variables to share between processes.
-    writeTrial = Value('d', 0)
     trialIndex = Value('d', 0)
-    
     cameraPinValue = Value( 'd', 0 )
 
     readP, writeP = Pipe(duplex=False)
 
     cam = Process(
             target=camera_client
-            , args=(readP, writeTrial, trialIndex, cameraPinValue )
+            , args=(readP, trialIndex, cameraPinValue )
             )
     cam.daemon = True
     cam.start()
     print('Camera client launched')
 
     arduinoP = Process(
-        target=arduino_client,
-        args=( writeP,
-            writeTrial,
-            trialIndex,
-            cameraPinValue
+            target=arduino_client,
+            args=( writeP, trialIndex, cameraPinValue)
             )
-        )
     arduinoP.daemon = True
     arduinoP.start()
     print("Arduino client launched")
