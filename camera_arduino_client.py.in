@@ -104,7 +104,7 @@ frame_size_ = img_shape_[0] * img_shape_[1]
 
 # Maximum allowed frame in each trial. This is guard against RAM overflow in
 # case arduino failes to update trial count. 
-max_frames_in_trial = 3200
+max_frames_in_trial = 500
 image_stack_ = None
 
 now = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -247,6 +247,12 @@ def save_img_stack(stack, index):
     global start_
     filename = os.path.join(data_dir_, 'stack_%03d.tif' % index)
     tmpfile = os.path.join('/mnt', 'ramdisk', 'tmp.tif')
+    # Remove empty frame.
+    stack = np.array( filter( lambda x : np.sum( x ) < 2, stack ))
+    if len( stack ) < 1:
+        print( 'Zero frames in image. Not saving' )
+        return 
+
     if tmpfile:
         tifffile.imsave(tmpfile, stack)
         # Use Popen to move the tmp file to desired location in background.
@@ -254,8 +260,7 @@ def save_img_stack(stack, index):
         subprocess.Popen([ "./copy_file.sh", tmpfile, filename ])
         print( 'Launched background process to copy data in %f' % ( time.time()
             - t ) )
-    print('[INFO] Saved to %s after %s secs' %
-          (filename, time.time() - start_))
+    print('[INFO] Saved to %s after %s secs' % (filename, time.time() - start_))
     start_ = time.time()
 
 
@@ -316,7 +321,7 @@ def camera_client(readP, trialIndex, cameraPinValue):
     trial_count = 0
     blinks_ = []
     writeTrial_ = False
-    startRecording_ = False
+    recording_ = False
     while not finished_all_:
         try:
             data = s.recv(frame_size_)
@@ -340,7 +345,11 @@ def camera_client(readP, trialIndex, cameraPinValue):
                     cv2.putText(img, txt.strip(), (0, h_ - 10),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.4, 128, 1
                                 )
-                image_stack_[framesInStack] = img
+
+                # Only save the frame if camera pin says so.
+                if recording_:
+                    image_stack_[framesInStack] = img
+                    framesInStack += 1
 
                 if len(bbox_) == 2:
                     # print( 'Bounding box has been drawn : %s' % str(bbox_) )
@@ -356,12 +365,12 @@ def camera_client(readP, trialIndex, cameraPinValue):
                         # When camera pin goes HIGH, start writing trial.
                         if cameraPinValue.value == 1:
                             msg = '%.2f ( ON)'  % res
-                            startRecording_ = True
+                            recording_ = True
                         else:
                             msg = '%.2f'  % res
-                            if startRecording_:
+                            if recording_:
+                                recording_ = False
                                 writeTrial_ = True
-                                startRecording_ = False
 
                         cv2.putText( 
                                 img, msg, (0, 10 )
@@ -374,7 +383,7 @@ def camera_client(readP, trialIndex, cameraPinValue):
                     blinks_.append( -1 )
 
                 # Show every 10th frame.
-                if framesInStack % 10 == 0:
+                if totalFrames % 10 == 0:
                     show_frame( img )
                     # show_frame( np.vstack( (infile, outfile )) )
 
@@ -386,13 +395,13 @@ def camera_client(readP, trialIndex, cameraPinValue):
                         if len( blinks_ ) > 10:
                             gnuplot_.plot( np.array( blinks_[-2000:] ))
 
-                framesInStack += 1
                 buf = buf[frame_size_:]
-
         except Exception as e:
             # Keep reading.
             print(e)
             continue
+
+        totalFrames += 1
 
         if framesInStack >= max_frames_in_trial:
             framesInStack = 0
@@ -400,6 +409,7 @@ def camera_client(readP, trialIndex, cameraPinValue):
             save_img_stack(image_stack_, trialIndex.value)
             init_stack( )
 
+        # Write to file and set flag to OFF.
         if writeTrial_:
             framesInStack = 0
             writeTrial_ = False
