@@ -103,7 +103,7 @@ frame_size_ = img_shape_[0] * img_shape_[1]
 # Maximum allowed frame in each trial. This is guard against RAM overflow in
 # case arduino failes to update trial count. After every 2000 frames, the data
 # will be flushed to disk.
-max_frames_in_trial = 4200
+max_frames_in_trial = 6200
 image_stack_ = None
 
 now = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
