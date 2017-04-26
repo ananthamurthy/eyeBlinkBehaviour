@@ -138,6 +138,8 @@ def append_trial_data(outfile, line ):
 
 
 def read_line():
+    """Append timestamp at which this line was read 
+    """
     now = datetime.datetime.now().isoformat()
     line = config.serial_port_.read_line()
     return now + ',' + line.replace(' ', '')
@@ -159,10 +161,10 @@ def arduino_client(writeP, writeTrial, trialIndex):
         # print( '[DEBUG] 0: %s' % line )
         writeP.send(line)
         data = line_to_data(line)
-        if len(data) < 6:
+        if len(data) < 10:
             continue
 
-        trialNum = data[2]
+        trialNum = int(data[2])
         # Valid trial has already started, arduino says so.
         if trialNum > 0:
             break
@@ -174,7 +176,7 @@ def arduino_client(writeP, writeTrial, trialIndex):
         # print( '[DEBUG] 1: %s' % line )
         writeP.send(line)
         data = line_to_data( line )
-        if len( data ) < 6:
+        if len( data ) < 10:
             continue
 
         trialNum = data[2]
@@ -239,7 +241,7 @@ def init_serial(baudRate=38400):
 def line_to_data(line):
     """First element is timestamp, rest the data etc.
     """
-    line = line.split(',')
+    line = filter(None, line.split(',') )
     data = [ ]
     for x in line:
         try:
