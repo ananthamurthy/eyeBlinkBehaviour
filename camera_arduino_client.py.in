@@ -42,8 +42,7 @@ logging.basicConfig(level=logging.INFO)
 start_ = time.time()
 total_trials_ = 0
 cs_type_ = None
-next_probe_in_ = -1
-flipped_ = -1
+prev_trial_ = 0
 
 # Frame and main window.
 bbox_ = [ (255,131), (521, 288) ]
