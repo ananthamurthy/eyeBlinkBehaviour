@@ -353,11 +353,9 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
     {
         // 500 ms before the PRE_ ends, start camera pin high. We start
         // recording as well.
-
         if( (millis( ) - stamp_) >= (duration - 500 ) )
-            digitalWrite( CAMERA_TTL_PIN, HIGH );
-        else
-            digitalWrite( CAMERA_TTL_PIN, LOW );
+            if( LOW == digitalRead( CAMERA_TTL_PIN ) )
+                digitalWrite( CAMERA_TTL_PIN, HIGH );
 
         write_data_line( );
     }
