@@ -61,7 +61,7 @@ def find_blinks_using_pixals( frame ):
     rs, cs = newframe.shape
     r0, c0 = rs / 2, cs / 2
     signal = np.sum( newframe[r0-rs/4:r0+rs/4,c0-cs/4:c0+cs/4] )
-    return frame, newframe, signal / (rs*cs/4), -1
+    return frame, newframe, 1.0 * signal / float(rs*cs/4), -1
 
 
 def process_frame(frame, method = 0):

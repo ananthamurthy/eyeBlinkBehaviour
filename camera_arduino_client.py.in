@@ -110,8 +110,10 @@ image_stack_ = None
 now = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
 
 # When True, put a small text on each frame.
+
+now = datetime.datetime.now().isoformat( )
 write_data_ = True
-data_dir_ = "@DATADIR@"
+data_dir_ = os.path.join( "@DATADIR@", now )
 trial_file_ = ''
 if not os.path.isdir(data_dir_):
     if write_data_:
@@ -163,7 +165,7 @@ def arduino_client(writeP, trialIndex, cameraPinValue):
         # print( '[DEBUG] 1: %s' % line )
         writeP.send(line)
         data = line_to_data( line )
-        if len( data ) < 10:
+        if len( data ) != 11:
             continue
 
         trialNum = int( data[2] )
@@ -354,33 +356,30 @@ def camera_client(readP, trialIndex, cameraPinValue):
                 if len(bbox_) == 2:
                     # print( 'Bounding box has been drawn : %s' % str(bbox_) )
                     cv2.rectangle( img, bbox_[0], bbox_[1], 128 )
-                    try:
-                        (x0, y0), (x1, y1) = bbox_
-                        roi = img[y0:y1,x0:x1]
-                        # Equalize histogram
-                        roi = cv2.equalizeHist( roi )
-                        infile, outfile, res, sss = blinky.process_frame(roi, 0)
-                        #cv2.imshow( 'algo', outfile )
+                    (x0, y0), (x1, y1) = bbox_
+                    roi = img[y0:y1,x0:x1]
+                    # Equalize histogram
+                    roi = cv2.equalizeHist( roi )
+                    infile, outfile, res, sss = blinky.process_frame(roi, 0)
+                    #cv2.imshow( 'algo', outfile )
 
-                        # When camera pin goes HIGH, start writing trial.
-                        if cameraPinValue.value == 1:
-                            msg = '%.2f ( ON)'  % res
-                            recording_ = True
-                        else:
-                            msg = '%.2f'  % res
-                            if recording_:
-                                recording_ = False
-                                writeTrial_ = True
+                    # When camera pin goes HIGH, start writing trial.
+                    if cameraPinValue.value == 1:
+                        msg = '%.2f ( ON)'  % res
+                        recording_ = True
+                    else:
+                        msg = '%.2f'  % res
+                        if recording_:
+                            recording_ = False
+                            writeTrial_ = True
 
-                        cv2.putText( 
-                                img, msg, (0, 10 )
-                                 , cv2.FONT_HERSHEY_SIMPLEX, 0.4, 255, 2
-                                 )
-                        blinks_.append( res )
-                    except Exception as e:
-                        print( "Failed to compute blink %s" % e  )
+                    cv2.putText( 
+                            img, msg, (0, 10 )
+                             , cv2.FONT_HERSHEY_SIMPLEX, 0.4, 255, 2
+                             )
+                    blinks_.append( res )
                 else:
-                    blinks_.append( -1 )
+                    blinks_.append( random.random( ) )
 
                 # Show every 10th frame.
                 if totalFrames % 10 == 0:

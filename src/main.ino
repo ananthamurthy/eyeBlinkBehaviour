@@ -452,9 +452,6 @@ void loop()
         else
             do_trial( i, false );
 
-
-        trial_count_ += 1;
-
         
         /*-----------------------------------------------------------------------------
          *  ITI.
@@ -463,8 +460,12 @@ void loop()
         stamp_ = millis( );
         sprintf( trial_state_, "ITI_" );
         while((millis( ) - stamp_) <= rduration )
-            write_data_line( );
-        
+        {
+            reset_watchdog( );
+            delay( 10 );
+        }
+
+        trial_count_ += 1;
     }
 
     // We are done with all trials. Nothing to do.
