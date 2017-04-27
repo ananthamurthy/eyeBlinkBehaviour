@@ -250,7 +250,7 @@ def save_img_stack(stack, index):
     filename = os.path.join(data_dir_, 'stack_%03d.tif' % index)
     tmpfile = os.path.join('/mnt', 'ramdisk', 'tmp.tif')
     # Remove empty frame.
-    stack = np.array( filter( lambda x : np.sum( x ) < 2, stack ))
+    stack = np.array( filter( lambda x : np.sum( x ) > 2, stack ))
     if len( stack ) < 1:
         print( 'Zero frames in image. Not saving' )
         return 
