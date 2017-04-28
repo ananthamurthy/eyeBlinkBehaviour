@@ -422,16 +422,6 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
 
 void loop()
 {
-    // Dont' do anything if trial count has exceedeed 100.
-    trial_count_ += 1;                          /* Just to be sure. */
-    if( trial_count_ >= 100 )
-    {
-        reboot_ = false;
-        reset_watchdog( );
-        Serial.println( "Session over" );
-        return;
-    }
-
     reset_watchdog( );
     // The probe trial occurs every 10th trial with +/- of 2 trials.
     unsigned numProbeTrials = 0;
@@ -473,5 +463,7 @@ void loop()
     reset_watchdog( );
     Serial.println( "All done. Party!" );
     Serial.flush( );
-    return;
+
+    // Do do anything once trails are over.
+    exit( 0 );
 }
