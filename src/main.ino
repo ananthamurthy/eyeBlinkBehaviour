@@ -423,7 +423,8 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
 void loop()
 {
     // Dont' do anything if trial count has exceedeed 100.
-    if( trial_count_ > 100 )
+    trial_count_ += 1;                          /* Just to be sure. */
+    if( trial_count_ >= 100 )
     {
         reboot_ = false;
         reset_watchdog( );
