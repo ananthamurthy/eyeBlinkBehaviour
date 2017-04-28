@@ -459,11 +459,11 @@ void loop()
         trial_count_ += 1;
     }
 
-    // We are done with all trials. Nothing to do.
-    reset_watchdog( );
-    Serial.println( "All done. Party!" );
-    Serial.flush( );
-
     // Do do anything once trails are over.
-    exit( 0 );
+    while( true )
+    {
+        reset_watchdog( );
+        Serial.println( ">>> All done" );
+        sleep( 1000 );
+    }
 }
