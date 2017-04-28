@@ -464,6 +464,6 @@ void loop()
     {
         reset_watchdog( );
         Serial.println( ">>> All done" );
-        sleep( 1000 );
+        delay( 1000 );
     }
 }
