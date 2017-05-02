@@ -120,7 +120,7 @@ void write_data_line( )
     reset_watchdog( );
 
     // Just read the registers where pin data is saved.
-    int tone = digitalRead( TONE_PIN );
+    int t = digitalRead( TONE_PIN );
     int led = digitalRead( LED_PIN ); 
 
     int puff = digitalRead( PUFF_PIN ); 
@@ -134,7 +134,7 @@ void write_data_line( )
     
     sprintf(msg_  
             , "%lu,%d,%d,%d,%d,%d,%d,%d,%d,%s"
-            , timestamp, trial_count_, puff, tone, led
+            , timestamp, trial_count_, puff, t, led
             , motion1, motion2, camera, microscope, trial_state_
             );
     Serial.println(msg_);
