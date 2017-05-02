@@ -423,11 +423,11 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
 void loop()
 {
     reset_watchdog( );
-    // The probe trial occurs every 10th trial with +/- of 2 trials.
+    // The probe trial occurs every 7th trial with +/- of 2 trials.
     unsigned numProbeTrials = 0;
-    unsigned nextProbbeTrialIndex = random(8, 13);
+    unsigned nextProbbeTrialIndex = random(5, 10);
 
-    for (size_t i = 1; i <= 100; i++) 
+    for (size_t i = 1; i <= 81; i++) 
     {
         reset_watchdog( );
 
