@@ -353,7 +353,7 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
     {
         // 500 ms before the PRE_ ends, start camera pin high. We start
         // recording as well.
-        if( (millis( ) - stamp_) >= (duration - 1500 ) )
+        if( (millis( ) - stamp_) >= (duration - 500 ) )
             if( LOW == digitalRead( CAMERA_TTL_PIN ) )
                 digitalWrite( CAMERA_TTL_PIN, HIGH );
 
@@ -405,8 +405,8 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
     while( (millis( ) - stamp_) <= duration )
     {
         write_data_line( );
-        // Switch camera OFF after 1500 ms into POST.
-        if( (millis() - stamp_) >= 1500 )
+        // Switch camera OFF after 500 ms into POST.
+        if( (millis() - stamp_) >= 500 )
             digitalWrite( CAMERA_TTL_PIN, LOW );
 
     }

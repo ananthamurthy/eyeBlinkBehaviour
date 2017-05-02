@@ -107,17 +107,20 @@ frame_size_ = img_shape_[0] * img_shape_[1]
 max_frames_in_trial = 500
 image_stack_ = None
 
-now = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-
-# When True, put a small text on each frame.
-
-now = datetime.datetime.now().isoformat( )
 write_data_ = True
-data_dir_ = os.path.join( "@DATADIR@", now )
+now =  datetime.datetime.now().isoformat( )
+data_dir_ = os.path.join( "@DATADIR@", '' )
 trial_file_ = ''
+
+# If data directory is already there, create a folder with timstamp to store
+# data.
 if not os.path.isdir(data_dir_):
-    if write_data_:
-        os.makedirs(data_dir_)
+    os.makedirs(data_dir_)
+else:
+    data_dir_ = os.path.join( "@DATADIR@", now )
+    os.makedirs(data_dir_)
+
+
 
 # Arduino data storate
 def trial_file_path( trial = 0 ):
@@ -247,7 +250,7 @@ def line_to_data(line):
 
 def save_img_stack(stack, index):
     global start_
-    filename = os.path.join(data_dir_, 'stack_%03d.tif' % index)
+    filename = os.path.join(data_dir_, 'trial_%03d.tif' % index)
     tmpfile = os.path.join('/mnt', 'ramdisk', 'tmp.tif')
     # Remove empty frame.
     stack = np.array( filter( lambda x : np.sum( x ) > 2, stack ))
