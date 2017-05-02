@@ -324,6 +324,7 @@ def camera_client(readP, trialIndex, cameraPinValue):
     blinks_ = []
     writeTrial_ = False
     recording_ = False
+    cameraPinState = [False, False]
     while not finished_all_:
         try:
             data = s.recv(frame_size_)
@@ -367,11 +368,17 @@ def camera_client(readP, trialIndex, cameraPinValue):
                     if cameraPinValue.value == 1:
                         msg = '%.2f ( ON)'  % res
                         recording_ = True
+                        cameraPinState.append( True )
+                        cameraPinState.pop( 0 )
+
                     else:
                         msg = '%.2f'  % res
-                        if recording_:
-                            recording_ = False
-                            writeTrial_ = True
+
+                    if (not cameraPinState[1]) and cameraPinState[0]:
+                        writeTrial_ = True
+                        recording_ = False
+                    else:
+                        writeTrial_ = False
 
                     cv2.putText( 
                             img, msg, (0, 10 )
