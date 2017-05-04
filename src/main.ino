@@ -27,7 +27,7 @@
 
 #define         SENSOR_PIN                  A5
 
-#define         TONE_FREQ                   4500
+#define         TONE_FREQ_HIGH              4500
 
 #define         PUFF_DURATION               50
 #define         TONE_DURATION               50
@@ -330,7 +330,7 @@ void do_first_trial( )
  * @param trial_num. Index of the trial.
  * @param ttype. Type of the trial.
  */
-void do_trial( unsigned int trial_num, bool isporobe = false )
+void do_trial( bool isporobe = false )
 {
     reset_watchdog( );
     check_for_reset( );
@@ -349,36 +349,36 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
     digitalWrite( CAMERA_TTL_PIN, LOW );
     digitalWrite( LED_PIN, LOW );
 
-    unsigned duration = 5000;
     while( (millis( ) - trial_start_time_) < duration ) /* PRE_ time */
     {
         // 500 ms before the PRE_ ends, start camera pin high. We start
         // recording as well.
-        if( (millis( ) - endBlockTime) >= (duration - 500 ) )
+        if( (millis( ) - stamp_) >= (duration - 1500 ) )
             digitalWrite( CAMERA_TTL_PIN, HIGH );
         else
             digitalWrite( CAMERA_TTL_PIN, LOW );
 
         write_data_line( );
     }
-    endBlockTime = millis( );
+    stamp_ = millis( );
 
     /*-----------------------------------------------------------------------------
      *  CS: 350 ms duration. Tone is played here.
      *-----------------------------------------------------------------------------*/
     duration = 350;
     play_tone( duration, TONE_FREQ_HIGH, 1.0 );
-    endBlockTime = millis( );
+    stamp_ = millis( );
 
     /*-----------------------------------------------------------------------------
      *  TRACE. The duration of trace varies from trial to trial.
      *-----------------------------------------------------------------------------*/
     duration = 250;
     sprintf( trial_state_, "TRAC" );
-    while( (millis( ) - endBlockTime) <= duration )
+    while( (millis( ) - stamp_) <= duration )
     {
         check_for_reset( );
         write_data_line( );
+    }
     stamp_ = millis( );
 
     /*-----------------------------------------------------------------------------
@@ -396,6 +396,7 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
         sprintf( trial_state_, "PUFF" );
         play_puff( duration );
     }
+
     stamp_ = millis( );
     
     /*-----------------------------------------------------------------------------
@@ -436,14 +437,14 @@ void loop()
         // Probe trial.
         if( i == nextProbbeTrialIndex )
         {
-            do_trial( i, true );
+            do_trial( true );
             numProbeTrials +=1 ;
             nextProbbeTrialIndex = random( 
                     (numProbeTrials+1)*10-2, (numProbeTrials+1)*10+3
                     );
         }
         else
-            do_trial( i, false );
+            do_trial( false );
 
         
         /*-----------------------------------------------------------------------------
