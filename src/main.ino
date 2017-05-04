@@ -366,6 +366,7 @@ void do_trial( bool isporobe = false )
      *  CS: 350 ms duration. Tone is played here.
      *-----------------------------------------------------------------------------*/
     duration = 350;
+    sprintf( trial_state_, "TRAC" );
     play_tone( duration, TONE_FREQ_HIGH, 1.0 );
     stamp_ = millis( );
 
