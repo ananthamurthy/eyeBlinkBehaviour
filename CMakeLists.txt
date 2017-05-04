@@ -41,9 +41,12 @@ find_program(ARDUINO_BIN arduino )
 
 set(ARDUINO_BOARD_FILE hardware/arduino/boards.txt)
 find_path( ARDUINO_DIR 
-    NAMES ${ARDUINO_BOARD_FILE} 
-    PATHS /usr/share/arduino /opt
+    NAMES boards.txt
+    PATHS /usr/share/arduino/hardware
+    PATH_SUFFIXES arduino arduino/avr
     )
+message( STATUS "Arduino location ${ARDUINO_DIR}" )
+
 find_path( ARDUINO_LIQUID_LIB_DIRS 
     NAMES LiquidCrystal.h 
     PATHS /usr/share/arduino /opt
@@ -73,12 +76,9 @@ if( (NOT ANIMAL_NAME) OR (NOT SESSION_TYPE) OR (NOT SESSION_NUM) )
         "\te.g cmake -DANIMAL_NAME=k3 -DSESSION_NUM=1 -DSESSION_TYPE=1 .. \n"
         )
 endif ( )
-set(SELECT_AFTER 600000000)
-set(FLIPPED 0)
-set(CS_FRACTION 10)
 
 # Data directory for given session and animal
-set(DATADIR "$ENV{HOME}/DATA/${ANIMAL_NAME}_${SESSION_TYPE}_${SESSION_NUM}")
+set(DATADIR "$ENV{HOME}/DATA/${ANIMAL_NAME}/${ANIMAL_NAME}_${SESSION_TYPE}_${SESSION_NUM}")
 file(MAKE_DIRECTORY ${DATADIR})
 
 
@@ -134,7 +134,6 @@ configure_file( ${CMAKE_SOURCE_DIR}/camera_arduino_client.py.in
 # Pass animal options to run.sh which will will passed to python script.
 SET(RUN_ARGS 
     "-p ${PORT} -n ${ANIMAL_NAME} -sn ${SESSION_NUM} -st ${SESSION_TYPE}"
-     " -f ${FLIPPED} -cf ${CS_FRACTION} -sa ${SELECT_AFTER}" 
      )
 
 file(COPY ${CMAKE_SOURCE_DIR}/eyeblinkdetector/extract.py 

@@ -14,8 +14,6 @@
 
 #include <avr/wdt.h>
 
-#define         DRY_RUN                     1
-
 // Pins etc.
 #define         TONE_PIN                    2
 #define         LED_PIN                     3
@@ -29,14 +27,11 @@
 
 #define         SENSOR_PIN                  A5
 
-/*-----------------------------------------------------------------------------
- *  Change parameters here.
- *-----------------------------------------------------------------------------*/
-#define         TONE_FREQ_LOW                 4500
-#define         TONE_FREQ_HIGH                7500
-#define         TONE_DURATION                 50
-#define         LED_DURATION                  50
-#define         PUFF_DURATION                 50
+#define         TONE_FREQ                   4500
+
+#define         PUFF_DURATION               50
+#define         TONE_DURATION               50
+#define         LED_DURATION               50
 
 
 unsigned long stamp_            = 0;
@@ -47,7 +42,6 @@ unsigned trial_count_           = 0;
 char msg_[80];
 
 unsigned long trial_start_time_ = 0;
-unsigned long trial_end_time_   = 0;
 
 
 char trial_state_[5]            = "PRE_";
@@ -58,10 +52,6 @@ char trial_state_[5]            = "PRE_";
 int incoming_byte_              = 0;
 bool reboot_                    = false;
 
-unsigned long currentTime( )
-{
-    return millis() - trial_start_time_;
-}
 
 /*-----------------------------------------------------------------------------
  *  WATCH DOG
@@ -145,7 +135,7 @@ void check_for_reset( void )
 {
     if( is_command_read( 'r', true ) )
     {
-        Serial.println( ">>> Reboot in 2 seconds" );
+        Serial.println( ">>>Received r. Reboot in 2 seconds" );
         reboot_ = true;
     }
 }
@@ -201,7 +191,6 @@ void led_on( unsigned int duration )
         digitalWrite( LED_PIN, HIGH );
         write_data_line( );
     }
-
     digitalWrite( LED_PIN, LOW );
 }
 
@@ -260,25 +249,30 @@ void wait_for_start( )
     sprintf( trial_state_, "INVA" );
     while( true )
     {
+
+        /*-----------------------------------------------------------------------------
+         *  Make sure each after reading command, we send >>>Received to serial
+         *  port. The python client waits for it.
+         *-----------------------------------------------------------------------------*/
         write_data_line( );
         if( is_command_read( 's', true ) )
         {
-            Serial.println( ">>> Start" );
+            Serial.println( ">>>Received r. Start" );
             break;                              /* Only START can break the loop */
         }
         else if( is_command_read( 'p', true ) ) 
         {
-            Serial.println( ">>> Playing puff" );
+            Serial.println( ">>>Received p. Playing puff" );
             play_puff( PUFF_DURATION );
         }
         else if( is_command_read( 't', true ) ) 
         {
-            Serial.println( ">>> Playing tone" );
-            play_tone( TONE_DURATION, TONE_FREQ_HIGH, 1.0);
+            Serial.println( ">>>Received t. Playing tone" );
+            play_tone( TONE_DURATION, 1.0);
         }
         else if( is_command_read( 'l', true ) ) 
         {
-            Serial.println( ">>> LED ON" );
+            Serial.println( ">>>Received l. LED ON" );
             led_on( LED_DURATION );
         }
         else
@@ -301,7 +295,7 @@ void setup()
     // setup watchdog. If not reset in 2 seconds, it reboots the system.
     wdt_enable( WDTO_2S );
     wdt_reset();
-    stamp_ = 0;
+    stamp_ = millis( );
 
     pinMode( TONE_PIN, OUTPUT );
     pinMode( PUFF_PIN, OUTPUT );
@@ -346,7 +340,8 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
     /*-----------------------------------------------------------------------------
      *  PRE. Start imaging for 10 seconds.
      *-----------------------------------------------------------------------------*/
-    unsigned endBlockTime = millis( );
+    unsigned duration = 5000;
+    stamp_ = millis( );
 
     sprintf( trial_state_, "PRE_" );
     digitalWrite( IMAGING_TRIGGER_PIN, HIGH);   /* Start imaging. */
@@ -384,17 +379,16 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
     {
         check_for_reset( );
         write_data_line( );
-    }
-    endBlockTime = millis( );
+    stamp_ = millis( );
 
     /*-----------------------------------------------------------------------------
      *  PUFF for 100 ms.
      *-----------------------------------------------------------------------------*/
-    duration = 100;
+    duration = PUFF_DURATION;
     if( isporobe )
     {
-        sprintf( trial_state_, "PROBE" );
-        while( (millis( ) - endBlockTime) <= duration )
+        sprintf( trial_state_, "PROB" );
+        while( (millis( ) - stamp_) <= duration )
             write_data_line( );
     }
     else
@@ -402,7 +396,7 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
         sprintf( trial_state_, "PUFF" );
         play_puff( duration );
     }
-    endBlockTime = millis( );
+    stamp_ = millis( );
     
     /*-----------------------------------------------------------------------------
      *  POST, flexible duration till trial is over. It is 10 second long.
@@ -410,14 +404,13 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
     // Last phase is post. If we are here just spend rest of time here.
     duration = 5000;
     sprintf( trial_state_, "POST" );
-    while( (millis( ) - endBlockTime) <= duration )
+    while( (millis( ) - stamp_) <= duration )
     {
+        write_data_line( );
         // Switch camera OFF after 500 ms into POST.
-        if( (millis() - endBlockTime) >= 500 )
+        if( (millis() - stamp_) >= 500 )
             digitalWrite( CAMERA_TTL_PIN, LOW );
 
-        check_for_reset( );
-        write_data_line( );
     }
 
     /*-----------------------------------------------------------------------------
@@ -427,18 +420,16 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
     Serial.print( ">>END Trial " );
     Serial.print( trial_count_ );
     Serial.println( " is over. Starting new");
-    trial_count_ += 1;
 }
 
 void loop()
 {
     reset_watchdog( );
-
-    // The probe trial occurs every 10th trial with +/- of 2 trials.
+    // The probe trial occurs every 7th trial with +/- of 2 trials.
     unsigned numProbeTrials = 0;
-    unsigned nextProbbeTrialIndex = random(8, 13);
+    unsigned nextProbbeTrialIndex = random(5, 10);
 
-    for (size_t i = 1; i <= 100; i++) 
+    for (size_t i = 1; i <= 81; i++) 
     {
         reset_watchdog( );
 
@@ -454,23 +445,27 @@ void loop()
         else
             do_trial( i, false );
 
-
         
         /*-----------------------------------------------------------------------------
          *  ITI.
          *-----------------------------------------------------------------------------*/
-        unsigned long duration = random( 5000, 10001);
-        unsigned long stamp_ = millis( );
+        unsigned long rduration = random( 10000, 15001);
+        stamp_ = millis( );
         sprintf( trial_state_, "ITI_" );
-        while( millis( ) - stamp_ <= duration )
-            write_data_line( );
-        
+        while((millis( ) - stamp_) <= rduration )
+        {
+            reset_watchdog( );
+            delay( 10 );
+        }
+
+        trial_count_ += 1;
     }
 
-    // We are done with all trials. Nothing to do.
-    reset_watchdog( );
-    Serial.println( "All done. Party!" );
-    Serial.flush( );
-    delay( 100 );
-    exit( 0 );
+    // Do do anything once trails are over.
+    while( true )
+    {
+        reset_watchdog( );
+        Serial.println( ">>> All done" );
+        delay( 1000 );
+    }
 }
