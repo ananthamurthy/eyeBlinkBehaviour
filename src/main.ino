@@ -423,15 +423,22 @@ void loop()
     // The probe trial occurs every 7th trial with +/- of 2 trials.
     unsigned numProbeTrials = 0;
 
+    // random number from uniform([10-var,10+var])
+    unsigned var = 2;
+    unsigned nextProbbeTrialIndex = random(10-var, 10+var+1);
+
     for (size_t i = 1; i <= 101; i++) 
     {
         reset_watchdog( );
 
-        // Probe trial.
-        if( (i % 10 ) == 0 )
+         // Probe trial.
+        if( i == nextProbbeTrialIndex )
         {
             do_trial( true );
             numProbeTrials +=1 ;
+            nextProbbeTrialIndex = random( 
+                    (numProbeTrials+1)*10-var, (numProbeTrials+1)*10+var+1
+                    );
         }
         else
             do_trial( false );
