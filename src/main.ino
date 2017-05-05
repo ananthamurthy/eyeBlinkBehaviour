@@ -257,24 +257,26 @@ void wait_for_start( )
         write_data_line( );
         if( is_command_read( 's', true ) )
         {
-            Serial.println( ">>>Received r. Start" );
+            Serial.println( ">>>Received s. Start" );
             break;                              /* Only START can break the loop */
         }
         else if( is_command_read( 'p', true ) ) 
         {
             Serial.println( ">>>Received p. Playing puff" );
-            play_puff( PUFF_DURATION );
+            play_puff( 10000 );                 /* Play puff of 10 second for instrument to record. */
         }
         else if( is_command_read( 't', true ) ) 
         {
             Serial.println( ">>>Received t. Playing tone" );
-            play_tone( TONE_DURATION, 1.0);
+            play_tone( 10000, 1.0);             /* Play tone for 10 seconds for instruments to record */
         }
+#if 0
         else if( is_command_read( 'l', true ) ) 
         {
             Serial.println( ">>>Received l. LED ON" );
             led_on( LED_DURATION );
         }
+#endif
         else
         {
             char c = Serial.read( );
@@ -282,6 +284,7 @@ void wait_for_start( )
             {
                 Serial.print( ">>> Unknown command : " );
                 Serial.println( c );
+                delay( 1000 );
             }
         }
     }
@@ -314,16 +317,6 @@ void setup()
     wait_for_start( );
 }
 
-void do_zero_trial( )
-{
-    return;
-}
-
-void do_first_trial( )
-{
-    return;
-}
-
 /**
  * @brief Do a single trial.
  *
@@ -340,8 +333,6 @@ void do_trial( bool isporobe = false )
     /*-----------------------------------------------------------------------------
      *  PRE. Start imaging for 10 seconds.
      *-----------------------------------------------------------------------------*/
-    unsigned duration = 5000;
-    stamp_ = millis( );
 
     sprintf( trial_state_, "PRE_" );
     digitalWrite( IMAGING_TRIGGER_PIN, HIGH);   /* Start imaging. */
@@ -349,7 +340,9 @@ void do_trial( bool isporobe = false )
     digitalWrite( CAMERA_TTL_PIN, LOW );
     digitalWrite( LED_PIN, LOW );
 
-    while( (millis( ) - trial_start_time_) < duration ) /* PRE_ time */
+    unsigned duration = 5000;
+    stamp_ = millis( );
+    while( (millis( ) - stamp_) < duration ) /* PRE_ time */
     {
         // 500 ms before the PRE_ ends, start camera pin high. We start
         // recording as well.
@@ -366,7 +359,7 @@ void do_trial( bool isporobe = false )
      *  CS: 350 ms duration. Tone is played here.
      *-----------------------------------------------------------------------------*/
     duration = 350;
-    sprintf( trial_state_, "TRAC" );
+    sprintf( trial_state_, "TONE" );
     play_tone( duration, TONE_FREQ_HIGH, 1.0 );
     stamp_ = millis( );
 
@@ -383,7 +376,7 @@ void do_trial( bool isporobe = false )
     stamp_ = millis( );
 
     /*-----------------------------------------------------------------------------
-     *  PUFF for 100 ms.
+     *  PUFF for PUFF_DURATION ms.
      *-----------------------------------------------------------------------------*/
     duration = PUFF_DURATION;
     if( isporobe )
@@ -409,8 +402,8 @@ void do_trial( bool isporobe = false )
     while( (millis( ) - stamp_) <= duration )
     {
         write_data_line( );
-        // Switch camera OFF after 500 ms into POST.
-        if( (millis() - stamp_) >= 500 )
+        // Switch camera OFF after 1500 ms into POST.
+        if( (millis() - stamp_) >= 1500 )
             digitalWrite( CAMERA_TTL_PIN, LOW );
 
     }
@@ -429,20 +422,16 @@ void loop()
     reset_watchdog( );
     // The probe trial occurs every 7th trial with +/- of 2 trials.
     unsigned numProbeTrials = 0;
-    unsigned nextProbbeTrialIndex = random(5, 10);
 
-    for (size_t i = 1; i <= 81; i++) 
+    for (size_t i = 1; i <= 101; i++) 
     {
         reset_watchdog( );
 
         // Probe trial.
-        if( i == nextProbbeTrialIndex )
+        if( (i % 10 ) == 0 )
         {
             do_trial( true );
             numProbeTrials +=1 ;
-            nextProbbeTrialIndex = random( 
-                    (numProbeTrials+1)*10-2, (numProbeTrials+1)*10+3
-                    );
         }
         else
             do_trial( false );
@@ -459,7 +448,6 @@ void loop()
             reset_watchdog( );
             delay( 10 );
         }
-
         trial_count_ += 1;
     }
 
