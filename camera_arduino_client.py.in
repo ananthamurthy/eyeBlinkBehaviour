@@ -104,7 +104,7 @@ frame_size_ = img_shape_[0] * img_shape_[1]
 
 # Maximum allowed frame in each trial. This is guard against RAM overflow in
 # case arduino failes to update trial count. 
-max_frames_in_trial = 500
+max_frames_in_trial = 1000
 image_stack_ = None
 
 write_data_ = True
