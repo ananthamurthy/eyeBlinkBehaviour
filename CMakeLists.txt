@@ -79,7 +79,9 @@ endif ( )
 
 # Data directory for given session and animal
 set(DATADIR "$ENV{HOME}/DATA/${ANIMAL_NAME}/${ANIMAL_NAME}_${SESSION_TYPE}_${SESSION_NUM}")
-file(MAKE_DIRECTORY ${DATADIR})
+
+# Python script handle this.
+# file(MAKE_DIRECTORY ${DATADIR})
 
 
 configure_file( ${CMAKE_SOURCE_DIR}/Makefile.arduino.in
