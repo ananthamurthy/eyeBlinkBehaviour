@@ -385,7 +385,7 @@ def camera_client(readP, trialIndex, cameraPinValue):
 
                     cv2.putText( 
                             img, msg, (0, 10 )
-                             , cv2.FONT_HERSHEY_SIMPLEX, 0.4, 255, 2
+                             , cv2.FONT_HERSHEY_SIMPLEX, 0.4, 128, 2
                              )
                     blinks_.append( res )
                 else:
@@ -411,19 +411,20 @@ def camera_client(readP, trialIndex, cameraPinValue):
             continue
 
         totalFrames += 1
-
-        if framesInStack >= max_frames_in_trial:
-            framesInStack = 0
-            print( '[INFO] Too many frames in buffer.. flusing ' )
-            save_img_stack(image_stack_, trialIndex.value)
-            init_stack( )
-
+        
         # Write to file and set flag to OFF.
         if writeTrial_:
             framesInStack = 0
             writeTrial_ = False
             save_img_stack(image_stack_, trialIndex.value)
             init_stack()
+
+        if framesInStack >= max_frames_in_trial:
+            framesInStack = 0
+            print( '[INFO] Too many frames in buffer.. flusing ' )
+            save_img_stack(image_stack_, -1 )
+            init_stack( )
+
 
 
 def main():
