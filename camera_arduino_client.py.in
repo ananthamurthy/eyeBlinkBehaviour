@@ -104,7 +104,7 @@ frame_size_ = img_shape_[0] * img_shape_[1]
 
 # Maximum allowed frame in each trial. This is guard against RAM overflow in
 # case arduino failes to update trial count. 
-max_frames_in_trial = 1000
+max_frames_in_trial = 500
 image_stack_ = None
 
 write_data_ = True
@@ -369,13 +369,14 @@ def camera_client(readP, trialIndex, cameraPinValue):
 
                     # When camera pin goes HIGH, start writing trial.
                     if cameraPinValue.value == 1:
-                        msg = '%.2f ( ON)'  % res
+                        msg = '%.2f (ON)'  % res
                         recording_ = True
                         cameraPinState.append( True )
                         cameraPinState.pop( 0 )
-
                     else:
                         msg = '%.2f'  % res
+                        cameraPinState.append( False )
+                        cameraPinState.pop( 0 )
 
                     if (not cameraPinState[1]) and cameraPinState[0]:
                         writeTrial_ = True
