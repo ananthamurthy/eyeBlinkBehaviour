@@ -337,8 +337,10 @@ def camera_client(readP, trialIndex, cameraPinValue):
                 img = np.frombuffer(buf[:frame_size_], dtype=np.uint8)
                 img = np.reshape(img, img_shape_)
                 txt = now
+
+                # This is critical.
                 # Read from PIPE but it should not be blocking.
-                if readP.poll():
+                if readP.poll(1e-4):
                     txt += ',' + readP.recv()
 
                 # Fill txt to have its length equal to frame width
