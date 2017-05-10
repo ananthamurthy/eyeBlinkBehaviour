@@ -54,6 +54,9 @@ function kill_acquition_from_point_grey( )
 {
     echo "Ctrl+c pressed. Terminating processes  $1"
     kill_process $1
+
+    # Cleanup /mnt/ramdisk
+    find /mnt/ramdisk -user $USER -print0 | xargs -0 rm
 }
 
 

@@ -295,7 +295,10 @@ void setup()
 {
     Serial.begin( 38400 );
 
-    // setup watchdog. If not reset in 2 seconds, it reboots the system.
+    // Random seed.
+    randomSeed( analogRead(0) );
+
+    //esetup watchdog. If not reset in 2 seconds, it reboots the system.
     wdt_enable( WDTO_2S );
     wdt_reset();
     stamp_ = millis( );

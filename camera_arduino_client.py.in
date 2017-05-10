@@ -339,8 +339,10 @@ def camera_client(readP, trialIndex, cameraPinValue):
                 img = np.frombuffer(buf[:frame_size_], dtype=np.uint8)
                 img = np.reshape(img, img_shape_)
                 txt = now
+
+                # This is critical.
                 # Read from PIPE but it should not be blocking.
-                if readP.poll():
+                if readP.poll(1e-4):
                     txt += ',' + readP.recv()
 
                 # Fill txt to have its length equal to frame width
@@ -371,13 +373,14 @@ def camera_client(readP, trialIndex, cameraPinValue):
 
                     # When camera pin goes HIGH, start writing trial.
                     if cameraPinValue.value == 1:
-                        msg = '%.2f ( ON)'  % res
+                        msg = '%.2f (ON)'  % res
                         recording_ = True
                         cameraPinState.append( True )
                         cameraPinState.pop( 0 )
-
                     else:
                         msg = '%.2f'  % res
+                        cameraPinState.append( False )
+                        cameraPinState.pop( 0 )
 
                     if (not cameraPinState[1]) and cameraPinState[0]:
                         writeTrial_ = True
@@ -387,7 +390,7 @@ def camera_client(readP, trialIndex, cameraPinValue):
 
                     cv2.putText( 
                             img, msg, (0, 10 )
-                             , cv2.FONT_HERSHEY_SIMPLEX, 0.4, 255, 2
+                             , cv2.FONT_HERSHEY_SIMPLEX, 0.4, 128, 2
                              )
                     blinks_.append( res )
                 else:
@@ -413,19 +416,20 @@ def camera_client(readP, trialIndex, cameraPinValue):
             continue
 
         totalFrames += 1
-
-        if framesInStack >= max_frames_in_trial:
-            framesInStack = 0
-            print( '[INFO] Too many frames in buffer.. flusing ' )
-            save_img_stack(image_stack_, trialIndex.value)
-            init_stack( )
-
+        
         # Write to file and set flag to OFF.
         if writeTrial_:
             framesInStack = 0
             writeTrial_ = False
             save_img_stack(image_stack_, trialIndex.value)
             init_stack()
+
+        if framesInStack >= max_frames_in_trial:
+            framesInStack = 0
+            print( '[INFO] Too many frames in buffer.. flusing ' )
+            save_img_stack(image_stack_, -1 )
+            init_stack( )
+
 
 
 def main():
