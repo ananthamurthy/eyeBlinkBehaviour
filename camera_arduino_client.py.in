@@ -33,8 +33,6 @@ import subprocess
 import blinky
 import gnuplotlib
 
-user_ = os.environ[ 'USER' ]
-
 gnuplot_ = gnuplotlib.gnuplotlib( title = 'Blink readout'
         , terminal = 'x11 noraise' 
         )
@@ -252,8 +250,8 @@ def line_to_data(line):
 
 def save_img_stack(stack, index):
     global start_
-    filename = os.path.join(data_dir_, 'stack_%03d.tif' % index)
-    tmpfile = os.path.join('/mnt', 'ramdisk', 'tmp_%s.tif' % user_ )
+    filename = os.path.join(data_dir_, 'trial_%03d.tif' % index)
+    tmpfile = os.path.join('/mnt', 'ramdisk', 'tmp.tif')
     # Remove empty frame.
     stack = np.array( filter( lambda x : np.sum( x ) > 2, stack ))
     if len( stack ) < 1:
@@ -345,19 +343,6 @@ def camera_client(readP, trialIndex, cameraPinValue):
                 if readP.poll(1e-4):
                     txt += ',' + readP.recv()
 
-            
-                res = -1.0
-                if len(bbox_) == 2:
-                    # print( 'Bounding box has been drawn : %s' % str(bbox_) )
-                    cv2.rectangle( img, bbox_[0], bbox_[1], 128 )
-                    (x0, y0), (x1, y1) = bbox_
-                    roi = img[y0:y1,x0:x1]
-                    # Equalize histogram
-                    roi = cv2.equalizeHist( roi )
-                    infile, outfile, res, sss = blinky.process_frame(roi, 0)
-                    #cv2.imshow( 'algo', outfile )
-                    txt += ',' + str( res )
-
                 # Fill txt to have its length equal to frame width
                 txt += ' ' * (img_shape_[1] - len(txt))
                 # Convert txt to binary and prefix to the img we got from camera
@@ -375,6 +360,15 @@ def camera_client(readP, trialIndex, cameraPinValue):
                     framesInStack += 1
 
                 if len(bbox_) == 2:
+                    # print( 'Bounding box has been drawn : %s' % str(bbox_) )
+                    cv2.rectangle( img, bbox_[0], bbox_[1], 128 )
+                    (x0, y0), (x1, y1) = bbox_
+                    roi = img[y0:y1,x0:x1]
+                    # Equalize histogram
+                    roi = cv2.equalizeHist( roi )
+                    infile, outfile, res, sss = blinky.process_frame(roi, 0)
+                    #cv2.imshow( 'algo', outfile )
+
                     # When camera pin goes HIGH, start writing trial.
                     if cameraPinValue.value == 1:
                         msg = '%.2f (ON)'  % res
