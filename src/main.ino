@@ -128,6 +128,7 @@ void write_data_line( )
             , motion1, motion2, camera, microscope, trial_state_
             );
     Serial.println(msg_);
+    //delay( 3 );
     Serial.flush( );
 }
 
