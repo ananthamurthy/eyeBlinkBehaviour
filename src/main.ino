@@ -345,6 +345,9 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
      *  PRE. Start imaging for 10 seconds.
      *-----------------------------------------------------------------------------*/
     unsigned duration = 5000;
+    if (trial_num == 1)
+	delay(60) // Shutter delay; Only for the first trial
+
     stamp_ = millis( );
 
     sprintf( trial_state_, "PRE_" );
