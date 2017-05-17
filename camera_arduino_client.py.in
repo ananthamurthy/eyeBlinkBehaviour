@@ -294,6 +294,19 @@ def show_frame(frame, outfile=None):
         cv2.imsave(outfile, frame)
 
 
+def writeTextToFrame( txt, img ):
+    global image_stack_, h_
+    # Fill txt to have its length equal to frame width
+    txt += ' ' * (img_shape_[1] - len(txt))
+    # Convert txt to binary and prefix to the img we got from camera
+    # server.
+    metadata = np.array(map(ord, txt), dtype=np.uint8)
+    img = np.vstack((metadata, img))
+    cv2.putText(img, txt.strip()
+            , (0, h_ - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.4, 128, 1
+            )
+    return img
+
 def camera_client(readP, trialIndex, cameraPinValue):
     global finished_all_
     global img_, buf_
@@ -325,100 +338,76 @@ def camera_client(readP, trialIndex, cameraPinValue):
     framesInStack = 0
     trial_count = 0
     blinks_ = []
-    writeTrial_ = False
-    recording_ = False
-    cameraPinState = [False, False]
+    cameraPinState = [0, 0]
+    res = 0.0
     while not finished_all_:
-        try:
-            data = s.recv(frame_size_)
-            buf += data
-            if len(buf) >= frame_size_:
-                now = datetime.datetime.now().isoformat()
-                img = np.frombuffer(buf[:frame_size_], dtype=np.uint8)
-                img = np.reshape(img, img_shape_)
-                txt = now
+        data = s.recv(frame_size_)
+        buf += data
+        if len(buf) >= frame_size_:
+            now = datetime.datetime.now().isoformat()
+            img = np.frombuffer(buf[:frame_size_], dtype=np.uint8)
+            img = np.reshape(img, img_shape_)
+            txt = now
 
-                # This is critical.
-                # Read from PIPE but it should not be blocking.
-                if readP.poll(1e-4):
-                    txt += ',' + readP.recv()
+            # This is critical.
+            # Read from PIPE but it should not be blocking.
+            if readP.poll(1e-4):
+                txt += ',' + readP.recv()
 
-                # Fill txt to have its length equal to frame width
-                txt += ' ' * (img_shape_[1] - len(txt))
-                # Convert txt to binary and prefix to the img we got from camera
-                # server.
-                metadata = np.array(map(ord, txt), dtype=np.uint8)
-                img = np.vstack((metadata, img))
-                if write_data_:
-                    cv2.putText(img, txt.strip(), (0, h_ - 10),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.4, 128, 1
-                                )
+            # Read camera line.
+            cameraPinState.append( cameraPinValue.value )
+            cameraPinState.pop( 0 )
 
-                # Only save the frame if camera pin says so.
-                if recording_:
-                    image_stack_[framesInStack] = img
-                    framesInStack += 1
+            if len(bbox_) == 2:
+                # print( 'Bounding box has been drawn : %s' % str(bbox_) )
+                cv2.rectangle( img, bbox_[0], bbox_[1], 128 )
+                (x0, y0), (x1, y1) = bbox_
+                roi = img[y0:y1,x0:x1]
+                # Equalize histogram
+                roi = cv2.equalizeHist( roi )
+                infile, outfile, res, sss = blinky.process_frame(roi, 0)
+                txt += ',%.3f' % res
+                img = writeTextToFrame( txt, img )
+
+                # When camera pin goes HIGH, show it to user.
+                if cameraPinState[-1] == 1:
+                    msg = '%.2f (ON)'  % res
+                else:
+                    msg = '%.2f'  % res
+
+                cv2.putText( img, msg, (0, 10 )
+                         , cv2.FONT_HERSHEY_SIMPLEX, 0.4, 128, 2
+                         )
+                blinks_.append( res )
+            else:
+                blinks_.append( random.random( ) )
+
+            # Only save the frame if camera pin says so.
+            if cameraPinState[-1] == 1:
+                image_stack_[framesInStack] = img
+                framesInStack += 1
+
+            # Show every 10th frame.
+            if totalFrames % 10 == 0:
+                show_frame( img )
+                # show_frame( np.vstack( (infile, outfile )) )
+
+                # Enable the following if you want to see the blink data on
+                # separate plot window. Slows down frame rate a bit ~ 10 to
+                # 20 FPS.
 
                 if len(bbox_) == 2:
-                    # print( 'Bounding box has been drawn : %s' % str(bbox_) )
-                    cv2.rectangle( img, bbox_[0], bbox_[1], 128 )
-                    (x0, y0), (x1, y1) = bbox_
-                    roi = img[y0:y1,x0:x1]
-                    # Equalize histogram
-                    roi = cv2.equalizeHist( roi )
-                    infile, outfile, res, sss = blinky.process_frame(roi, 0)
-                    #cv2.imshow( 'algo', outfile )
+                    if len( blinks_ ) > 10:
+                        gnuplot_.plot( np.array( blinks_[-2000:] ))
 
-                    # When camera pin goes HIGH, start writing trial.
-                    if cameraPinValue.value == 1:
-                        msg = '%.2f (ON)'  % res
-                        recording_ = True
-                        cameraPinState.append( True )
-                        cameraPinState.pop( 0 )
-                    else:
-                        msg = '%.2f'  % res
-                        cameraPinState.append( False )
-                        cameraPinState.pop( 0 )
-
-                    if (not cameraPinState[1]) and cameraPinState[0]:
-                        writeTrial_ = True
-                        recording_ = False
-                    else:
-                        writeTrial_ = False
-
-                    cv2.putText( 
-                            img, msg, (0, 10 )
-                             , cv2.FONT_HERSHEY_SIMPLEX, 0.4, 128, 2
-                             )
-                    blinks_.append( res )
-                else:
-                    blinks_.append( random.random( ) )
-
-                # Show every 10th frame.
-                if totalFrames % 10 == 0:
-                    show_frame( img )
-                    # show_frame( np.vstack( (infile, outfile )) )
-
-                    # Enable the following if you want to see the blink data on
-                    # separate plot window. Slows down frame rate a bit ~ 10 to
-                    # 20 FPS.
-
-                    if len(bbox_) == 2:
-                        if len( blinks_ ) > 10:
-                            gnuplot_.plot( np.array( blinks_[-2000:] ))
-
-                buf = buf[frame_size_:]
-        except Exception as e:
-            # Keep reading.
-            print(e)
-            continue
+            buf = buf[frame_size_:]
 
         totalFrames += 1
         
-        # Write to file and set flag to OFF.
-        if writeTrial_:
+        # When camera pin make transitions from 1 to zero, write the frame
+        if cameraPinState[0] == 1 and cameraPinState[-1] == 0:
+            print( 'IMP: Writing trial %d to disk' % trialIndex.value )
             framesInStack = 0
-            writeTrial_ = False
             save_img_stack(image_stack_, trialIndex.value)
             init_stack()
 
