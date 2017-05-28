@@ -15,9 +15,9 @@
 
 
 #ifndef  config_h_INC
-#define  config.h_INC
+#define  config_h_INC
 
 #define SESSION_TYPE           @SESSION_TYPE@
 #define ANIMAL_NAME            @ANINAL_NAME@             
 
-#endif   /* ----- #ifndef config.h_INC  ----- */
+#endif   /* ----- #ifndef config_h_INC  ----- */
