@@ -17,8 +17,6 @@
 // Pins etc.
 #define         TONE_PIN                    2
 #define         LED_PIN                     3
-#define         MOTION1_PIN                 4
-#define         MOTION2_PIN                 7
 
 // These pins are more than 7.
 #define         CAMERA_TTL_PIN              10
@@ -32,6 +30,10 @@
 #define         PUFF_DURATION               50
 #define         TONE_DURATION               50
 #define         LED_DURATION               50
+
+// Motion detection related.
+#define         MOTION1_PIN                 6
+#define         MOTION2_PIN                 7
 
 
 unsigned long stamp_            = 0;
@@ -119,8 +121,8 @@ void write_data_line( )
 
     unsigned long timestamp = millis() - trial_start_time_;
 
-    int motion1 = analogRead( MOTION1_PIN );
-    int motion2 = analogRead( MOTION2_PIN );
+    int motion1 = digitalRead( MOTION1_PIN );
+    int motion2 = digitalRead( MOTION2_PIN );
     
     sprintf(msg_  
             , "%lu,%d,%d,%d,%d,%d,%d,%d,%d,%s"
@@ -197,52 +199,6 @@ void led_on( unsigned int duration )
 
 
 /**
- * @brief Configure the experiment here. All parameters needs to be set must be
- * done here.
- */
-void configure_experiment( )
-{
-    // While this is not answered, keep looping 
-    Serial.println( "?? Please configure your experiment" );
-    Serial.println( "NOTE: This has been disabled" );
-    while( true )
-    {
-        break;
-#if 0
-        incoming_byte_ = Serial.read( ) - '0';
-        if( incoming_byte_ < 0 )
-        {
-            Serial.println( ">>> ... Waiting for response" );
-            delay( 1000 );
-        }
-        else if( incoming_byte_ == 0 )
-        {
-            Serial.print( ">>> Valid response. Got " );
-            Serial.println( incoming_byte_  );
-            Serial.flush( );
-            tsubtype_ = first;
-            return;
-        }
-        else if( incoming_byte_ == 1 )
-        {
-            Serial.print( ">>> Valid response. Got " );
-            Serial.println( incoming_byte_ );
-            Serial.flush( );
-            tsubtype_ = second;
-            return;
-        }
-        else
-        {
-            Serial.print( ">>> Unexpected response, recieved : " );
-            Serial.println( incoming_byte_ - '0' );
-            delay( 100 );
-        }
-#endif
-    }
-}
-
-
-/**
  * @brief Wait for trial to start.
  */
 void wait_for_start( )
@@ -312,7 +268,6 @@ void setup()
     pinMode( MOTION1_PIN, INPUT );
     pinMode( MOTION2_PIN, INPUT );
 
-    configure_experiment( );
     Serial.println( ">>> Waiting for 's' to be pressed" );
 
     wait_for_start( );

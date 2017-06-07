@@ -153,5 +153,15 @@ add_custom_target( run
     VERBATIM
     )
 
+set( THREADMILL_TEST_SCRIPT test_threadmill.py )
+add_custom_target( threadmill
+    DEPENDS upload
+    COMMAND python ${THREADMILL_TEST_SCRIPT} ${PORT}
+    COMMENT "Testing threadmill"
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    VERBATIM
+    )
+
+
 # Now  add the client and server 
 add_subdirectory( ${CMAKE_SOURCE_DIR}/PointGreyCamera )
