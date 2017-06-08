@@ -31,6 +31,7 @@ void PS2Mouse::low(int pin) {
 }
 
 void PS2Mouse::initialize() {
+    Serial.println( "Calling mouse init" );
     high(_clockPin);
     high(_dataPin);
     reset();
@@ -40,6 +41,7 @@ void PS2Mouse::initialize() {
     setSampleRate(40);
     setRemoteMode();
     delayMicroseconds(100);
+    Serial.println( "Initialization of mouse is done" );
 }
 
 void PS2Mouse::writeByte(char data) {

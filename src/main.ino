@@ -13,6 +13,7 @@
  */
 
 #include <avr/wdt.h>
+#include "arduino-ps2-mouse/PS2Mouse.h"
 
 // Pins etc.
 #define         TONE_PIN                    2
@@ -32,8 +33,11 @@
 #define         LED_DURATION               50
 
 // Motion detection related.
-#define         MOTION1_PIN                 A0
-#define         MOTION2_PIN                 A1
+#define         CLOCK_PIN                 6
+#define         DATA_PIN                  7
+
+// Motion detection based on motor
+#define         MOTOR_OUT              A1
 
 
 unsigned long stamp_            = 0;
@@ -54,6 +58,10 @@ char trial_state_[5]            = "PRE_";
 int incoming_byte_              = 0;
 bool reboot_                    = false;
 
+/*
+ * MOUSE
+ */
+PS2Mouse mouse( CLOCK_PIN, DATA_PIN );
 
 /*-----------------------------------------------------------------------------
  *  WATCH DOG
@@ -121,17 +129,21 @@ void write_data_line( )
 
     unsigned long timestamp = millis() - trial_start_time_;
 
-    int motion1 = analogRead( MOTION1_PIN );
-    int motion2 = analogRead( MOTION2_PIN );
+    // Read mouse data.
+    MouseData data = mouse.readData( );
+    int x = data.position.x;
+    int y = data.position.y;
+
+    int motor = analogRead( MOTOR_OUT );
     
     sprintf(msg_  
-            , "%lu,%d,%d,%d,%d,%d,%d,%d,%d,%s"
+            , "%lu,%d,%d,%d,%d,%4d,%4d,%d,%d,%d,%s"
             , timestamp, trial_count_, puff, tone, led
-            , motion1, motion2, camera, microscope, trial_state_
+            , x, y, camera, microscope, motor, trial_state_
             );
     Serial.println(msg_);
-    //delay( 3 );
     Serial.flush( );
+    //delay( 3 );
 }
 
 void check_for_reset( void )
@@ -261,14 +273,17 @@ void setup()
     pinMode( PUFF_PIN, OUTPUT );
     pinMode( LED_PIN, OUTPUT );
 
+    // Motor related.
+    pinMode( MOTOR_OUT, INPUT );
+
     pinMode( CAMERA_TTL_PIN, OUTPUT );
     pinMode( IMAGING_TRIGGER_PIN, OUTPUT );
 
-    /*  Pins set by sensors */
-    pinMode( MOTION1_PIN, OUTPUT );
-    pinMode( MOTION2_PIN, OUTPUT );
 
-    Serial.println( ">>> Waiting for 's' to be pressed" );
+    Serial.println( "Stuck in setup() ... mostly due to MOUSE" );
+
+    // Configure mouse here
+    mouse.initialize( );
 
     wait_for_start( );
 }
