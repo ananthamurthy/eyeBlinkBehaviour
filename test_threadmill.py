@@ -19,6 +19,7 @@ import os
 import numpy as np
 import time
 import datetime
+import scipy.signal as sig
 import gnuplotlib as gpl
 sys.path.append( 'pyblink' )
 import arduino
@@ -66,22 +67,40 @@ def compute_speed( tvec, yvec ):
     minus1Ps = np.where( ydiff == -1 )
     minus1Ts = tvec[ minus1Ps ]
     tps = np.diff( minus1Ts )
-    velocity = np.mean( 11.5 / tps )    # m / sec
+    velocity = np.mean( 100 * 4.5 / tps )    # m / sec
+    if np.isnan( velocity ):
+        velocity = 0.0
     return velocity
 
 
 def calculate_motion( t, s1, s2 ):
     """Caculate speed and direction of motion """
-    direction = 1
-    v1 = compute_speed( np.array(t), np.array(s1) )
-    v2 = compute_speed( np.array(t), np.array(s2) )
-    print( 'Velocity %g %g , diff = %g' % (v1, v2, v1-v2) )
+    t, s1, s2 = [ np.array( x ) for x in [ t, s1, s2] ]
+    s1H = sig.hilbert( s1 )
+    s2H = sig.hilbert( s2 )
+    theta1 = np.unwrap( np.angle( s1H ) )
+    theta2 = np.unwrap( np.angle( s2H ) )
+    direction = theta1 - theta2
+    v1 = compute_speed( t, s1 )
+    v2 = compute_speed( t, s2 )
+    # gpl.plot( (t, s1), (t, s2), terminal = 'X11' )
+    return (v1+v2)/2.0, np.mean(direction)
+
+def calculate_direction( s1, s2 ):
+    d = -1
+    if s1 > s2:
+        d = 1
+    else:
+        d = -1
+    return d
 
 def main( port, baud ):
     print( '[INFO] Using port %s baudrate %d' % (port, baud ) )
     tvec, motion1, motion2 = [ ], [ ], [ ]
     ar = arduino.ArduinoPort( port )
     ar.open( )
+    speed, direction = 0.0, 0
+    N = 20
     while True:
         line = ar.read_line( )
         data = line_to_data( line )
@@ -92,12 +111,12 @@ def main( port, baud ):
         motion1.append( data[5] )
         motion2.append( data[6] )
         try:
-            N = 100
-            direction, speed = calculate_motion( tvec[-N:], motion1[-N:], motion2[-N:] )
+            speed,direction = calculate_motion( tvec[-N:], motion1[-N:], motion2[-N:] )
         except Exception as e:
-            print( '.', end = '' )
-            sys.stdout.flush( )
-
+            speed = 0.0
+            direction = 0
+            print( e )
+        print( '%.5f %s' % (speed, direction))
 
 if __name__ == '__main__':
     port = sys.argv[1]

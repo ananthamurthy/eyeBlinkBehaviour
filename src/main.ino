@@ -13,7 +13,10 @@
  */
 
 #include <avr/wdt.h>
+
+#ifdef USE_MOUSE
 #include "arduino-ps2-mouse/PS2Mouse.h"
+#endif
 
 // Pins etc.
 #define         TONE_PIN                    2
@@ -32,9 +35,15 @@
 #define         TONE_DURATION               50
 #define         LED_DURATION               50
 
+#ifdef USE_MOUSE
 // Motion detection related.
 #define         CLOCK_PIN                 6
 #define         DATA_PIN                  7
+#else
+#define         MOTION1_PIN                 6
+#define         MOTION2_PIN                 7
+#endif 
+
 
 // Motion detection based on motor
 #define         MOTOR_OUT              A1
@@ -61,7 +70,9 @@ bool reboot_                    = false;
 /*
  * MOUSE
  */
+#ifdef USE_MOUSE
 PS2Mouse mouse( CLOCK_PIN, DATA_PIN );
+#endif
 
 /*-----------------------------------------------------------------------------
  *  WATCH DOG
@@ -129,17 +140,23 @@ void write_data_line( )
 
     unsigned long timestamp = millis() - trial_start_time_;
 
+    int motion1;
+    int motion2;
+
+#ifdef USE_MOUSE
     // Read mouse data.
     MouseData data = mouse.readData( );
-    int x = data.position.x;
-    int y = data.position.y;
-
-    int motor = analogRead( MOTOR_OUT );
+    motion1 = data.position.x;
+    motion2 = data.position.y;
+#else
+    motion1 = digitalRead( MOTION1_PIN );
+    motion2 = digitalRead( MOTION2_PIN );
+#endif
     
     sprintf(msg_  
-            , "%lu,%d,%d,%d,%d,%4d,%4d,%d,%d,%d,%s"
+            , "%lu,%d,%d,%d,%d,%d,%d,%d,%d,%s"
             , timestamp, trial_count_, puff, tone, led
-            , x, y, camera, microscope, motor, trial_state_
+            , motion1, motion2, camera, microscope, trial_state_
             );
     Serial.println(msg_);
     Serial.flush( );
@@ -273,17 +290,20 @@ void setup()
     pinMode( PUFF_PIN, OUTPUT );
     pinMode( LED_PIN, OUTPUT );
 
-    // Motor related.
-    pinMode( MOTOR_OUT, INPUT );
-
     pinMode( CAMERA_TTL_PIN, OUTPUT );
     pinMode( IMAGING_TRIGGER_PIN, OUTPUT );
 
 
-    Serial.println( "Stuck in setup() ... mostly due to MOUSE" );
 
+#ifdef USE_MOUSE
     // Configure mouse here
     mouse.initialize( );
+    Serial.println( "Stuck in setup() ... mostly due to MOUSE" );
+#else
+    Serial.println( "Using LED/DIODE pair" );
+    pinMode( MOTION1_PIN, INPUT );
+    pinMode( MOTION2_PIN, INPUT );
+#endif
 
     wait_for_start( );
 }
