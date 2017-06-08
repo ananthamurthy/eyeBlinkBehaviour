@@ -32,8 +32,8 @@
 #define         LED_DURATION               50
 
 // Motion detection related.
-#define         MOTION1_PIN                 6
-#define         MOTION2_PIN                 7
+#define         MOTION1_PIN                 A0
+#define         MOTION2_PIN                 A1
 
 
 unsigned long stamp_            = 0;
@@ -121,8 +121,8 @@ void write_data_line( )
 
     unsigned long timestamp = millis() - trial_start_time_;
 
-    int motion1 = digitalRead( MOTION1_PIN );
-    int motion2 = digitalRead( MOTION2_PIN );
+    int motion1 = analogRead( MOTION1_PIN );
+    int motion2 = analogRead( MOTION2_PIN );
     
     sprintf(msg_  
             , "%lu,%d,%d,%d,%d,%d,%d,%d,%d,%s"
@@ -265,8 +265,8 @@ void setup()
     pinMode( IMAGING_TRIGGER_PIN, OUTPUT );
 
     /*  Pins set by sensors */
-    pinMode( MOTION1_PIN, INPUT );
-    pinMode( MOTION2_PIN, INPUT );
+    pinMode( MOTION1_PIN, OUTPUT );
+    pinMode( MOTION2_PIN, OUTPUT );
 
     Serial.println( ">>> Waiting for 's' to be pressed" );
 
