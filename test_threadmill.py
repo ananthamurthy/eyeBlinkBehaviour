@@ -69,7 +69,7 @@ def compute_speed( tvec, yvec ):
     minus1Ps = np.where( ydiff == -1 )
     minus1Ts = tvec[ minus1Ps ]
     tps = np.diff( minus1Ts )
-    velocity = np.mean( 100 * 4.5 / tps )    # m / sec
+    velocity = np.mean( 4.1 / tps )    # m / sec
     if np.isnan( velocity ):
         velocity = 0.0
     return velocity
@@ -80,13 +80,12 @@ def calculate_motion( t, s1, s2 ):
     t, s1, s2 = [ np.array( x ) for x in [ t, s1, s2] ]
     s1H = sig.hilbert( s1 )
     s2H = sig.hilbert( s2 )
-    theta1 = np.unwrap( np.angle( s1H ) )
-    theta2 = np.unwrap( np.angle( s2H ) )
-    direction = theta1 - theta2
     v1 = compute_speed( t, s1 )
     v2 = compute_speed( t, s2 )
     # gpl.plot( (t, s1), (t, s2), terminal = 'X11' )
-    speed, dire = (v1+v2)/2.0, np.mean(direction)
+    speed = (v1+v2)/2.0
+    dire = calculate_direction( s1[0], s2[0] )
+
     with open( res_file_, 'a' ) as f:
         f.write( '%g %g %g %g %g %g\n' % (t[-1], s1[-1], s1[-2], v1, v2, dire ) )
 
