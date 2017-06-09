@@ -105,7 +105,6 @@ def main( port, baud ):
     ar = arduino.ArduinoPort( port )
     ar.open( )
     speed, direction = 0.0, 0
-    N = 20
     with open( res_file_, 'w' ) as f:
         f.write( "time s1 s2 v1 v2 dir\n" )
 
@@ -119,6 +118,7 @@ def main( port, baud ):
         motion1.append( data[5] )
         motion2.append( data[6] )
         try:
+            N = 10
             speed,direction = calculate_motion( tvec[-N:], motion1[-N:], motion2[-N:] )
         except Exception as e:
             speed = 0.0

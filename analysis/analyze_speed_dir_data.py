@@ -28,7 +28,7 @@ def smooth( vec, N = 20 ):
 
 
 def main( ):
-    df = pd.read_csv( sys.argv[1], sep =  ' ', nrows = 500 )
+    df = pd.read_csv( sys.argv[1], sep =  ' ' )
     
     plt.subplot( 311 )
     plt.plot( df[ 'time' ], df[ 's1' ] )
