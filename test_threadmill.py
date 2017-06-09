@@ -24,6 +24,8 @@ import gnuplotlib as gpl
 sys.path.append( 'pyblink' )
 import arduino
 
+res_file_ = '__results__tmp__.csv' 
+
 
 def stamp( ):
     return datetime.datetime.now().isoformat( )
@@ -84,7 +86,11 @@ def calculate_motion( t, s1, s2 ):
     v1 = compute_speed( t, s1 )
     v2 = compute_speed( t, s2 )
     # gpl.plot( (t, s1), (t, s2), terminal = 'X11' )
-    return (v1+v2)/2.0, np.mean(direction)
+    speed, dire = (v1+v2)/2.0, np.mean(direction)
+    with open( res_file_, 'a' ) as f:
+        f.write( '%g %g %g %g %g %g\n' % (t[-1], s1[-1], s1[-2], v1, v2, dire ) )
+
+    return speed, dire
 
 def calculate_direction( s1, s2 ):
     d = -1
@@ -101,6 +107,9 @@ def main( port, baud ):
     ar.open( )
     speed, direction = 0.0, 0
     N = 20
+    with open( res_file_, 'w' ) as f:
+        f.write( "time s1 s2 v1 v2 dir\n" )
+
     while True:
         line = ar.read_line( )
         data = line_to_data( line )

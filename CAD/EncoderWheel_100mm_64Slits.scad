@@ -4,7 +4,7 @@
 shaftDiameter = 5.1;
 wheelDiameter = 120;
 shaftMargin = 10;
-shaftHeight = 10;
+shaftHeight = 20;
 shaftBevel = 0;
 
 // 3x of this value
