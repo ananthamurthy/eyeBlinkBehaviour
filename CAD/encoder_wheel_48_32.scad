@@ -1,4 +1,5 @@
 // All units are in mm.
+
 // Modified from Thingyverse.
 
 shaftDiameter = 5.1;
@@ -17,7 +18,7 @@ encoderSlitWidth = 1;
 encoderSlitMargin = 1;
 encoderSlitCount = 32;
 
-encoderInnerRadiusF = 55;
+encodeInnerRadius2 = 55;
 encoderOuterRadiusF = 58;
 encoderSlitWidthF = 1;
 encoderSlitCountF = 48;
@@ -26,7 +27,7 @@ shaftR = shaftDiameter/2;
 wheelR = wheelDiameter/2;
 
 encoderSlitLength = encoderOuterRadius-encoderInnerRadius;
-encoderSlitLengthF = encoderOuterRadiusF-encoderInnerRadiusF;
+encoderSlitLengthF = encoderOuterRadiusF-encodeInnerRadius2;
 
 difference () {
 	rotate_extrude($fn=200) 
@@ -61,7 +62,7 @@ difference () {
 			rotate(a = [0,0,(360/encoderSlitCountF)*i]) 
             {
 				translate(
-                    v=[0,encoderInnerRadiusF+(encoderSlitLengthF/2),wheelHeigh/2]
+                    v=[0,encodeInnerRadius2+(encoderSlitLengthF/2),wheelHeigh/2]
                     ) {
                             cube( size = [ 
                                     encoderSlitWidthF,encoderSlitLengthF,wheelHeigh+1]
