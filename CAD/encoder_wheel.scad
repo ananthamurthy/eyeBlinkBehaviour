@@ -3,7 +3,7 @@
  * GNU-GPLv3. (c) 2017 Dilawar Singh  <dilawars@ncbs.res.in>
  */
 
-shaftDiameter = 5.1;
+shaftDiameter = 6.5;
 wheelDiameter = 120;
 shaftMargin = 10;
 shaftHeight = 20;
@@ -14,19 +14,19 @@ wheelHeigh = 2;
 wheelGrooveDepth = 1;
 
 // Outer most slit width.
-slitW = 1.5;
+slitW = 3;
 slitL = 4;
 gapBetweenSlits = 1;
 
 // Outermost slits: 48 in numbers.
-strip1Count = 48;
+strip1Count = 32;
 strip1OuterR = wheelR - 3;
 strip1SlitL = 2 * slitL;
 strip1InnerR = strip1OuterR - strip1SlitL;
 strip1Width = slitW;
 
 // Second strip : 32
-strip2Count = 48;
+strip2Count = 32;
 strip2SlitL = slitL;
 strip2OuterR = strip1InnerR - gapBetweenSlits;
 strip2InnerR = strip2OuterR - strip2SlitL;
