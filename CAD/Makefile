@@ -1,4 +1,4 @@
-all : ./encoder_wheel.png ./encoder_wheel.stl ./lock.png ./lock.stl
+all : ./encoder_wheel.png
 	@echo "All done"
 
 
