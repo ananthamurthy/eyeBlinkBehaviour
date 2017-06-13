@@ -14,6 +14,7 @@
 
 #include <avr/wdt.h>
 
+#define USE_MOUSE 
 #ifdef USE_MOUSE
 #include "arduino-ps2-mouse/PS2Mouse.h"
 #endif
@@ -33,7 +34,7 @@
 
 #define         PUFF_DURATION               50
 #define         TONE_DURATION               50
-#define         LED_DURATION               50
+#define         LED_DURATION                50
 
 #ifdef USE_MOUSE
 // Motion detection related.
@@ -154,7 +155,7 @@ void write_data_line( )
 #endif
     
     sprintf(msg_  
-            , "%lu,%d,%d,%d,%d,%d,%d,%d,%d,%s"
+            , "%lu,%d,%d,%d,%d,%3d,%3d,%d,%d,%s"
             , timestamp, trial_count_, puff, tone, led
             , motion1, motion2, camera, microscope, trial_state_
             );

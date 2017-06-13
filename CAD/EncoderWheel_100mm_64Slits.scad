@@ -11,16 +11,22 @@ shaftBevel = 0;
 wheelHeigh = 2;
 wheelGrooveDepth = 1;
 
-encoderInnerRadius = 45;
-encoderOuterRadius = 55;
+encoderInnerRadius = 44;
+encoderOuterRadius = 52;
 encoderSlitWidth = 1;
 encoderSlitMargin = 1;
-encoderSlitCount = 64;
+encoderSlitCount = 32;
+
+encoderInnerRadiusF = 55;
+encoderOuterRadiusF = 58;
+encoderSlitWidthF = 1;
+encoderSlitCountF = 48;
 
 shaftR = shaftDiameter/2;
 wheelR = wheelDiameter/2;
 
 encoderSlitLength = encoderOuterRadius-encoderInnerRadius;
+encoderSlitLengthF = encoderOuterRadiusF-encoderInnerRadiusF;
 
 difference () {
 	rotate_extrude($fn=200) 
@@ -48,5 +54,22 @@ difference () {
                     }
                }
 		}
+        
+        
+        for(i=[0:encoderSlitCountF-1]) 
+        {
+			rotate(a = [0,0,(360/encoderSlitCountF)*i]) 
+            {
+				translate(
+                    v=[0,encoderInnerRadiusF+(encoderSlitLengthF/2),wheelHeigh/2]
+                    ) {
+                            cube( size = [ 
+                                    encoderSlitWidthF,encoderSlitLengthF,wheelHeigh+1]
+                                    , center = true
+                                );
+                    }
+               }
+		}
+        
 	}
 }
