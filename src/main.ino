@@ -342,9 +342,9 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
     trial_start_time_ = millis( );
 
     /*-----------------------------------------------------------------------------
-     *  PRE. Start imaging for 10 seconds.
+     *  PRE. Start imaging;  for 8 seconds.
      *-----------------------------------------------------------------------------*/
-    unsigned duration = 10000;
+    unsigned duration = 8000;
     if (trial_num == 1)
 	delay(60); // Shutter delay; Only for the first trial
 
@@ -404,10 +404,10 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
     stamp_ = millis( );
     
     /*-----------------------------------------------------------------------------
-     *  POST, flexible duration till trial is over. It is 10 second long.
+     *  POST, flexible duration till trial is over. It is 8 second long.
      *-----------------------------------------------------------------------------*/
     // Last phase is post. If we are here just spend rest of time here.
-    duration = 10000;
+    duration = 8000;
     sprintf( trial_state_, "POST" );
     while( (millis( ) - stamp_) <= duration )
     {
@@ -432,7 +432,7 @@ void loop()
     reset_watchdog( );
     // The probe trial occurs every 7th trial with +/- of 2 trials.
     unsigned numProbeTrials = 0;
-    unsigned nextProbbeTrialIndex = random(5, 10);
+    unsigned nextProbbeTrialIndex = random(4, 8);
 
     for (size_t i = 1; i <= 62; i++) 
     {
