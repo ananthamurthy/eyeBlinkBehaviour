@@ -344,7 +344,7 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
     /*-----------------------------------------------------------------------------
      *  PRE. Start imaging for 10 seconds.
      *-----------------------------------------------------------------------------*/
-    unsigned duration = 5000;
+    unsigned duration = 10000;
     if (trial_num == 1)
 	delay(60); // Shutter delay; Only for the first trial
 
@@ -407,7 +407,7 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
      *  POST, flexible duration till trial is over. It is 10 second long.
      *-----------------------------------------------------------------------------*/
     // Last phase is post. If we are here just spend rest of time here.
-    duration = 5000;
+    duration = 10000;
     sprintf( trial_state_, "POST" );
     while( (millis( ) - stamp_) <= duration )
     {
@@ -454,7 +454,7 @@ void loop()
         /*-----------------------------------------------------------------------------
          *  ITI.
          *-----------------------------------------------------------------------------*/
-        unsigned long rduration = random( 15000, 18001);
+        unsigned long rduration = random( 23000, 25001);
         stamp_ = millis( );
         sprintf( trial_state_, "ITI_" );
         while((millis( ) - stamp_) <= rduration )
