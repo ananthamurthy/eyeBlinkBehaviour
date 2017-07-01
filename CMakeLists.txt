@@ -88,6 +88,10 @@ configure_file( ${CMAKE_SOURCE_DIR}/Makefile.arduino.in
     ${CMAKE_SOURCE_DIR}/Makefile.arduino
     )
 
+configure_file( ${CMAKE_SOURCE_DIR}/src/config.h.in
+    ${CMAKE_SOURCE_DIR}/src/config.h
+    )
+
 set(ARDUINO_TARGET_NAME eyeBlinkBehaviour)
 set(ARDUINO_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 

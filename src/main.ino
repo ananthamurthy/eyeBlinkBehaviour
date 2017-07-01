@@ -13,8 +13,9 @@
  */
 
 #include <avr/wdt.h>
+#include "config.h"
 
-#define USE_MOUSE 
+//#define USE_MOUSE 
 #ifdef USE_MOUSE
 #include "arduino-ps2-mouse/PS2Mouse.h"
 #endif
@@ -48,6 +49,10 @@
 
 // Motion detection based on motor
 #define         MOTOR_OUT              A1
+
+// What kind of stimulus is given.
+#define         SOUND                   0
+#define         LIGHT                   1
 
 
 unsigned long stamp_            = 0;
@@ -325,20 +330,15 @@ void do_first_trial( )
  * @param trial_num. Index of the trial.
  * @param ttype. Type of the trial.
  */
-void do_trial( unsigned int trial_num, bool isporobe = false )
+void do_trial( unsigned int trial_num, int cs_type, bool isprobe = false )
 {
     reset_watchdog( );
     check_for_reset( );
 
     trial_start_time_ = millis( );
 
-    /*-----------------------------------------------------------------------------
-     *  PRE. Start imaging for 10 seconds.
-     *-----------------------------------------------------------------------------*/
-    unsigned duration = 5000;
-    if (trial_num == 1)
-	delay(60); // Shutter delay; Only for the first trial
-
+    // PRE
+    unsigned duration = 10000;
     stamp_ = millis( );
 
     sprintf( trial_state_, "PRE_" );
@@ -360,13 +360,24 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
     stamp_ = millis( );
 
     /*-----------------------------------------------------------------------------
-     *  CS: 50 ms duration. No tone is played here. Write LED pin to HIGH.
+     *  CS: 50 ms duration. Either LED or TONE depending on trial type.
      *-----------------------------------------------------------------------------*/
-    duration = LED_DURATION;
-    stamp_ = millis( );
-    sprintf( trial_state_, "CS+" );
-    led_on( duration );
-    stamp_ = millis( );
+    if( cs_type == LIGHT )
+    {
+        duration = LED_DURATION;
+        stamp_ = millis( );
+        sprintf( trial_state_, "CS+" );
+        led_on( duration );
+        stamp_ = millis( );
+    }
+    else if( cs_type == SOUND )
+    {
+        duration = TONE_DURATION;
+        stamp_ = millis( );
+        sprintf( trial_state_, "CS+" );
+        play_tone( duration );
+        stamp_ = millis( );
+    }
 
     /*-----------------------------------------------------------------------------
      *  TRACE. The duration of trace varies from trial to trial.
@@ -378,10 +389,10 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
     stamp_ = millis( );
 
     /*-----------------------------------------------------------------------------
-     *  PUFF for 50 ms.
+     *  PUFF for 50 ms if trial is not a probe type.
      *-----------------------------------------------------------------------------*/
     duration = PUFF_DURATION;
-    if( isporobe )
+    if( isprobe )
     {
         sprintf( trial_state_, "PROB" );
         while( (millis( ) - stamp_) <= duration )
@@ -398,7 +409,7 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
      *  POST, flexible duration till trial is over. It is 10 second long.
      *-----------------------------------------------------------------------------*/
     // Last phase is post. If we are here just spend rest of time here.
-    duration = 5000;
+    duration = 10000;
     sprintf( trial_state_, "POST" );
     while( (millis( ) - stamp_) <= duration )
     {
@@ -421,26 +432,49 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
 void loop()
 {
     reset_watchdog( );
+
     // The probe trial occurs every 7th trial with +/- of 2 trials.
     unsigned numProbeTrials = 0;
     unsigned nextProbbeTrialIndex = random(5, 10);
 
     for (size_t i = 1; i <= 81; i++) 
     {
+
         reset_watchdog( );
 
-        // Probe trial.
-        if( i == nextProbbeTrialIndex )
+        // These are normal trial with either SOUND or LIGHT.
+        if( SESSION_TYPE == 0 || SESSION_TYPE == 1 )
         {
-            do_trial( i, true );
-            numProbeTrials +=1 ;
-            nextProbbeTrialIndex = random( 
-                    (numProbeTrials+1)*10-2, (numProbeTrials+1)*10+3
-                    );
-        }
-        else
-            do_trial( i, false );
+            int cs_type = SOUND;
+            if( 1 == SESSION_TYPE )
+                cs_type = LIGHT;
 
+            bool isprobe = false;
+
+            // Probe trial.
+            if( i == nextProbbeTrialIndex )
+            {
+                isprobe = true;
+                numProbeTrials +=1 ;
+                nextProbbeTrialIndex = random( 
+                        (numProbeTrials+1)*10-2, (numProbeTrials+1)*10+3
+                        );
+            }
+            do_trial( i, cs_type, isprobe );
+        }
+        else  // These are mixed trials.
+        {
+            // Every 5, 10, 15 etc trial is proble trials.
+            bool isprobe = false;
+            if( i % 5 == 0 )
+                isprobe = true;
+
+            // 1-4, 11-14, 21-24 etc are trails with SOUND.
+            int cs_type = LIGHT;
+            if( i % 10 > 0 && i % 10 <= 5 )
+                cs_type = SOUND;
+            do_trial( i, cs_type, isprobe );
+        }
         
         /*-----------------------------------------------------------------------------
          *  ITI.
