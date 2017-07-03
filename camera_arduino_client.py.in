@@ -12,6 +12,7 @@ __email__      = ""
 __status__     = "Development"
 
 import sys
+sys.path.append( '../pyblink' )
 import os
 import socket
 import io

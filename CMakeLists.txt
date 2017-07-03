@@ -136,6 +136,7 @@ configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/copy_file.sh.in
 configure_file( ${CMAKE_SOURCE_DIR}/camera_arduino_client.py.in 
     ${CMAKE_BINARY_DIR}/camera_arduino_client.py 
     )
+configure_file( ${CMAKE_SOURCE_DIR}/pyblink/config.py ${CMAKE_BINARY_DIR}/config.py )
 
 # Pass animal options to run.sh which will will passed to python script.
 SET(RUN_ARGS 
