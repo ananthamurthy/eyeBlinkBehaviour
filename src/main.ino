@@ -34,7 +34,7 @@
 #define         TONE_FREQ                   4500
 
 #define         PUFF_DURATION               50
-#define         TONE_DURATION               50
+#define         TONE_DURATION               350
 #define         LED_DURATION                50
 
 #ifdef USE_MOUSE
