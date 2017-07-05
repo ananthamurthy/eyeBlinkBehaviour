@@ -1,22 +1,29 @@
 # eyeBlinkBehaviour
 
 Camera server (PointGrey) and arduino based behaviour setup. Everything is
-automated using cmake.
+automated using cmake. Both arduino and camera must be connected to compute
+before doing the following.
 
 To build and upload to arduino   
 
     $ mkdir _build 
     $ cd _build
-    $ cmake ..
-    $ make run              # to run the whole setup, or
-    $ make miniterm         # Just to test arduino board. 
+    $ cmake -DANIMAL_NAME=k2 -DSESSION_NUM=1 -DSESSION_TYPE=2 ..
+    $ make run              # to run the whole setup, (arduino and camera both must be connected)or
+    $ make miniterm         # Just to test arduino board. (camera need to be connected)
+
+Press `CTRL+C` in terminal to close the session. If just running `make
+miniterm`, press `CTRL+]` to come out of miniterm (scrolling text).
 
 
 # Dependencies
 
+Most of them are in source.
+
 - cmake 
 - gnuplot-x11
 - pip install readchar
+- pip install gnuplotlib
 
 
 # Commands
@@ -27,10 +34,6 @@ To build and upload to arduino
 - __Select__ : s 
 - __Reboot__ : ctrl+c
 
-# Print data line 
+# What is being prinited.
 
-    sprintf(msg_  
-            , "%lu,%d,%d,%d,%d,%d,%d,%d,%d,%s"
-            , timestamp, trial_count_, puff, tone, led
-            , motion1, motion2, camera, microscope, trial_state_
-            );
+See function `write_data_line` in file `src/main.ino`.
