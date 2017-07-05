@@ -102,6 +102,7 @@ void reset_watchdog( )
 }
 
 
+
 /**
  * @brief  Read a command from command line. Consume when character is matched.
  *
@@ -280,6 +281,15 @@ void wait_for_start( )
     }
 }
 
+void print_trial_info( )
+{
+    Serial.print( ">> ANIMAL NAME: " );
+    Serial.print( ANIMAL_NAME );
+    Serial.print( " SESSION NUM: " );
+    Serial.print( SESSION_NUM );
+    Serial.print( " SESSION TYPE: " );
+    Serial.println( SESSION_TYPE );
+}
 
 void setup()
 {
@@ -312,6 +322,7 @@ void setup()
     pinMode( MOTION2_PIN, INPUT );
 #endif
 
+    print_trial_info( );
     wait_for_start( );
 }
 
@@ -326,6 +337,20 @@ void do_first_trial( )
 }
 
 /**
+ * @brief Just for testing.
+ *
+ * @param duration
+ */
+void do_empty_trial( size_t trial_num, int duration = 10 )
+{
+    Serial.print( ">> TRIAL NUM: " );
+    Serial.println( trial_num );
+    //print_trial_info( );
+    delay( duration );
+    Serial.println( ">>     TRIAL OVER." );
+}
+
+/**
  * @brief Do a single trial.
  *
  * @param trial_num. Index of the trial.
@@ -336,6 +361,7 @@ void do_trial( unsigned int trial_num, int cs_type, bool isprobe = false )
     reset_watchdog( );
     check_for_reset( );
 
+    print_trial_info( );
     trial_start_time_ = millis( );
 
     // PRE
@@ -385,8 +411,8 @@ void do_trial( unsigned int trial_num, int cs_type, bool isprobe = false )
     }
     else
     {
-        Serial.println( "Horror horror. What type of session is that?" );
-        Serial.println( "We only allow type 0 (SOUND), 1 (LIGHT) or 2 (MIXED)" );
+        Serial.println( ">> Horror horror. What type of session is that?" );
+        Serial.println( ">> We only allow type 0 (SOUND), 1 (LIGHT) or 2 (MIXED)" );
     }
 
     /*-----------------------------------------------------------------------------
@@ -470,7 +496,21 @@ void loop()
                         (numProbeTrials+1)*10-2, (numProbeTrials+1)*10+3
                         );
             }
+#if DEBUG
+            if( isprobe )
+            {
+                Serial.print( ">> PROBE TRIAL. Index :" );
+                Serial.print( i );
+                Serial.print( ". Next probe " );
+                Serial.println( nextProbbeTrialIndex );
+            }
+#endif
+
+#if DEBUG
+            do_empty_trial( i );
+#else
             do_trial( i, cs_type, isprobe );
+#endif
         }
         else if( 2 == SESSION_TYPE )  // These are mixed trials.
         {
@@ -479,22 +519,39 @@ void loop()
             if( i % 5 == 0 )
                 isprobe = true;
 
+#if DEBUG
+            if( isprobe )
+            {
+                Serial.print( ">> PROBE TRIAL. Index :" );
+                Serial.println( i );
+            }
+#endif
+
             // 1-4, 11-14, 21-24 etc are trails with SOUND.
             int cs_type = LIGHT;
             if( i % 10 > 0 && i % 10 <= 5 )
                 cs_type = SOUND;
+#if DEBUG
+            do_empty_trial( i );
+#else
             do_trial( i, cs_type, isprobe );
+#endif
+
         }
         else
         {
-            Serial.println( "Horror horror. What type of session is that?" );
-            Serial.println( "We only allow type 0 (SOUND), 1 (LIGHT) or 2 (MIXED)" );
+            Serial.println( ">> Horror horror. What type of session is that?" );
+            Serial.println( ">> We only allow type 0 (SOUND), 1 (LIGHT) or 2 (MIXED)" );
         }
         
         /*-----------------------------------------------------------------------------
          *  ITI.
          *-----------------------------------------------------------------------------*/
+#if DEBUG
+        unsigned long rduration = random( 100, 151);
+#else
         unsigned long rduration = random( 10000, 15001);
+#endif
         stamp_ = millis( );
         sprintf( trial_state_, "ITI_" );
         while((millis( ) - stamp_) <= rduration )
