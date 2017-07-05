@@ -4,7 +4,19 @@ Camera server (PointGrey) and arduino based behaviour setup. Everything is
 automated using cmake. Both arduino and camera must be connected to compute
 before doing the following.
 
-To build and upload to arduino   
+# Download and setup 
+
+To download the code from a particular branch
+
+     $ git clone --recursive -b bhumika https://github.com/ananthamurthy/eyeBlinkBehaviour 
+     $ cd eyeBlinkBehaviour 
+     $ ./bootstap.sh   
+     
+The script `bootstap.sh` will try to configure your system. You must have `sudo` permissions. And you
+must be using `Ubuntu` since the camera server only compiles on Ubuntu. In case, something odd happens, 
+raise an issue on github.
+
+Once bootstrap is successful, to build and upload to arduino   
 
     $ mkdir _build 
     $ cd _build
