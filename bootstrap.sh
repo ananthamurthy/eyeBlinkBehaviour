@@ -28,9 +28,10 @@ sudo chmod a+w /mnt/ramdisk
 #printf "\ttmpfs /mnt/ramdisk tmpfs nosuid,size=1024M 0 0\n"
 #printf "To make it permanent\n"
 
-if grep -Fxq "tmpfs /mnt/ramdisk" /etc/fstab; then
+LINE="tmpfs /mnt/randisk tmpfs nosuid,size=1024M 0 0"
+if grep -Fxq "$LINE" /etc/fstab; then
     echo "RAMDISK already configured in /etc/fstab"
 else
-    echo "tmpfs /mnt/randisk tmpfs nosuid,size=1024M 0 0" | sudo tee --append /etc/fstab 
+    echo "$LINE" | sudo tee --append /etc/fstab 
 fi
 echo "All done. You may like to reboot/logout"
