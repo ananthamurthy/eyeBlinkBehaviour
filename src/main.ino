@@ -53,6 +53,7 @@
 // What kind of stimulus is given.
 #define         SOUND                   0
 #define         LIGHT                   1
+#define         MIXED                   2
 
 
 unsigned long stamp_            = 0;
@@ -378,6 +379,15 @@ void do_trial( unsigned int trial_num, int cs_type, bool isprobe = false )
         play_tone( duration );
         stamp_ = millis( );
     }
+    else if( cs_type == MIXED )
+    {
+        // Mixed type.
+    }
+    else
+    {
+        Serial.println( "Horror horror. What type of session is that?" );
+        Serial.println( "We only allow type 0 (SOUND), 1 (LIGHT) or 2 (MIXED)" );
+    }
 
     /*-----------------------------------------------------------------------------
      *  TRACE. The duration of trace varies from trial to trial.
@@ -462,7 +472,7 @@ void loop()
             }
             do_trial( i, cs_type, isprobe );
         }
-        else  // These are mixed trials.
+        else if( 2 == SESSION_TYPE )  // These are mixed trials.
         {
             // Every 5, 10, 15 etc trial is proble trials.
             bool isprobe = false;
@@ -474,6 +484,11 @@ void loop()
             if( i % 10 > 0 && i % 10 <= 5 )
                 cs_type = SOUND;
             do_trial( i, cs_type, isprobe );
+        }
+        else
+        {
+            Serial.println( "Horror horror. What type of session is that?" );
+            Serial.println( "We only allow type 0 (SOUND), 1 (LIGHT) or 2 (MIXED)" );
         }
         
         /*-----------------------------------------------------------------------------
