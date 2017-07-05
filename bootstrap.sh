@@ -23,8 +23,14 @@ fi
 sudo mkdir -p /mnt/ramdisk
 sudo chmod a+w /mnt/ramdisk
 
+#echo "You may like mount a slice of ram to /mnt/ramdisk"
+#echo "Something like the following needs to be added to /etc/fstab"
+#printf "\ttmpfs /mnt/ramdisk tmpfs nosuid,size=1024M 0 0\n"
+#printf "To make it permanent\n"
+
+if grep -Fxq "tmpfs /mnt/ramdisk" /etc/fstab; then
+    echo "RAMDISK already configured in /etc/fstab"
+else
+    echo "tmpfs /mnt/randisk tmpfs nosuid,size=1024M 0 0" | sudo tee --append /etc/fstab 
+fi
 echo "All done. You may like to reboot/logout"
-echo "You may like mount a slice of ram to /mnt/ramdisk"
-echo "Something like the following needs to be added to /etc/fstab"
-printf "\ttmpfs /mnt/ramdisk tmpfs nosuid,size=1024M 0 0\n"
-printf "To make it permanent\n"
