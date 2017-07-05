@@ -491,7 +491,7 @@ void loop()
         trial_count_ += 1;
     }
 
-    // Do do anything once trails are over.
+    // Don't do anything once trails are over.
     while( true )
     {
         reset_watchdog( );
