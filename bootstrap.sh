@@ -2,15 +2,9 @@
 set +x 
 set -e
 
-sudo apt install -y  libopencv-* \
-  libboost-dev  \
-  cmake \
-  python-numpy \
-  python-opencv \ 
-  arduino \
-  python-pip \
-  gnuplot \
-  python-tifffile python-pillow  python-matplotlib \
+sudo apt install -y libopencv-dev libopencv-*-dev libboost-dev  \
+    cmake python-numpy python-opencv \
+    arduino python-pip gnuplot python-tifffile python-pillow  python-matplotlib 
 sudo -E pip install gnuplotlib readchar  
 
 echo "Now adding user to all the cool groups"
