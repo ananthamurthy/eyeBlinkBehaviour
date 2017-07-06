@@ -1,5 +1,3 @@
-# eyeBlinkBehaviour
-
 Camera server (PointGrey) and arduino based behaviour setup. Everything is
 automated using cmake. Both arduino and camera must be connected to compute
 before doing the following.
