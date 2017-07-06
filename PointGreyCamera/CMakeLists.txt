@@ -40,14 +40,15 @@ set(CMAKE_BUILD_TYPE Release)
 
 add_definitions( -std=c++11 -Wall -Wno-unknown-pragmas )
 
+include_directories( ${SPINNAKER_SRC_DIR} ${SPINNAKER_SRC_DIR}/include )
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/include )
+
 find_library( SPINNAKER_LIB Spinnaker 
     PATHS ${SPINNAKER_SRC_DIR}/lib
     NO_CMAKE_PATHS 
     )
 
 message(STATUS "Found ${SPINNAKER_LIB}")
-include_directories( ${SPINNAKER_SRC_DIR} ${SPINNAKER_SRC_DIR}/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/include )
 add_executable( cam_server ./src/main.cpp )
 
 # After building the server, copy required client and configuration files into

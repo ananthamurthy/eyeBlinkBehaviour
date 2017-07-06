@@ -473,7 +473,7 @@ void loop()
     unsigned numProbeTrials = 0;
     unsigned nextProbbeTrialIndex = random(5, 10);
 
-    for (size_t i = 1; i <= 81; i++) 
+    for (size_t i = 0; i <= 80; i++) 
     {
 
         reset_watchdog( );
@@ -512,6 +512,10 @@ void loop()
             do_trial( i, cs_type, isprobe );
 #endif
         }
+	/*************************************************************************
+	* MIXED TRIALS
+	*************************************************************************/
+
         else if( 2 == SESSION_TYPE )  // These are mixed trials.
         {
             // Every 5, 10, 15 etc trial is proble trials.
