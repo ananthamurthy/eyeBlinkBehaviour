@@ -473,7 +473,7 @@ void loop()
     unsigned numProbeTrials = 0;
     unsigned nextProbbeTrialIndex = random(5, 10);
 
-    for (size_t i = 0; i <= 80; i++) 
+    for (size_t i = 1; i <= 81; i++) 
     {
 
         reset_watchdog( );
