@@ -3,7 +3,7 @@ set +x
 set -e
 
 sudo apt install -y libopencv-dev libopencv-*-dev libboost-dev  \
-    cmake python-numpy python-opencv vim openssh-server \
+    cmake python-numpy python-serial python-opencv vim openssh-server \
     arduino python-pip gnuplot python-tifffile python-pillow  python-matplotlib 
 sudo -E pip install gnuplotlib readchar  
 

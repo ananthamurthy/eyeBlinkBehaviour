@@ -8,7 +8,7 @@ To download the code from a particular branch
 
      $ git clone --recursive -b bhumika https://github.com/ananthamurthy/eyeBlinkBehaviour 
      $ cd eyeBlinkBehaviour 
-     $ ./bootstap.sh   
+     $ ./bootstap.sh    # To setup your Ubuntu system.
      
 The script `bootstap.sh` will try to configure your system. You must have `sudo` permissions. And you
 must be using `Ubuntu` since the camera server only compiles on Ubuntu. In case, something odd happens, 
@@ -39,6 +39,7 @@ Most of them are in source.
 
 - cmake 
 - gnuplot-x11
+- python-serial
 - pip install readchar
 - pip install gnuplotlib
 
