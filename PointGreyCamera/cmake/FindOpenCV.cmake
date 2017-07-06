@@ -25,7 +25,7 @@ SET(OpenCV_COMPONENTS
     video
     videoio
     videostab
-    imgcodecs
+    #imgcodecs
     )
 
 FOREACH(COMPONENT ${OpenCV_COMPONENTS})

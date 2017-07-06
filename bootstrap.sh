@@ -4,8 +4,9 @@ set -e
 
 sudo apt install -y libopencv-dev libopencv-*-dev libboost-dev  \
     cmake python-numpy python-serial python-opencv vim openssh-server \
-    arduino python-pip gnuplot python-tifffile python-pillow  python-matplotlib 
-sudo -E pip install gnuplotlib readchar  
+    arduino python-pip gnuplot python-tifffile python-pillow  python-matplotlib  \
+    pkg-config libopencv-features2d-dev libopencv-imgproc-dev
+sudo -E pip install gnuplotlib readchar --upgrade
 
 echo "Now adding user to all the cool groups"
 sudo gpasswd -a $USER dialout
