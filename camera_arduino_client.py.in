@@ -1,0 +1,513 @@
+#!/usr/bin/env python
+
+from __future__ import print_function
+
+__author__     = "Dilawar Singh"
+__copyright__  = "Copyright 2016, Dilawar Singh"
+__credits__    = ["NCBS Bangalore"]
+__license__    = "GNU GPL"
+__version__    = "1.0.0"
+__maintainer__ = "Dilawar Singh"
+__email__      = ""
+__status__     = "Development"
+
+import sys
+sys.path.append( '../pyblink' )
+import os
+import socket
+import io
+import random
+import time
+import errno
+import numpy as np
+import cv2
+from multiprocessing import Process, Value, Pipe
+import datetime
+import re
+import config                           # in pyblink/config.py
+import arduino
+import readchar
+from collections import defaultdict
+import logging
+import tifffile
+import subprocess
+import blinky
+import gnuplotlib
+
+gnuplot_ = gnuplotlib.gnuplotlib( title = 'Blink readout'
+        , terminal = 'x11 noraise' 
+        )
+
+logging.basicConfig(level=logging.INFO)
+
+start_ = time.time()
+total_trials_ = 0
+cs_type_ = None
+prev_trial_ = 0
+
+# Frame and main window.
+bbox_ = [ (255,131), (521, 288) ]
+default_bbox_ = bbox_ 
+
+camera_store_begin_ = 0
+camera_store_end_ = 0
+
+title_ = 'Animal Window'
+
+
+def onmouse(event, x, y, flags, params):
+    global bbox_
+    global default_bbox_ 
+    # Draw Rectangle
+    if event == cv2.EVENT_LBUTTONDOWN:
+        bbox_ = []
+        bbox_.append((x, y))
+
+    elif event == cv2.EVENT_LBUTTONUP:
+        if abs( x - bbox_[0][0] ) > 10 and abs( y - bbox_[0][1] ) >  10:
+            bbox_.append((x, y))
+            default_bbox_ = bbox_ 
+        else:
+            bbox_ = default_bbox_
+            return 
+
+        print( '[INFO] Current box %s' % bbox_ )
+
+window_ = cv2.namedWindow( title_ )
+cv2.setMouseCallback( title_, onmouse )
+
+select_sent_ = False
+
+running_trial_ = 0
+finished_all_ = False
+
+script_dir = os.path.dirname(os.path.realpath(__file__))
+config_file = os.path.join(script_dir, 'config.h')
+
+if not os.path.isfile(config_file):
+    print("I can't find %s. Make sure it is available" % config_file)
+    print(" Did you run cmake? ")
+    quit()
+
+h_, w_ = -1, -1
+with open(config_file, "r") as cf:
+    configText = cf.read()
+    h = re.search(r'#define\s+FRAME_HEIGHT\s+(\d+)', configText).group(1)
+    w = re.search(r'#define\s+FRAME_WIDTH\s+(\d+)', configText).group(1)
+    sock = re.search(r'#define\s+SOCK_PATH\s+\"(.+?)\"', configText).group(1)
+    h_, w_ = int(h), int(w)
+    assert sock, "Can't read socket path from configuration file"
+
+sock_name_ = sock
+
+img_shape_ = (h_, w_)
+frame_size_ = img_shape_[0] * img_shape_[1]
+
+# Maximum allowed frame in each trial. This is guard against RAM overflow in
+# case arduino failes to update trial count. 
+max_frames_in_trial = 500
+image_stack_ = None
+
+write_data_ = True
+now =  datetime.datetime.now().isoformat( )
+data_dir_ = os.path.join( "@DATADIR@", '' )
+trial_file_ = ''
+
+# If data directory is already there, create a folder with timstamp to store
+# data.
+if not os.path.isdir(data_dir_):
+    os.makedirs(data_dir_)
+else:
+    data_dir_ = os.path.join( "@DATADIR@", now )
+    os.makedirs(data_dir_)
+
+
+
+# Arduino data storate
+def trial_file_path( trial = 0 ):
+    filename = "name=%s_st=%s_sn=%s" % (
+        config.args_.name, config.args_.session_type, config.args_.session_num
+            )
+    filename += 'trial=%d.dat' % trial
+    trial_file_ = os.path.join( data_dir_, filename )
+    return trial_file_ 
+
+def cleanup():
+    global finished_all_
+    finished_all_ = True
+    config.serial_port_.write_msg('r')
+    print("+++++++++++++++++++++++++++++ All over")
+
+
+def append_trial_data(outfile, line ):
+    with open(outfile, 'a') as f:
+        f.write('%s\n' %  line )
+
+
+def read_line():
+    """Append timestamp at which this line was read 
+    """
+    now = datetime.datetime.now().isoformat()
+    line = config.serial_port_.read_line()
+    line = now + ',' + line.replace(' ', '')
+    # print( line )
+    return line
+
+
+def arduino_client(writeP, trialIndex, cameraPinValue):
+    global running_trial_
+    global cs_type_
+    global next_probe_in_
+    global select_sent_
+    global finished_all_
+
+    tstart = time.time()
+    currentTrialIndex = 0
+
+    while not finished_all_:
+        line = read_line()
+        # print( '[DEBUG] 1: %s' % line )
+        writeP.send(line)
+        data = line_to_data( line )
+        if len( data ) != 11:
+            continue
+
+        trialNum = int( data[2] )
+        if trialNum < 1:
+            continue 
+
+        trialIndex.value = int( trialNum )
+
+        # 3rd last value in data line is camera.
+        with cameraPinValue.get_lock( ):
+            cameraPinValue.value = int( data[-3] )
+            assert( cameraPinValue.value in [ 0, 1 ] )
+
+        # NOTE: Write arduino data separately in a single file.
+        append_trial_data(trial_file_path( trialNum ), line )
+        if trialNum >= 100:
+            finished_all_ = True
+
+
+def init_arduino_client():
+    """
+    Wait for first four questions to appear which requires writing to serial
+    port. If serial port is sending legal data then continue, questions are
+    probably answered.
+    """
+    return True
+
+
+def send_command():
+    # all commands should be two characters long
+    # This function must be last one after all the threads/processes have been
+    # launched.
+    global select_sent_
+    global finished_all_
+    command = ""
+    legalCommandsBeforeStart = [ "t", "s", "p", "l" ]
+    legalCommandsAfterStart = [ ]
+    validCommands = legalCommandsAfterStart + legalCommandsBeforeStart
+    validStartChars = ''.join([x[0] for x in validCommands])
+    print('Executing send command loop')
+    while True:
+        # This is blocking.
+        command = readchar.readkey()
+        if command in validCommands:
+            if command in legalCommandsBeforeStart and not select_sent_:
+                logging.info("[COMMAND] Sending command: %s" % command)
+                config.serial_port_.write_msg(command)
+                if command == 's':
+                    select_sent_ = True
+                    
+        elif command in [ '\x03', '\x04', '\x1a']:
+            finished_all_ = True
+            break
+
+
+def init_serial(baudRate=38400):
+    if config.args_.port is None:
+        config.args_.port = arduino.get_default_serial_port()
+    logging.info("Using port: %s" % config.args_.port)
+    config.serial_port_ = arduino.ArduinoPort(config.args_.port, baudRate)
+    config.serial_port_.open(wait=True)
+
+
+def line_to_data(line):
+    """First element is timestamp, rest the data etc.
+    """
+    if '>' in line:
+        return [ ]
+
+    line = filter(None, line.split(',') )
+    data = [ ]
+    for x in line:
+        try:
+            data.append( int(x) )
+        except ValueError as e:
+            data.append( x )
+    return data
+
+
+def save_img_stack(stack, index):
+    global start_
+    filename = os.path.join(data_dir_, 'trial_%03d.tif' % index)
+    tmpfile = os.path.join('/mnt', 'ramdisk', 'tmp.tif')
+    # Remove empty frame.
+    stack = np.array( filter( lambda x : np.sum( x ) > 2, stack ))
+    if len( stack ) < 1:
+        print( 'Zero frames in image. Not saving' )
+        return 
+
+    if tmpfile:
+        tifffile.imsave(tmpfile, stack)
+        # Use Popen to move the tmp file to desired location in background.
+        t = time.time()
+        subprocess.Popen([ "./copy_file.sh", tmpfile, filename ])
+        print( 'Launched background process to copy data in %f' % ( time.time()
+            - t ) )
+    print('[INFO] Saved to %s after %s secs' % (filename, time.time() - start_))
+    start_ = time.time()
+
+
+def init_stack():
+    """
+    Set height to be 1 more than what is sent by camera for we'll add dataline
+    recieved from arduino board as the first row of frame.
+    """
+    global image_stack_
+    global h_, w_
+    global max_frames_in_trial
+    image_stack_ = np.zeros(
+        shape=(max_frames_in_trial, h_ + 1, w_), dtype=np.uint8
+    )
+
+
+def poll_socket():
+    return os.path.exists(sock_name_)
+
+
+def show_frame(frame, outfile=None):
+    global title_
+    cv2.imshow( title_, frame)
+    cv2.waitKey(1)
+    if outfile:
+        cv2.imsave(outfile, frame)
+
+
+def camera_client(readP, trialIndex, cameraPinValue):
+    global finished_all_
+    global img_, buf_
+    global image_stack_
+    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+
+    # Connect to socket. Try only for 5 seconds.
+    now = time.time()
+    while not finished_all_:
+        if time.time() - now > 5:
+            print('[INFO] Timeout in connecting socket. Quitting')
+            finished_all_ = True
+            break
+        if os.path.exists(sock_name_):
+            try:
+                s.connect(sock_name_)
+                break
+            except Exception as e:
+                print('Error connecting %s' % e)
+                time.sleep(1)
+        else:
+            print('Could not find %s' % sock_name_)
+            time.sleep(1)
+
+    totalBytesRead = 0
+    totalFrames = 0
+    buf = ''
+    init_stack()
+    framesInStack = 0
+    trial_count = 0
+    blinks_ = []
+    writeTrial_ = False
+    recording_ = False
+    cameraPinState = [False, False]
+    while not finished_all_:
+        try:
+            data = s.recv(frame_size_)
+            buf += data
+            if len(buf) >= frame_size_:
+                now = datetime.datetime.now().isoformat()
+                img = np.frombuffer(buf[:frame_size_], dtype=np.uint8)
+                img = np.reshape(img, img_shape_)
+                txt = now
+
+                # This is critical.
+                # Read from PIPE but it should not be blocking.
+                if readP.poll(1e-4):
+                    txt += ',' + readP.recv()
+
+                # Fill txt to have its length equal to frame width
+                txt += ' ' * (img_shape_[1] - len(txt))
+                # Convert txt to binary and prefix to the img we got from camera
+                # server.
+                metadata = np.array(map(ord, txt), dtype=np.uint8)
+                img = np.vstack((metadata, img))
+                if write_data_:
+                    cv2.putText(img, txt.strip(), (0, h_ - 10),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.4, 128, 1
+                                )
+
+                # Only save the frame if camera pin says so.
+                if recording_:
+                    image_stack_[framesInStack] = img
+                    framesInStack += 1
+
+                if len(bbox_) == 2:
+                    # print( 'Bounding box has been drawn : %s' % str(bbox_) )
+                    cv2.rectangle( img, bbox_[0], bbox_[1], 128 )
+                    (x0, y0), (x1, y1) = bbox_
+                    roi = img[y0:y1,x0:x1]
+                    # Equalize histogram
+                    roi = cv2.equalizeHist( roi )
+                    infile, outfile, res, sss = blinky.process_frame(roi, 0)
+                    #cv2.imshow( 'algo', outfile )
+
+                    # When camera pin goes HIGH, start writing trial.
+                    if cameraPinValue.value == 1:
+                        msg = '%.2f (ON)'  % res
+                        recording_ = True
+                        cameraPinState.append( True )
+                        cameraPinState.pop( 0 )
+                    else:
+                        msg = '%.2f'  % res
+                        cameraPinState.append( False )
+                        cameraPinState.pop( 0 )
+
+                    if (not cameraPinState[1]) and cameraPinState[0]:
+                        writeTrial_ = True
+                        recording_ = False
+                    else:
+                        writeTrial_ = False
+
+                    cv2.putText( 
+                            img, msg, (0, 10 )
+                             , cv2.FONT_HERSHEY_SIMPLEX, 0.4, 128, 2
+                             )
+                    blinks_.append( res )
+                else:
+                    blinks_.append( random.random( ) )
+
+                # Show every 10th frame.
+                if totalFrames % 10 == 0:
+                    show_frame( img )
+                    # show_frame( np.vstack( (infile, outfile )) )
+
+                    # Enable the following if you want to see the blink data on
+                    # separate plot window. Slows down frame rate a bit ~ 10 to
+                    # 20 FPS.
+
+                    if len(bbox_) == 2:
+                        if len( blinks_ ) > 10:
+                            gnuplot_.plot( np.array( blinks_[-2000:] ))
+
+                buf = buf[frame_size_:]
+        except Exception as e:
+            # Keep reading.
+            print(e)
+            continue
+
+        totalFrames += 1
+        
+        # Write to file and set flag to OFF.
+        if writeTrial_:
+            framesInStack = 0
+            writeTrial_ = False
+            save_img_stack(image_stack_, trialIndex.value)
+            init_stack()
+
+        if framesInStack >= max_frames_in_trial:
+            framesInStack = 0
+            print( '[INFO] Too many frames in buffer.. flusing ' )
+            save_img_stack(image_stack_, -1 )
+            init_stack( )
+
+
+
+def main():
+    # Lock so that only one process prints to console at a time.
+    # When daemon is set to True, all threads will exit (ungracefully) when main
+    # terminates.
+    global finished_all_
+
+    config.init_logger(config.args_.port.replace('/', '_'))
+    init_arduino_client()
+    print('Initialized arduino board')
+
+    # Variables to share between processes.
+    trialIndex = Value('d', 0)
+    cameraPinValue = Value( 'd', 0 )
+
+    readP, writeP = Pipe(duplex=False)
+
+    cam = Process(
+            target=camera_client
+            , args=(readP, trialIndex, cameraPinValue )
+            )
+    cam.daemon = True
+    cam.start()
+    print('Camera client launched')
+
+    arduinoP = Process(
+            target=arduino_client,
+            args=( writeP, trialIndex, cameraPinValue)
+            )
+    arduinoP.daemon = True
+    arduinoP.start()
+    print("Arduino client launched")
+
+    try:
+        send_command()
+    except Exception as e:
+        print('Got %s in send_comamnd' % e)
+        finished_all_ = True
+        raise KeyboardInterrupt
+
+    arduinoP.join()
+    cam.join()
+    print('All done')
+
+if __name__ == '__main__':
+    import argparse
+    description = '''Recieve data from serial port and camera as well.'''
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument(
+        '--name',
+        '-n',
+        required=True,
+        type=str,
+        help='Mouse name (string)')
+    parser.add_argument(
+        '--session-type',
+        '-st',
+        required=True,
+        type=int,
+        help='Seession Type [0 to 11]')
+    parser.add_argument(
+        '--session-num',
+        '-sn',
+        required=True,
+        type=int,
+        help='Session number (positive integer)')
+    parser.add_argument(
+        '--port',
+        '-p',
+        required=False,
+        default=None,
+        help='Serial port [full path]')
+    parser.parse_args(namespace=config.args_)
+    init_serial()
+    # Intialize logger after intializing serial port.
+    try:
+        main()
+    except KeyboardInterrupt as e:
+        logging.warn("Interrupt from keyboard.... Quitting after cleanup.")
+        cleanup()
+        quit(1)

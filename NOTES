@@ -1,0 +1,37 @@
+1. Hook the arduino up to a usb port
+2. Verify/Compile the code and upload to the arduino
+3. Run the python code to send in the session details and start reading data
+4. ONLY THEN, press SELECT on the Arduino's LCD to begin the session.
+NOTE: Pressing SELECT is going to start the trial whether or not the session details or data have been read
+*/
+
+/*
+GENERAL NOTE: All codes to be uploaded to the Arduino, cycle through "void loop()" at some refresh rate.
+Basically calculations, assignments, etc. can be executed every cycle, if specified as such.
+*/
+
+/*
+TRACE EYE-BLINK CONDITIONING:
+>> Associate a tone with the eye-blink response.
+>> The US is an air-puff to the eye.
+>> 5 s Pre-tone, 350 ms CS+/-, 100 ms US/No-US, Post-stim (till 20s trial).
+>> ITI (randomized between 20-30 s). // Will have to check if randomization
+is the best option.
+
+The following is the trainning logic for running behaviour with head-fixed
+mice, using assorted solenoids and an eye-blink sensor.
+The code reports the current state on LCD screen, pushes output through a
+simple solenoid driver circuit and transfers data to a serial port.
+
+
+                        Wednesday 07 December 2016 01:17:04 PM IST, Dilawar Singh
+
+Python script camera_arduino_client.py.in is used by cmake to generate a
+combined client script ./camera_arduino_client.py which is launched after camera
+server has started. 
+
+0. It connectes to arduino first. Answer whatever is asked. As soon as arduino
+starts giving video file. It display them in a window. Each trial gets its own
+tiff file. 0th trial means data before trial has started.
+
+    

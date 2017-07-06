@@ -1,0 +1,8 @@
+libopencv-dev
+libnotify-dev
+python-serial
+python-opencv
+cmake
+arduino
+python-numpy
+python-gnuplotlib

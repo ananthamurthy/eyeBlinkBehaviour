@@ -1,0 +1,68 @@
+//=============================================================================
+// Copyright © 2016 Point Grey Research, Inc. All Rights Reserved.
+//
+// This software is the confidential and proprietary information of
+// Point Grey Research, Inc. ("Confidential Information"). You shall not
+// disclose such Confidential Information and shall use it only in
+// accordance with the terms of the "License Agreement" that you
+// entered into with PGR in connection with this software.
+//
+// UNLESS OTHERWISE SET OUT IN THE LICENSE AGREEMENT, THIS SOFTWARE IS
+// PROVIDED ON AN "AS-IS" BASIS AND POINT GREY RESEARCH INC. MAKES NO
+// REPRESENTATIONS OR WARRANTIES ABOUT THE SOFTWARE, EITHER EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY IMPLIED WARRANTIES OR
+// CONDITIONS OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR
+// NON-INFRINGEMENT. POINT GREY RESEARCH INC. SHALL NOT BE LIABLE FOR ANY
+// DAMAGES, INCLUDING BUT NOT LIMITED TO ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, PUNITIVE, OR CONSEQUENTIAL DAMAGES, OR ANY LOSS OF PROFITS,
+// REVENUE, DATA OR DATA USE, ARISING OUT OF OR IN CONNECTION WITH THIS
+// SOFTWARE OR OTHERWISE SUFFERED BY YOU AS A RESULT OF USING, MODIFYING
+// OR DISTRIBUTING THIS SOFTWARE OR ITS DERIVATIVES.
+//=============================================================================
+   
+/* Auto-generated file. Do not modify. */
+/* Generated Fri Aug 19 10:27:38 2016 */
+
+#include "QuickSpinC.h"
+
+#ifndef PGR_SPINNAKERC_TLINTERFACE_H
+#define PGR_SPINNAKERC_TLINTERFACE_H
+
+/**	
+* @defgroup TLInterfaceC_h TLInterface Structures
+* @ingroup CQuickSpin
+*/
+/*@{*/
+
+typedef struct _quickSpinTLInterface
+{
+	quickSpinStringNode InterfaceID;
+	quickSpinStringNode InterfaceDisplayName;
+	quickSpinStringNode InterfaceType;
+	quickSpinIntegerNode GevInterfaceGateway;
+	quickSpinIntegerNode GevInterfaceMACAddress;
+	quickSpinIntegerNode GevInterfaceIPAddress;
+	quickSpinIntegerNode GevInterfaceSubnetMask;
+	quickSpinEnumerationNode POEStatus;
+	quickSpinStringNode DeviceUnlock;
+	quickSpinCommandNode DeviceUpdateList;
+	quickSpinIntegerNode DeviceCount;
+	quickSpinIntegerNode DeviceSelector;
+	quickSpinStringNode DeviceID;
+	quickSpinStringNode DeviceVendorName;
+	quickSpinStringNode DeviceModelName;
+	quickSpinEnumerationNode DeviceAccessStatus;
+	quickSpinIntegerNode GevDeviceIPAddress;
+	quickSpinIntegerNode GevDeviceSubnetMask;
+	quickSpinIntegerNode GevDeviceMACAddress;
+	quickSpinCommandNode AutoForceIP;
+	quickSpinIntegerNode IncompatibleDeviceCount;
+	quickSpinIntegerNode IncompatibleDeviceSelector;
+	quickSpinStringNode IncompatibleDeviceID;
+	quickSpinStringNode IncompatibleDeviceVendorName;
+	quickSpinStringNode IncompatibleDeviceModelName;
+} quickSpinTLInterface;
+
+/*@}*/
+
+#endif // PGR_SPINNAKERC_TLINTERFACE_H

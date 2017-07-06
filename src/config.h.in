@@ -1,0 +1,9 @@
+#ifndef CONFIG.H_H
+#define CONFIG.H_H
+
+#define         SESSION_TYPE        @SESSION_TYPE@
+#define         SESSION_NUM         @SESSION_NUM@
+#define         ANIMAL_NAME         "@ANIMAL_NAME@"
+
+
+#endif /* end of include guard: CONFIG.H_H */

@@ -1,0 +1,425 @@
+#!/usr/bin/env python2
+
+"""
+arduino_live.py: 
+
+Read the data from serial port and plot it using FuncAnimation from matplotlib.
+
+"""
+from __future__ import print_function
+    
+__author__           = "Dilawar Singh, Ananthamurhty, and Shriya P"
+__copyright__        = "Copyright 2015, Bhalla lab, NCBS Bangalore"
+__credits__          = ["NCBS Bangalore"]
+__license__          = "GNU GPL"
+__version__          = "1.0.0"
+__maintainer__       = __author__
+__email__            = "dilawars@ncbs.res.in"
+__status__           = "Development"
+
+import config
+import arduino 
+import os
+import sys
+import time
+import readchar
+
+from collections import defaultdict
+import datetime
+import csv
+import numpy as np
+import codecs
+import Queue
+from threading import Thread, Lock
+import gnuplotlib 
+import logging
+
+_logger = logging.getLogger('')
+
+running_data_line_ = 0
+total_trials_ = 100
+cs_type_ = None
+next_probe_in_ = -1
+flipped_ = 0
+current_state_ = "INVA"
+shutdown_command_ = 'r'
+
+gp_ = gnuplotlib.gnuplotlib( terminal = 'x11' )
+
+
+# Our shared queue used in multiprocessing
+q_ = Queue.Queue()
+running_trial_ = 0
+finished_all_ = 0
+
+def trial_file_path( trialNum ):
+    return os.path.join( config.save_dir_, 'Trial%s.csv' % trialNum )
+
+def cleanup():
+    global finished_all_
+    global gp_
+    finished_all_ = 1
+    config.serial_port_.write_msg( shutdown_command_ )
+    print("+++++++++++++++++++++++++++++ All over")
+    gp_.__del__( )
+    raise KeyboardInterrupt("Finished all")
+
+def init_serial( baudRate = 38400):
+    if config.args_.port is None:
+        config.args_.port = arduino.get_default_serial_port( )
+    _logger.info("Using port: %s" % config.args_.port)
+    config.serial_port_ = arduino.ArduinoPort( config.args_.port, baudRate )
+    config.serial_port_.open( wait = True )
+
+def append_trial_data( outfile, data):
+    with open(outfile, 'a') as f:
+        msg = ",".join( [str(x) for x in data] )
+        #print('Writing: %s' % msg )
+        f.write( msg + '\n' )
+
+def send_press_select( reftime, interval ):
+    if time.time() - reftime < interval:
+        return False
+    _logger.info('Sending SELECT to board')
+    config.serial_port_.write_msg("ss\r")
+    time.sleep(0.5)
+    _logger.info('[INFO] Waiting for Board to respond .', end='')
+    sys.stdout.flush()
+    while '>>>Recieved' not in config.serial_port_.read_line():
+        print('.', end='')
+        sys.stdout.flush()
+    return True
+
+def print_line( line, lock ):
+    global running_data_line_
+    ds = line.split(',')
+    if len(ds) != 4:
+        return 
+    hline = '-'.join([ '' for x in range( min(80, int(ds[1])/10) ) ])
+    # Only print if running data line is multiple of 10
+    if running_data_line_ % 20 == 0:
+        lock.acquire()
+        _logger.info("%3s - %10s\n" % (line, hline ))
+        lock.release()
+
+def initialize_trial_file( trial_number ):
+    trialFile = trial_file_path( trial_number )
+    print('[INFO] Initializing a new trial file', end='')
+    with open( trialFile, "w") as f:
+        f.write("# Written on: %s\n" % datetime.datetime.now().isoformat())
+        f.write("# mouse name : %s\n" % config.args_.name)
+        f.write("# Session type : %s\n" % config.args_.session_type)
+        f.write("# Session num : %s\n" % config.args_.session_num)
+        f.write("# flipped : %s\n" % flipped_)
+    print(".... Done")
+
+    
+def collect_data( lock ):
+    global q_
+    global running_data_line_
+    global total_trials_
+    global running_trial_
+    global cs_type_ 
+    global next_probe_in_
+    global current_state_
+    tstart = time.time()
+    runningTrial = 0
+    while True:
+        running_data_line_ += 1
+        line = config.serial_port_.read_line( )
+        data = line_to_data( line )
+        current_state_ = data[6]
+        trialNum = data[2]
+        if data[1] is None:
+            continue
+        try:
+            t, v = data[0], data[1]
+            q_.put((t,v))
+        except Exception as e:
+            pass
+
+        # Valid trial has started.
+        if trialNum != 0:
+            break
+
+    _logger.info('Out of first loop.')
+    while True:
+        if finished_all_ == 1:
+            return None
+        running_data_line_ += 1
+        trialNum = data[2]
+        line = config.serial_port_.read_line()
+        data = line_to_data(line)
+        if (data[0] and data[1]) is None:
+            continue
+        q_.put((data[0],data[1]))
+        trialFile = trial_file_path( trialNum )
+        append_trial_data(trialFile, data)
+        print_line( line, lock )
+        if trialNum > running_trial_:
+            outfile = trial_file_path( running_trial_ )
+            _logger.info("|| Wrote previous trial to %s" % outfile)
+            _logger.info('== New Trial: :%s/%s, cs: %s' % (trialNum,
+                total_trials_, cs_type_)
+                )
+            # Also initialize the new trial file.
+            initialize_trial_file( trialNum )
+            running_trial_ = trialNum
+        if running_trial_ == total_trials_:
+            # Exit
+            cleanup()
+
+def line_to_data( line ):
+    """Convert read line to valid data.
+    If >>> is in the line, print it onto console. THis is command response 
+    from arduino.
+    """
+    sizeOfData = 7
+    data = [None]*sizeOfData
+
+    if '>>>' in line:
+        print(line)
+        return data
+
+    if len( line.split(',')) != sizeOfData:
+        return data;
+
+    for i, x in enumerate(line.split(',')):
+        try:
+            data[i] = int(x.strip())
+        except Exception as e:
+            data[i] = x.strip()
+    return data
+
+def init_gui():
+    config.text_.set_text('')
+    return config.gline_, config.gline1_, config.text_
+
+def plot_data( lock ):
+    global q_
+    global running_trial_
+    global total_trials_
+    global cs_type_, next_probe_in_
+    global gp_
+    ptstart = time.time()
+    while True:
+        if finished_all_ == 1:
+            return None
+        # Queue can become empty in ITI sessions.
+        qsize = q_.qsize( )
+        if qsize < 20:
+            # _logger.debug('Queue  size less than 20')
+            continue
+        # Get some elements from queue and plot them.
+        for i in range(10):
+            t, v = q_.get()
+            config.ybuff_.append( int(v) )
+        
+        title = '%s %2.2f, Mouse: %s, Trial: %2d/%3d, State=%s' % ( 
+                config.args_.port
+                , time.time() - ptstart 
+                , config.args_.name
+                , running_trial_
+                , total_trials_
+                , current_state_
+                )
+
+        # NOTE: Any other temrinal than x11 will steal the focus from terminal.
+        # User won't be able to send command 
+        gp_.plot( np.asarray(config.ybuff_[-2000:])
+                , legend = title
+                # , yrange = '200:600'  # When commented out 
+                                        # Auto-scale y-range automatically.
+                )
+
+def answer_questions( numbers = 5):
+    # All great UI have four questions. Yes we have to, they all starts with
+    # Please. Not three. Four. Sorry.
+    questionsAnswered = [ ]
+    for i in range( 20 ):
+        l = arduino.read_until('?? Please', timeout = 1)
+        if 'mouse name' in l:
+            _logger.info('[ANSW] %s = %s' % (l, config.args_.name))
+            config.serial_port_.write_msg('%s\r' % config.args_.name )
+            time.sleep(0.5)
+            if l not in questionsAnswered:
+                questionsAnswered.append(l)
+        elif 'session type' in l:
+            _logger.info('[ANSW] %s = %s' % (l, config.args_.session_type))
+            config.serial_port_.write_msg( '%s\r' % config.args_.session_type )
+            time.sleep(0.5)
+            if l not in questionsAnswered:
+                questionsAnswered.append(l)
+        elif 'session number' in l:
+            _logger.info('[ANSW] %s = %s' % (l, config.args_.session_num))
+            config.serial_port_.write_msg('%s\r' % config.args_.session_num )
+            time.sleep(0.5)
+            if l not in questionsAnswered:
+                questionsAnswered.append(l)
+        elif  'want to flip' in l:
+            _logger.info('[ANSW] %s = %s' % (l, config.args_.flipped))
+            config.serial_port_.write_msg('%s\r' % config.args_.flipped)
+            time.sleep(0.5)
+            flipped_ = 1
+            if l not in questionsAnswered:
+                questionsAnswered.append( l )
+        elif 'CS Fraction' in l:
+            _logger.info("[ANSW] %s = %s " % (l, config.args_.cs_fraction))
+            config.serial_port_.write_msg( '%s\r' % config.args_.cs_fraction)
+            time.sleep( 0.5 )
+            if l not in questionsAnswered:
+                questionsAnswered.append( l )
+        else:
+                pass
+
+        if len(questionsAnswered) == numbers:
+            _logger.info('[INFO] All questions are answered')
+            return 
+
+
+def init( ):
+    """
+    Wait for first four questions to appear which requires writing to serial
+    port. If serial port is sending legal data then continue, questions are
+    probably answered.
+    """
+
+    # Get 4 lines from arduino, and check if arduino is sending legal data or
+    # just waiting for questions to be answered.
+    for i in range(4):
+        l = config.serial_port_.read_line( )
+        while not l:
+            l = config.serial_port_.read_line( )
+        if '?? please' in l.lower():
+            answer_questions(  )
+            break
+        # If valid data is found in lines (trial is more than 1) then don't ask
+        # questions and quit immediately
+        else:
+            data = line_to_data( l )
+            if data[2] is not None:
+                if data[2] >= 0:
+                    break
+
+    now = datetime.datetime.now()
+    timeStamp =  now.strftime('%Y-%m-%d_%H-%M-%S')
+<<<<<<< HEAD:python/arduino_live
+    mouseName = 'MouseS%s' % config.args_.name
+    outdir = os.path.join( mouseName
+            , 'MouseS%s_SessionType%s_Session%s' % ( 
+=======
+    mouseName = 'Mouse%s' % config.args_.name
+    outdir = os.path.join( mouseName
+            , 'Mouse%s_SessionType%s_Session%s' % ( 
+>>>>>>> master:pyblink/arduino_live
+                config.args_.name, config.args_.session_type, config.args_.session_num)
+            )
+
+    config.save_dir_ = os.path.join( config.save_dir_, outdir )
+    if os.path.exists(config.save_dir_):
+        config.save_dir_ = os.path.join(config.save_dir_, timeStamp)
+        os.makedirs(config.save_dir_)
+    else:
+        os.makedirs(config.save_dir_) 
+
+def send_command( ):
+    # all commands should be two characters long
+    global finished_all_
+    command = ""
+    legalCommands = [ "1", "2", "p", "s", 'r' ]
+    while True:
+        command = readchar.readkey()
+        if command in legalCommands:
+            if command == 's' or command == 'p':
+                print( '[INFO] Command = %s' % command )
+                config.serial_port_.write_msg( "%s" % command )
+            elif command == 'r':
+                # reboot. 
+                _logger.warn("Reboot in 2 seconds. You have to relaunch the app")
+                config.serial_port_.write_msg( "%s\r" % command )
+                finished_all_ = 1
+                raise KeyboardInterrupt
+        elif command in [ '\x03', '\x04', '\x1a' ]:
+            finished_all_ = 1
+            raise KeyboardInterrupt
+
+def main( ):
+    init( )
+    print( '[INFO] Init is done' )
+    # Lock so that only one process prints to console at a time.
+    l = Lock( ) 
+
+    # When daemon is set to True, all threads will exit (ungracefully) when main
+    # terminates.
+    collectProcess = Thread( target = collect_data, args=(l,))
+    collectProcess.daemon = True
+    plotProcess = Thread( target = plot_data, args=(l,))
+    plotProcess.daemon = True
+
+    collectProcess.start()
+    plotProcess.start()
+
+    plotProcess.join( timeout = 1 )
+    collectProcess.join( timeout = 1 )
+
+    send_command( )
+
+if __name__ == '__main__':
+    import argparse
+    # Argument parser.
+    description = '''Animate arduino data from serial port'''
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument('--name', '-n'
+        , required = True
+        , type = str
+        , help = 'Mouse name (string)'
+        )
+    parser.add_argument('--session-type', '-st'
+        , required = True
+        , type = int
+        , help = 'Seession Type [0 or 1]'
+        )
+    parser.add_argument('--session-num', '-sn'
+        , required = True
+        , type = int
+        , help = 'Session number (positive integer)'
+        )
+    parser.add_argument('--port', '-p'
+        , required = False
+        , default = None
+        , help = 'Serial port [full path]'
+        )
+<<<<<<< HEAD:python/arduino_live
+=======
+    parser.add_argument('--select_after', '-sa'
+        , required = False
+        , default = 60000000.0
+        , type = float
+        , help = 'Press SELECT after time. Default 600 sec.'
+        )
+    parser.add_argument('--flipped', '-f'
+        , required = False
+        , default = 0
+        , type = int
+        , help = 'Wheather CS+/CS- are to be flipped (0/1 (False,True)'
+        )
+    parser.add_argument('--cs_fraction', '-cf'
+        , required = False
+        , default = 10
+        , type = int
+        , help = 'CS fraction'
+        )
+>>>>>>> master:pyblink/arduino_live
+    parser.parse_args( namespace = config.args_ )
+    init_serial()
+    # Intialize logger after intializing serial port.
+    config.init_logger( filename = 
+            'blink_%s.log' % config.args_.port.split('/')[-1]
+            )
+    try:
+        main( )
+    except KeyboardInterrupt as e:
+        _logger.warn("Interrupt from keyboard.... Quitting after cleanup.")
+        cleanup()
+        quit()
+
