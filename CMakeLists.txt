@@ -73,7 +73,7 @@ message(STATUS "List of arduino boards ${ARDUINO_DIR}")
 if( (NOT ANIMAL_NAME) OR (NOT SESSION_TYPE) OR (NOT SESSION_NUM) )
     message( FATAL_ERROR 
         "Please pass ANIMAL_NAME, SESSION_NUM and SESSION_TYPE to cmake \n"
-        "\te.g cmake -DANIMAL_NAME=k3 -DSESSION_NUM=1 -DSESSION_TYPE=1 .. \n"
+        "\te.g cmake -DANIMAL_NAME=k3 -DSESSION_NUM=1 -DSESSION_TYPE=S .. \n"
         )
 endif ( )
 

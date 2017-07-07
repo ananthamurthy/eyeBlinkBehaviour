@@ -479,10 +479,10 @@ void loop()
         reset_watchdog( );
 
         // These are normal trial with either SOUND or LIGHT.
-        if( SESSION_TYPE == 0 || SESSION_TYPE == 1 )
+        if( SESSION_TYPE == 'S' || SESSION_TYPE == 'L' )
         {
             int cs_type = SOUND;
-            if( 1 == SESSION_TYPE )
+            if( 'L' == SESSION_TYPE )
                 cs_type = LIGHT;
 
             bool isprobe = false;
@@ -516,7 +516,7 @@ void loop()
 	* MIXED TRIALS
 	*************************************************************************/
 
-        else if( 2 == SESSION_TYPE )  // These are mixed trials.
+        else if( 'M' == SESSION_TYPE )  // These are mixed trials.
         {
             // Every 5, 10, 15 etc trial is proble trials.
             bool isprobe = false;

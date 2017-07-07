@@ -488,8 +488,8 @@ if __name__ == '__main__':
         '--session-type',
         '-st',
         required=True,
-        type=int,
-        help='Seession Type [0 to 11]')
+        type=str,
+        help='Seession Type [S, L, M]')
     parser.add_argument(
         '--session-num',
         '-sn',
