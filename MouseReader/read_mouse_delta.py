@@ -13,6 +13,7 @@ __status__           = "Development"
 import struct
 import os
 import time
+import math
 import threading
 import Queue
 
@@ -40,16 +41,18 @@ def printMouse( q ):
         if not q.empty( ):
             val = q.get( )
             prev_, cur_ = cur_, val 
-            dx = ((cur_[1] - prev_[1]) ** 2 + (cur_[2]-prev_[2]) ** 2) ** 0.5
-            v = dx / (cur_[0] - prev_[0])
-            print( 'velocity = %f' % v )
+            dx, dy = (cur_[1] - prev_[1]),  (cur_[2]-prev_[2]) 
+	    dist = ( dx ** 2.0 + dy ** 2.0 ) ** 0.5
+            v = dist / (cur_[0] - prev_[0])
+	    theta = math.atan( dx / max(1e-6,dy) )
+            print( 'velocity = % 8.3f, % 8.3f' % (v, theta) )
 
 
 
 def main( ):
     global user_interrupt_
     q = Queue.Queue( )
-    f = open( "/dev/input/mouse0", "rb" ) 
+    f = open( "/dev/input/mouse1", "rb" ) 
     readT = threading.Thread( name = 'get_mouse', target=getMouseEvent, args=(f,q))
     writeT = threading.Thread( name = 'print_mouse', target=printMouse, args=(q,) )
     readT.daemon = True
