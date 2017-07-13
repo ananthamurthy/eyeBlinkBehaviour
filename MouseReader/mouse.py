@@ -1,14 +1,17 @@
-import pyautogui, sys
-
-print('Press Ctrl-C to quit.')
+import pyautogui
+import sys
 
 x0, y0 = (960, 540)
 
-try:
-    while True:
-        pyautogui.moveTo( x0, y0 )
-        x, y = pyautogui.position()
-        positionStr = 'X:' + str(x0-x).rjust(4) + ' Y:' + str(y0-y).rjust(4)
-        print( positionStr )
-except KeyboardInterrupt:
-    print '\n'
+def main( ):
+    try:
+        while True:
+            pyautogui.moveTo( x0, y0 )
+            x, y = pyautogui.position()
+            print( x, y )
+    except KeyboardInterrupt:
+        print( 'Received interrupt' )
+        quit(1)
+
+if __name__ == '__main__':
+    main()
