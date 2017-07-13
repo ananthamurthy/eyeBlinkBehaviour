@@ -344,22 +344,6 @@ def camera_client(readP, trialIndex, cameraPinValue):
                 if readP.poll(1e-4):
                     txt += ',' + readP.recv()
 
-                # Fill txt to have its length equal to frame width
-                txt += ' ' * (img_shape_[1] - len(txt))
-                # Convert txt to binary and prefix to the img we got from camera
-                # server.
-                metadata = np.array(map(ord, txt), dtype=np.uint8)
-                img = np.vstack((metadata, img))
-                if write_data_:
-                    cv2.putText(img, txt.strip(), (0, h_ - 10),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.4, 128, 1
-                                )
-
-                # Only save the frame if camera pin says so.
-                if recording_:
-                    image_stack_[framesInStack] = img
-                    framesInStack += 1
-
                 if len(bbox_) == 2:
                     # print( 'Bounding box has been drawn : %s' % str(bbox_) )
                     cv2.rectangle( img, bbox_[0], bbox_[1], 128 )
@@ -394,6 +378,27 @@ def camera_client(readP, trialIndex, cameraPinValue):
                     blinks_.append( res )
                 else:
                     blinks_.append( random.random( ) )
+
+                # Append blink value to data.
+                txt += ',%4.3f' % blinks_[-1]
+
+                # Fill txt to have its length equal to frame width
+                txt += ' ' * (img_shape_[1] - len(txt))
+
+                # Convert txt to binary and prefix to the img we got from camera
+                # server.
+                metadata = np.array(map(ord, txt), dtype=np.uint8)
+                img = np.vstack((metadata, img))
+                if write_data_:
+                    cv2.putText(img, txt.strip(), (0, h_ - 10),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.4, 128, 1
+                                )
+
+                # Only save the frame if camera pin says so.
+                if recording_:
+                    image_stack_[framesInStack] = img
+                    framesInStack += 1
+
 
                 # Show every 10th frame.
                 if totalFrames % 10 == 0:

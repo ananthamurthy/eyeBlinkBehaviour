@@ -32,6 +32,7 @@ plt.rcParams.update({'font.size': 8})
 cols_ = { 'time' : 0 , 'sensor' : 1 , 'trial_count' : 2
         , 'tone' : 3 , 'puff' : 4 , 'led' : 5 , 'status' : 6 }
 
+            
 columns_ = [ 'time', 'sensor', 'trial_count', 'tone', 'puff', 'led', 'status']
 
 aN, bN = 0, 0
@@ -213,6 +214,7 @@ def main( args ):
     plot = args.get('plot', True)
     logging.debug('Processing file %s' % trialFile )
     metadata, data = parse_csv_file( trialFile )
+    print( data )
     if len( data ) <= 10:
         logging.debug( 'Few or no entry in this trial' )
         return 

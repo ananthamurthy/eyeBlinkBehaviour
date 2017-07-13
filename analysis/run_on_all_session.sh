@@ -8,9 +8,9 @@ if [ $# -lt 1 ]; then
     exit
 fi
 
-PAT=${2:-*SessionType*Session*}
-
+PAT=${2:-*_S_*}
 echo "Using pattern: $PAT"
+
 DIRS=`find $1 -type d -name "${PAT}"`
 for d in $DIRS; do
     echo "Processing $d"

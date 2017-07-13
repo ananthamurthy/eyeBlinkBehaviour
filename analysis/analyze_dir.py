@@ -88,9 +88,9 @@ def main(  ):
     for d, sd, fs in os.walk( args_.dir ):
         for f in fs:
             ext = f.split('.')[-1]
-            if ext == 'csv':
+            if ext == 'dat':
                 filepath = os.path.join(d, f)
-                trialIndex = re.search('Trial(?P<index>\d+)\.csv', filepath) 
+                trialIndex = re.search( r'trial=(?P<index>\d+)\.%s'%ext, filepath) 
                 if trialIndex:
                     index = int(trialIndex.groupdict()['index'])
                     files[index] = (filepath, f)
