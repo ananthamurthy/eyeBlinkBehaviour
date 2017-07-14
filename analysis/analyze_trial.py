@@ -54,21 +54,42 @@ def process( trialdir ):
                 res = pickle.load( pF )
                 trial_data_.append( (f, res) )
 
-    allBlinks = [ ]
+    times, allBlinks = [ ], [ ]
     for (f, d) in trial_data_:
         blinks = d[ 'blinks' ]
+        tvec = d['time']
+        cs = d['cs']
+        tvec = map(lambda x: (x - cs[0]).total_seconds( ), tvec)
+        times.append( tvec )
         allBlinks.append( d['blinks'] )
+
+    tmins, tmaxs = [ ], [ ]
+    for t in times:
+        tmins.append( min(t) )
+        tmaxs.append( max(t) )
+
+    minT, maxT = max(tmins), min(tmaxs)
+    newTVec = np.linspace( minT, maxT, len(allBlinks) )
 
     allLens = [ len(x) for x in allBlinks ]
     minL = min( allLens )
     img = [ ]
-    for row in allBlinks:
-        img.append( row[:minL] )
+    for tvec, yvec in zip(times, allBlinks):
+        row = np.interp( newTVec, tvec, yvec )
+        img.append( row )
+
+    numTicks = 10
+    stepSize = len(newTVec) / (1+numTicks)
+    xlabels = [ '%d' % int(1000 * x) for x in newTVec[::stepSize] ]
 
     plt.imshow( img, interpolation = 'none', aspect = 'auto' )
+    plt.xticks( range(0, len(newTVec), stepSize), xlabels, fontsize=10)
+    plt.xlabel( 'Time (ms)' )
+
     plt.colorbar( )
 
-    plt.title( 'Trial: %s' % trialdir, fontsize = 10 )
+    trialName = filter(None, trialdir.split( '/' ))[-1]
+    plt.title( 'Trial: %s' % trialName )
 
     outfile = os.path.join( datadir, 'summary.png' )
     plt.savefig( outfile )
@@ -79,6 +100,7 @@ def main( ):
     datadir = sys.argv[1]
     print( '[INFO] Processing %s' % datadir )
     process( datadir )
+
 
 if __name__ == '__main__':
     main()

@@ -103,13 +103,15 @@ def process( tifffile, plot = True ):
             , us = [ usST, usET ]
             )
 
-    pickleFile = os.path.join( datadir, '%s.pickle' %
-            os.path.basename(tifffile))
+    pickleFile = os.path.join( 
+            datadir, '%s.pickle' % os.path.basename(tifffile)
+            )
+
     with open( pickleFile, 'wb' ) as pF:
         pickle.dump( res, pF )
+
     print( '[INFO] Wrote pickle %s' % pickleFile )
     return res
-
 
 def main( ):
     tiff = sys.argv[1]
