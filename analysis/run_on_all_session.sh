@@ -8,7 +8,7 @@ if [ $# -lt 1 ]; then
     exit
 fi
 
-PAT=${2:-*_S_*}
+PAT=${2:-*_?_*}
 echo "Using pattern: $PAT"
 
 DIRS=`find $1 -type d -name "${PAT}"`

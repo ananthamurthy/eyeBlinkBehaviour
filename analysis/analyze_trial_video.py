@@ -16,10 +16,12 @@ __status__           = "Development"
 import sys
 import os
 import datetime
+import numpy as np
 import cPickle as pickle 
 from libtiff import TIFF
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import config
 
 try:
     mpl.style.use( 'seaborn-poster' )
@@ -42,6 +44,21 @@ def get_status_timeslice( data, status ):
     else:
         startTime, endTime = 0.0, 0.0
     return startTime, endTime
+
+def compute_learning_yesno( time, blink, cs_start_time, thres = 20 ):
+    baseline, signal = [ ], [ ]
+    for t, v in zip( time, blink):
+        t1 = (t - cs_start_time).total_seconds( )
+        if t1 > -0.200 and t1 <= 0:
+            baseline.append( v )
+        elif t1 > 0 and t1 <= 0.300:
+            signal.append( v )
+
+    baseMean, baseSTD = np.mean( baseline ), np.std( baseline )
+    signal = map( lambda x : abs( x - baseMean ), signal )
+    if max( signal ) > config.thres_:
+        return True
+    return False
 
 def process( tifffile, plot = True ):
     print( '[INFO] Processing %s' % tifffile )
@@ -72,7 +89,10 @@ def process( tifffile, plot = True ):
     cspST, cspET = get_status_timeslice( arduinoData, 'CS+' )
     usST, usET = get_status_timeslice( arduinoData, 'PUFF' )
 
-
+    # Computer perfornace of this trial.
+    learnt = compute_learning_yesno( tvec, blinkVec, cspST )
+    if learnt:
+        print( '++ Learning in %s' % tifffile )
     datadir = os.path.join( os.path.dirname( tifffile ), '_analysis' )
     if not os.path.isdir( datadir ):
         os.makedirs( datadir )
@@ -86,21 +106,24 @@ def process( tifffile, plot = True ):
         if usET > usST:
             ax.plot( [usST, usET] , [mean_, mean_] )
 
-        ax.plot( tvec, blinkVec )
+        ax.plot( tvec, blinkVec, label = 'Learning?=%s' % learnt  )
+        plt.legend( framealpha = 0.4 )
         plt.xticks( rotation = 'vertical' )
-        ax.set_title( os.path.basename( sys.argv[1] ), fontsize = 8)
+        plt.title( os.path.basename( sys.argv[1] ), fontsize = 8)
 
         outfile = os.path.join( datadir, '%s.png' % os.path.basename(tifffile))
-        plt.tight_layout( pad = 0.2 )
+        plt.tight_layout( pad = 3 )
         plt.savefig( outfile )
         plt.close( )
         print( 'Saved to %s' % outfile )
+
 
     # Write processed data to pickle.
     res = dict( time = tvec
             , blinks = blinkVec
             , cs = [ cspST, cspET ]
             , us = [ usST, usET ]
+            , did_learn = learnt
             )
 
     pickleFile = os.path.join( 
