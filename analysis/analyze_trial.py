@@ -1,3 +1,5 @@
+#!/usr/bin/evn python2
+
 """analyze_trial.py: 
 
 Analyze each trial.
