@@ -16,15 +16,16 @@ __status__           = "Development"
 import sys
 import os
 import datetime
-import numpy as np
+import cPickle as pickle 
 from libtiff import TIFF
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+
 try:
-    mpl.style.use( 'ggplot' )
+    mpl.style.use( 'seaborn-poster' )
 except Exception as e:
     pass
-mpl.rcParams['axes.linewidth'] = 0.1
+#mpl.rcParams['axes.linewidth'] = 0.1
 plt.rc('font', family='serif')
 
 fmt_ =  "%Y-%m-%dT%H:%M:%S.%f"
@@ -42,8 +43,7 @@ def get_status_timeslice( data, status ):
         startTime, endTime = 0.0, 0.0
     return startTime, endTime
 
-def process( tifffile ):
-    ax = plt.subplot( 111 )
+def process( tifffile, plot = True ):
     print( '[INFO] Processing %s' % tifffile )
     tf = TIFF.open( tifffile )
     frames = tf.iter_images( )
@@ -67,34 +67,48 @@ def process( tifffile ):
     for l in datalines:
         tvec.append( parse_timestamp( l[0] ) )
         blinkVec.append( float( l[-1] ) )
-
     mean_,min_,max_ = sum(blinkVec)/len(blinkVec), min( blinkVec ), max(blinkVec)
 
     cspST, cspET = get_status_timeslice( arduinoData, 'CS+' )
-    print( cspET, cspST )
-    if cspET > cspST:
-        ax.plot( [cspST, cspET] , [mean_, mean_] )
-
     usST, usET = get_status_timeslice( arduinoData, 'PUFF' )
-    if usET > usST:
-        ax.plot( [usST, usET] , [mean_, mean_] )
 
 
+    datadir = os.path.join( os.path.dirname( tifffile ), '_analysis' )
+    if not os.path.isdir( datadir ):
+        os.makedirs( datadir )
 
-    ax.plot( tvec, blinkVec )
-    plt.xticks( rotation = 'vertical' )
-    ax.set_title( os.path.basename( sys.argv[1] ), fontsize = 8)
+    if plot:
+        ax = plt.subplot( 111 )
 
-    outdir = os.path.dirname( tifffile )
-    outfile = os.path.join( outfile, '_plots', '%s.png' % os.path.basename(
-        tifffile ) )
-    plt.tight_layout( pad = 0.2 )
-    plt.savefig( outfile )
-    plt.close( )
-    print( 'Saved to %s' % outfile )
-    #with open( datafile, "w" ) as f:
-    #    f.write( "\n".join( datalines ) )
-    #    print( "[INFO] Wrote all data to %s" % datafile )
+        if cspET > cspST:
+            ax.plot( [cspST, cspET] , [mean_, mean_] )
+
+        if usET > usST:
+            ax.plot( [usST, usET] , [mean_, mean_] )
+
+        ax.plot( tvec, blinkVec )
+        plt.xticks( rotation = 'vertical' )
+        ax.set_title( os.path.basename( sys.argv[1] ), fontsize = 8)
+
+        outfile = os.path.join( datadir, '%s.png' % os.path.basename(tifffile))
+        plt.tight_layout( pad = 0.2 )
+        plt.savefig( outfile )
+        plt.close( )
+        print( 'Saved to %s' % outfile )
+
+    # Write processed data to pickle.
+    res = dict( time = tvec
+            , blinks = blinkVec
+            , cs = [ cspST, cspET ]
+            , us = [ usST, usET ]
+            )
+
+    pickleFile = os.path.join( datadir, '%s.pickle' %
+            os.path.basename(tifffile))
+    with open( pickleFile, 'wb' ) as pF:
+        pickle.dump( res, pF )
+    print( '[INFO] Wrote pickle %s' % pickleFile )
+    return res
 
 
 def main( ):
