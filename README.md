@@ -35,7 +35,7 @@ If you need to change the arduino port, pass `-DPORT=/path/to/port` option to cm
 
 # Dependencies
 
-Most of them are in source.
+Most of them are in source. You need to install the following:
 
 - cmake 
 - gnuplot-x11
@@ -43,6 +43,9 @@ Most of them are in source.
 - pip install readchar
 - pip install gnuplotlib
 
+## Analysis
+ 
+- sudo apt install python-tifflib 
 
 # Commands
 
