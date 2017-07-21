@@ -18,7 +18,6 @@ __status__           = "Development"
 import os
 import sys
 import analyze_trial_video 
-import glob
 import cPickle as pickle
 import numpy as np
 import config
@@ -44,10 +43,12 @@ def process( trialdir ):
             if ext in [ 'tiff', 'tif' ]:
                 tiffs.append( os.path.join( d, f ) )
 
-    
-    datadir = os.path.join( trialdir, '_analysis' )
+    resdir = os.path.join( trialdir, '_analysis' )
+    if not os.path.exists( resdir ):
+        os.makedirs( resdir )
+
     for f in sorted( tiffs ):
-        pickleFile = os.path.join(datadir, os.path.basename( '%s.pickle' % f))
+        pickleFile = os.path.join(resdir, os.path.basename( '%s.pickle' % f))
         if not os.path.exists( pickleFile ):
             res = analyze_trial_video.process( f, plot = True )
             trial_data_.append( (f, res) )
@@ -112,7 +113,7 @@ def process( trialdir ):
     plt.legend( framealpha=0.4)
 
     plt.title( "Performance Index %.3f" % pI )
-    outfile = os.path.join( datadir, 'summary.png' )
+    outfile = os.path.join( resdir, 'summary.png' )
 
     plt.tight_layout( pad = 3 )
 
