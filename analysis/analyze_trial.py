@@ -1,4 +1,4 @@
-#!/usr/bin/evn python2
+#!/usr/bin/env python2
 
 """analyze_trial.py: 
 
