@@ -34,13 +34,16 @@ fmt_ =  "%Y-%m-%dT%H:%M:%S.%f"
 
 def parse_timestamp( tstamp ):
     global fmt_
-    return datetime.datetime.strptime( tstamp, fmt_ )
+    date = datetime.datetime.strptime( tstamp, fmt_ )
+    return date
 
 def get_status_timeslice( data, status ):
     status = filter( lambda x: x[-2] == status, data )
     if len( status ) > 2:
         startTime = parse_timestamp( status[0][1] )
         endTime = parse_timestamp( status[-1][1] ) 
+        if startTime is None or endTime is None:
+            return None, None
     else:
         startTime, endTime = 0.0, 0.0
     return startTime, endTime
@@ -82,8 +85,12 @@ def process( tifffile, plot = True ):
 
     tvec, blinkVec = [ ], [ ] 
     for l in datalines:
-        tvec.append( parse_timestamp( l[0] ) )
-        blinkVec.append( float( l[-1] ) )
+        try:
+            tvec.append( parse_timestamp( l[0] ) )
+            blinkVec.append( float( l[-1] ) )
+        except Exception as e:
+            print( '[WARN] Failed to parse data line %s. Ignoring' % l )
+            print( '\t Error was %s' % e )
     mean_,min_,max_ = sum(blinkVec)/len(blinkVec), min( blinkVec ), max(blinkVec)
 
     cspST, cspET = get_status_timeslice( arduinoData, 'CS+' )
