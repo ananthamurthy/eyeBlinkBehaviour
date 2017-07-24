@@ -15,6 +15,7 @@ import os
 import time
 import math
 import threading
+import io
 import Queue
 
 user_ = os.environ.get( 'USER', ' ' )
@@ -52,7 +53,7 @@ def printMouse( q ):
 def main( ):
     global user_interrupt_
     q = Queue.Queue( )
-    f = open( "/dev/input/mouse1", "rb" ) 
+    f = io.open( sys.argv[1], "rb" ) 
     readT = threading.Thread( name = 'get_mouse', target=getMouseEvent, args=(f,q))
     writeT = threading.Thread( name = 'print_mouse', target=printMouse, args=(q,) )
     readT.daemon = True
@@ -69,6 +70,7 @@ def main( ):
     except Exception as e:
         user_interrupt_ = True
     print( '> All done' )
+    f.close( )
 
 if __name__ == '__main__':
     main()
