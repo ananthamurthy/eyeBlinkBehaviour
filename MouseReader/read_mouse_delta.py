@@ -10,6 +10,7 @@ __maintainer__       = "Dilawar Singh"
 __email__            = "dilawars@ncbs.res.in"
 __status__           = "Development"
 
+import sys
 import struct
 import os
 import time
@@ -21,56 +22,62 @@ import Queue
 user_ = os.environ.get( 'USER', ' ' )
 
 user_interrupt_ = False
-cur_, prev_ = (0,0,0), (0,0,0)
+trajs = [ (0,0,0) ] * 10
 
 def getMouseEvent( mouseF, q ):
     global user_interrupt_
-    while True:
-        if user_interrupt_:
-            break 
-        buf = mouseF.read(3);
-        x,y = struct.unpack( "bb", buf[1:] );
-        t = time.time( )
-        q.put( (t, x, y) )
+    if user_interrupt_:
+        return 
+    buf = mouseF.read(3);
+    x,y = struct.unpack( "bb", buf[1:] );
+    t = time.time( )
+    q.put( (t, x, y) )
 
 def printMouse( q ):
     global user_interrupt_
-    global prev_, cur_
-    while True:
-        if user_interrupt_:
-            break 
-        if not q.empty( ):
-            val = q.get( )
-            prev_, cur_ = cur_, val 
-            dx, dy = (cur_[1] - prev_[1]),  (cur_[2]-prev_[2]) 
-	    dist = ( dx ** 2.0 + dy ** 2.0 ) ** 0.5
-            v = dist / (cur_[0] - prev_[0])
-	    theta = math.atan( dx / max(1e-6,dy) )
-            print( 'velocity = % 8.3f, % 8.3f' % (v, theta) )
+    if user_interrupt_:
+        return
+    if not q.empty( ):
+        val = q.get( )
+        t1, dx, dy = val
+        t0, x0, y0 = trajs[-1]
+        trajs.append( (t1, x0 + dx, y0 + dy) )
+        trajs.pop( 0 )
+        res = compute_velocity_and_dir( trajs )
+        print( res )
+
+def compute_velocity_and_dir( trajs ):
+    vels, dirs = [ ], [ ]
+    for i, (t, x, y) in enumerate(trajs[1:]):
+        t0, x0, y0 = trajs[i]
+        if t > t0:
+            v = ((x - x0 ) ** 2.0 + (y-y0)**2.0) ** 0.5 / (t-t0)
+            theta = (y - y0) / max(1e-12, (x - x0))
+            d = math.atan( theta )
+            vels.append( v )
+            dirs.append( d )
+        else:
+            vels.append( 0 )
+            dirs.append( 0 )
+    # average direction
+    return sum( vels ) / len(vels), sum( dirs ) / len(dirs)
+
+
+
 
 
 
 def main( ):
     global user_interrupt_
     q = Queue.Queue( )
-    f = io.open( sys.argv[1], "rb" ) 
-    readT = threading.Thread( name = 'get_mouse', target=getMouseEvent, args=(f,q))
-    writeT = threading.Thread( name = 'print_mouse', target=printMouse, args=(q,) )
-    readT.daemon = True
-    writeT.daemon = True
-    readT.start( )
-    writeT.start( )
-
-    # Main thread, just to catch interrupts.
-    try:
-        while 1:
-            time.sleep( 0.1 )
-    except KeyboardInterrupt as e:
-        user_interrupt_ = True 
-    except Exception as e:
-        user_interrupt_ = True
-    print( '> All done' )
-    f.close( )
+    if len( sys.argv ) < 2:
+        path = '/dev/input/mice'
+    else:
+        path = sys.argv[1]
+    f = io.open( path, "rb" ) 
+    while 1:
+        getMouseEvent(f, q)
+        printMouse( q )
 
 if __name__ == '__main__':
     main()
