@@ -15,8 +15,9 @@ execute_process(
 endif(NOT PORT)
 
 if (NOT PORT )
-    message(FATAL_ERROR 
-        "Could not find a serial port automatically. You won't be able to upload"
+    message(STATUS
+        "WARNING:"
+        "\nCould not find a serial port automatically. You won't be able to upload"
         "\n and run the arduino target. If you are sure that arduino board is "
         "\n connected and functional, you should provide port path from "
         "\n command line: e.g. \n"
@@ -88,8 +89,12 @@ configure_file( ${CMAKE_SOURCE_DIR}/Makefile.arduino.in
     ${CMAKE_SOURCE_DIR}/Makefile.arduino
     )
 
+
 set(ARDUINO_TARGET_NAME eyeBlinkBehaviour)
 set(ARDUINO_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
+
+# Write variables to config.h file.
+configure_file( ${ARDUINO_SRC_DIR}/config.h.in ${ARDUINO_SRC_DIR}/config.h )
 
 set(ARDDUINO_OUT_HEX_FILE 
     ${CMAKE_SOURCE_DIR}/${BOARD_NAME}/${ARDUINO_TARGET_NAME}/${ARDUINO_TARGET_NAME}.hex 

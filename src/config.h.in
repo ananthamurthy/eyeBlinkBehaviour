@@ -1,0 +1,23 @@
+/***
+ *       Filename:  config.h.in
+ *
+ *    Description:  This configuration file is modified by CMake/Build system.
+ *
+ *        Version:  0.0.1
+ *        Created:  2017-05-28
+ *       Revision:  none
+ *
+ *         Author:  Dilawar Singh <dilawars@ncbs.res.in>
+ *   Organization:  NCBS Bangalore
+ *
+ *        License:  GNU GPL2
+ */
+
+
+#ifndef  config_h_INC
+#define  config_h_INC
+
+#define SESSION_TYPE           @SESSION_TYPE@
+#define ANIMAL_NAME            @ANINAL_NAME@             
+
+#endif   /* ----- #ifndef config_h_INC  ----- */
