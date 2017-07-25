@@ -39,6 +39,8 @@ def parse_timestamp( tstamp ):
 
 def get_status_timeslice( data, status ):
     status = filter( lambda x: x[-2] == status, data )
+    if not status:
+        return 0.0, 0.0
     if len( status ) > 2:
         startTime = parse_timestamp( status[0][1] )
         endTime = parse_timestamp( status[-1][1] ) 
@@ -95,12 +97,20 @@ def process( tifffile, plot = True ):
 
     cspST, cspET = get_status_timeslice( arduinoData, 'CS+' )
     usST, usET = get_status_timeslice( arduinoData, 'PUFF' )
+    probeTs = get_status_timeslice( arduinoData, 'PROB' )
+
+    if probeTs[0] == 0.0 and probeTs[1] == 0.0:
+        # Nowhere we found PROB in trial.
+        isProbe = False
+    else:
+        print( '[INFO] Trial %s is a PROBE trial' % tifffile )
+        isProbe = True
 
     # Computer perfornace of this trial.
     learnt = compute_learning_yesno( tvec, blinkVec, cspST )
     if learnt:
         print( '++ Learning in %s' % tifffile )
-    datadir = os.path.join( os.path.dirname( tifffile ), '_analysis' )
+    datadir = os.path.join( os.path.dirname( tifffile ), config.tempdir )
     if not os.path.isdir( datadir ):
         os.makedirs( datadir )
 
@@ -131,6 +141,7 @@ def process( tifffile, plot = True ):
             , cs = [ cspST, cspET ]
             , us = [ usST, usET ]
             , did_learn = learnt
+            , is_probe = isProbe
             )
 
     pickleFile = os.path.join( 

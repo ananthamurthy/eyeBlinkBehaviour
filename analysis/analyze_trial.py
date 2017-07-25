@@ -43,7 +43,7 @@ def process( trialdir ):
             if ext in [ 'tiff', 'tif' ]:
                 tiffs.append( os.path.join( d, f ) )
 
-    resdir = os.path.join( trialdir, '_analysis' )
+    resdir = os.path.join( trialdir, config.tempdir )
     if not os.path.exists( resdir ):
         os.makedirs( resdir )
 
@@ -58,8 +58,8 @@ def process( trialdir ):
                 res = pickle.load( pF )
                 trial_data_.append( (f, res) )
 
-    times, allBlinks = [ ], [ ]
-    for (f, d) in trial_data_:
+    times, allBlinks, probeTrial = [ ], [ ], [ ]
+    for i, (f, d) in enumerate(trial_data_):
         blinks = d[ 'blinks' ]
         tvec = d['time']
         cs = d['cs']
@@ -71,6 +71,9 @@ def process( trialdir ):
                 )
         times.append( tvec )
         allBlinks.append( d['blinks'] )
+        if d['is_probe'] == True:
+            probeTrial.append( i )
+        
 
     tmins, tmaxs = [ ], [ ]
     for t in times:
@@ -83,40 +86,71 @@ def process( trialdir ):
 
     allLens = [ len(x) for x in allBlinks ]
     minL = min( allLens )
-    img = [ ]
 
-    alignedData = [ ]
-    for tvec, yvec in zip(times, allBlinks):
+    img, probeImg = [ ], [ ]
+    alignedData, alignedProbeData = [ ], [ ]
+    for i, (tvec, yvec) in enumerate(zip(times, allBlinks)):
         row = np.interp( newTVec, tvec, yvec )
-        img.append( row )
+        if i in probeTrial:
+            probeImg.append( row )
+        else:
+            img.append( row )
         alignedData.append( zip(newTVec,row) )
+
+    # Separate probe trials.
+    probeData, otherData = [ ], [ ]
+    for i, row in enumerate( alignedData ):
+        if i in probeTrial:
+            probeData.append( row )
+        else:
+            otherData.append( row )
 
     numTicks = 10
     stepSize = (len(newTVec) / numTicks)
     xlabels = [ '%d' % int(1000 * x) for x in newTVec[::stepSize] ]
 
-    plt.subplot( 211 )
+    ax1 = plt.subplot( 411 )
     plt.imshow( img, interpolation = 'none', aspect = 'auto' )
     plt.xticks( range(0, len(newTVec), stepSize), xlabels, fontsize=10)
-
     plt.xlabel( 'Time (ms)' )
-    plt.colorbar( )
 
-    trialName = filter(None, trialdir.split( '/' ))[-1]
+    meanOfTrials = np.mean( img, axis = 0 )
+    stdOfTrials = np.std( img, axis = 0 )
+
+    ax2 = plt.subplot( 412, sharex = ax1 )
+    idx = range( len( meanOfTrials ) )
+    plt.plot( idx, meanOfTrials, color = 'blue' ) 
+    plt.fill_between( idx, meanOfTrials - stdOfTrials, meanOfTrials + stdOfTrials
+            , color = 'lightblue'
+            ) 
+
+    plt.subplot( 413, sharex = ax1 )
+    plt.imshow( probeImg, interpolation = 'none', aspect = 'auto' )
+    plt.xticks( range(0, len(newTVec), stepSize), xlabels, fontsize=10)
+    #plt.colorbar( )
+    plt.xlabel( 'Time (ms)' )
+
 
     # Compute performance index.
     perfs = compute_performance( alignedData )
     pI, piList = compute_performance_index( perfs )
-    plt.subplot( 212 )
-    plt.plot( map( lambda x: x[0], perfs ), label = 'learning' )
-    plt.xlabel( '# Trial' )
-    plt.legend( framealpha=0.4)
+    plt.subplot( 414, sharex = ax1 )
 
-    plt.title( "Performance Index %.3f" % pI )
+    meanOfProbeTrials = np.mean( probeImg, axis = 0 )
+    stdOfProbeTrials = np.std( probeImg, axis = 0 )
+
+    idx = range( len( meanOfProbeTrials ) )
+    plt.plot( idx, meanOfProbeTrials, color = 'red' ) 
+    plt.fill_between( idx, meanOfProbeTrials - stdOfProbeTrials
+            , meanOfProbeTrials + stdOfProbeTrials
+            , color = 'beige'
+            ) 
+
     outfile = os.path.join( resdir, 'summary.png' )
 
-    plt.tight_layout( pad = 3 )
+    plt.tight_layout( pad = 1 )
 
+    trialName = filter(None, trialdir.split( '/' ))[-1]
     plt.suptitle( 'Trial: %s' % trialName )
     plt.savefig( outfile )
     print( 'Wrote summary to %s' % outfile )
