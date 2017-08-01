@@ -295,6 +295,19 @@ def show_frame(frame, outfile=None):
         cv2.imsave(outfile, frame)
 
 
+def writeTextToFrame( txt, img ):
+    global image_stack_, h_
+    # Fill txt to have its length equal to frame width
+    txt += ' ' * (img_shape_[1] - len(txt))
+    # Convert txt to binary and prefix to the img we got from camera
+    # server.
+    metadata = np.array(map(ord, txt), dtype=np.uint8)
+    img = np.vstack((metadata, img))
+    cv2.putText(img, txt.strip()
+            , (0, h_ - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.4, 128, 1
+            )
+    return img
+
 def camera_client(readP, trialIndex, cameraPinValue):
     global finished_all_
     global img_, buf_

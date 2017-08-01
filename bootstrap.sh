@@ -2,11 +2,16 @@
 set +x 
 set -e
 
-sudo apt install -y libopencv-dev libopencv-*-dev libboost-dev  \
-    cmake python-numpy python-serial python-opencv vim openssh-server \
-    arduino python-pip gnuplot python-tifffile python-pillow  python-matplotlib  \
-    pkg-config libopencv-features2d-dev libopencv-imgproc-dev
-sudo -E pip install gnuplotlib readchar --upgrade
+sudo apt install -y  libopencv-*
+sudo apt install -y  libboost-dev 
+sudo apt install -y  cmake
+sudo apt install -y  python-numpy 
+sudo apt install -y  python-opencv 
+sudo apt install -y  arduino
+sudo apt install -y  python-pip
+sudo apt install -y  gnuplot 
+sudo apt install -y  python-tifffile python-pillow  python-matplotlib
+sudo -E pip install gnuplotlib readchar  
 
 echo "Now adding user to all the cool groups"
 sudo gpasswd -a $USER dialout

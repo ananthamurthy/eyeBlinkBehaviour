@@ -58,3 +58,10 @@ Most of them are in source. You need to install the following:
 # What is being prinited.
 
 See function `write_data_line` in file `src/main.ino`.
+# Print data line 
+
+    sprintf(msg_  
+            , "%lu,%d,%d,%d,%d,%d,%d,%d,%d,%s"
+            , timestamp, trial_count_, puff, tone, led
+            , motion1, motion2, camera, microscope, trial_state_
+            );

@@ -2,6 +2,12 @@
 __pycache__/
 *.py[cod]
 *$py.class
+*.o
+*.pyc
+*~
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
 
 # C extensions
 *.so
@@ -10,6 +16,8 @@ __pycache__/
 .Python
 env/
 build/
+*/Builds/*
+Builds/*
 develop-eggs/
 dist/
 downloads/
@@ -45,6 +53,7 @@ nosetests.xml
 coverage.xml
 *.cover
 .hypothesis/
+*,cover
 
 # Translations
 *.mo
@@ -99,3 +108,16 @@ ENV/
 
 # mypy
 .mypy_cache/
+eye-Blink_Conditioning.xcodeproj/project.xcworkspace/contents.xcworkspacedata
+
+*.pbxproj
+
+*.plist
+
+*.pbxproj
+
+*.pbxproj
+
+eye-Blink_Conditioning.xcodeproj/project.pbxproj
+*.o
+

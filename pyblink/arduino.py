@@ -44,7 +44,7 @@ class ArduinoPort( ):
             print("[FATAL] Could not connect")
             print(e)
             if wait:
-                logging.warn("[INFO] Device seems to be busy. I'll try to reconnect"
+                _logger.warn("[INFO] Device seems to be busy. I'll try to reconnect"
                         " after  some time..."
                         )
                 time.sleep(1)
@@ -52,7 +52,7 @@ class ArduinoPort( ):
             else:
                 quit()
         except Exception as e:
-            logging.error("[FATAL] Failed to connect to port. Error %s" % e)
+            _logger.error("[FATAL] Failed to connect to port. Error %s" % e)
             quit()
         if wait:
             print("[INFO] Waiting for port %s to open" % self.path, end='')

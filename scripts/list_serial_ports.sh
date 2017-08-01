@@ -19,3 +19,4 @@
 
 set -o nounset                              # Treat unset variables as an error
 python -m serial.tools.list_ports -q  | head -n 1
+
