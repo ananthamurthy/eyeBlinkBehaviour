@@ -263,12 +263,12 @@ void wait_for_start( )
         else if( is_command_read( 'p', true ) ) 
         {
             Serial.println( ">>>Received p. Playing puff" );
-            play_puff( 10000 );                 /* Play puff of 10 second for instrument to record. */
+            play_puff( 50 );                 /* Play puff of 10 second for instrument to record. */
         }
         else if( is_command_read( 't', true ) ) 
         {
             Serial.println( ">>>Received t. Playing tone" );
-            play_tone( 10000, 1.0);             /* Play tone for 10 seconds for instruments to record */
+            play_tone( 350, 1.0);             /* Play tone for 10 seconds for instruments to record */
         }
 #if 0
         else if( is_command_read( 'l', true ) ) 
