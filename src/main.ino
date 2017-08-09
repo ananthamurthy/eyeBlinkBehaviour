@@ -13,7 +13,6 @@
  */
 
 #include <avr/wdt.h>
-#include "config.h"
 
 // Pins etc.
 #define         TONE_PIN                    2
@@ -330,47 +329,6 @@ void do_first_trial( )
 }
 
 /**
- * @brief Different trace time for different SESSION_TYPE
- * See https://github.com/ananthamurthy/eyeBlinkBehaviour/issues/17
- *
- * @return  Trace time in milli-seconds.
- */
-int trace_time( )
-{
-    if( 0 == SESSION_TYPE )
-        return 0;
-    else if( 1 == SESSION_TYPE )
-        return 250;
-    else if( 2 == SESSION_TYPE )
-        return 350;
-    else if( 3 == SESSION_TYPE )
-        return 500;
-    else 
-        return 250;
-}
-
-/**
- * @brief Return post time.
- * See https://github.com/ananthamurthy/eyeBlinkBehaviour/issues/17
- *
- * @return Post time in milli-seconds.
- */
-int post_time( )
-{
-    if( 0 == SESSION_TYPE )
-        return 0;
-    else if( 1 == SESSION_TYPE )
-        return 1150;
-    else if( 2 == SESSION_TYPE )
-        return 1050;
-    else if( 3 == SESSION_TYPE )
-        return 900;
-    else 
-        return 1150;
-
-}
-
-/**
  * @brief Do a single trial.
  *
  * @param trial_num. Index of the trial.
@@ -422,7 +380,7 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
     /*-----------------------------------------------------------------------------
      *  TRACE. The duration of trace varies from trial to trial.
      *-----------------------------------------------------------------------------*/
-    duration = trace_time( );
+    duration = 250;
     sprintf( trial_state_, "TRAC" );
     while( (millis( ) - stamp_) <= duration )
         write_data_line( );
