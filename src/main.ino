@@ -412,11 +412,23 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
 
     /*-----------------------------------------------------------------------------
      *  CS: 50 ms duration. No tone is played here. Write LED pin to HIGH.
+     *  Play CS only when SESSION_TYPE is not 5.
      *-----------------------------------------------------------------------------*/
-    duration = LED_DURATION;
-    stamp_ = millis( );
-    sprintf( trial_state_, "CS+" );
-    led_on( duration );
+    if( 5 == SESSION_TYPE )
+    {
+        sprintf( trial_state_, "NOCS" );
+        duration =  LED_DURATION;
+        while( (millis( ) - stamp_) <= duration )
+            write_data_line( );
+    }
+    else
+    {
+        duration = LED_DURATION;
+        stamp_ = millis( );
+        sprintf( trial_state_, "CS+" );
+        led_on( duration );
+    }
+
     stamp_ = millis( );
 
     /*-----------------------------------------------------------------------------
@@ -431,17 +443,27 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
     /*-----------------------------------------------------------------------------
      *  PUFF for 50 ms.
      *-----------------------------------------------------------------------------*/
-    duration = PUFF_DURATION;
-    if( isporobe )
+    if( 4 == SESSION_TYPE || 5 == SESSION_TYPE )
     {
-        sprintf( trial_state_, "PROB" );
+        sprintf( trial_state_, "NOPF" );
+        duration =  PUFF_DURATION;
         while( (millis( ) - stamp_) <= duration )
             write_data_line( );
     }
     else
     {
-        sprintf( trial_state_, "PUFF" );
-        play_puff( duration );
+        duration = PUFF_DURATION;
+        if( isporobe )
+        {
+            sprintf( trial_state_, "PROB" );
+            while( (millis( ) - stamp_) <= duration )
+                write_data_line( );
+        }
+        else
+        {
+            sprintf( trial_state_, "PUFF" );
+            play_puff( duration );
+        }
     }
     stamp_ = millis( );
     
