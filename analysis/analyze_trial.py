@@ -109,49 +109,52 @@ def process( trialdir ):
     stepSize = (len(newTVec) / numTicks)
     xlabels = [ '%d' % int(1000 * x) for x in newTVec[::stepSize] ]
 
-    ax1 = plt.subplot( 411 )
+    plt.figure( figsize=(8,10) )
+    ax1 = plt.subplot( 311 )
     plt.imshow( img, interpolation = 'none', aspect = 'auto' )
+    plt.title( 'CS+' )
     plt.xticks( range(0, len(newTVec), stepSize), xlabels, fontsize=10)
-    plt.xlabel( 'Time (ms)' )
+    plt.colorbar( )
 
     meanOfTrials = np.mean( img, axis = 0 )
     stdOfTrials = np.std( img, axis = 0 )
 
-    ax2 = plt.subplot( 412, sharex = ax1 )
+    ax3 = plt.subplot( 313, sharex = ax1 )
     idx = range( len( meanOfTrials ) )
-    plt.plot( idx, meanOfTrials, color = 'blue' ) 
+    plt.plot( idx, meanOfTrials, color = 'blue', label = 'CS+' ) 
     plt.fill_between( idx, meanOfTrials - stdOfTrials, meanOfTrials + stdOfTrials
-            , color = 'lightblue'
+            , color = 'blue'
+            , alpha = 0.2
             ) 
 
-    plt.subplot( 413, sharex = ax1 )
+    ax2 = plt.subplot( 312, sharex = ax1 )
     plt.imshow( probeImg, interpolation = 'none', aspect = 'auto' )
+    plt.title( 'Probe' )
     plt.xticks( range(0, len(newTVec), stepSize), xlabels, fontsize=10)
-    #plt.colorbar( )
-    plt.xlabel( 'Time (ms)' )
+    plt.colorbar( )
 
 
     # Compute performance index.
     perfs = compute_performance( alignedData )
     pI, piList = compute_performance_index( perfs )
-    plt.subplot( 414, sharex = ax1 )
 
+    ax3 = plt.subplot( 313, sharex = ax1 )
     meanOfProbeTrials = np.mean( probeImg, axis = 0 )
     stdOfProbeTrials = np.std( probeImg, axis = 0 )
-
     idx = range( len( meanOfProbeTrials ) )
-    plt.plot( idx, meanOfProbeTrials, color = 'red' ) 
+    plt.plot( idx, meanOfProbeTrials, color = 'red', label = 'Probe' ) 
     plt.fill_between( idx, meanOfProbeTrials - stdOfProbeTrials
             , meanOfProbeTrials + stdOfProbeTrials
-            , color = 'beige'
+            , color = 'red'
+            , alpha = 0.2
             ) 
+    ax3.legend( framealpha = 0.1 )
+    plt.xlabel( 'Time (ms)' )
 
     outfile = os.path.join( resdir, 'summary.png' )
-
-    plt.tight_layout( pad = 1 )
-
+    plt.tight_layout( pad = 2 )
     trialName = filter(None, trialdir.split( '/' ))[-1]
-    plt.suptitle( 'Trial: %s' % trialName )
+    plt.suptitle( 'Trial: %s' % trialName, x = 0.1)
     plt.savefig( outfile )
     print( 'Wrote summary to %s' % outfile )
 
