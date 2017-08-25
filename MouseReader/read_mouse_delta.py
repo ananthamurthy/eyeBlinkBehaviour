@@ -19,6 +19,7 @@ import threading
 import io
 import Queue
 import fcntl 
+import datetime
 
 user_ = os.environ.get( 'USER', ' ' )
 
@@ -43,7 +44,7 @@ def getMouseEvent( mouseF, q ):
     else:
         q.put( (t,0,0) )
 
-def printMouse( q ):
+def getMousePos( q ):
     global user_interrupt_
     global lastT_
     if user_interrupt_:
@@ -56,7 +57,7 @@ def printMouse( q ):
         trajs.pop( 0 )
         res = compute_velocity_and_dir( trajs )
         if t1 > lastT_ + 5e-3 :
-            print( '%.6f %.3f %.3f' % (t1, res[0], res[1] ) )
+            return '%.6f,%.3f,%.3f' % (t1, res[0], res[1] )
             lastT_ = t1
 
 def compute_velocity_and_dir( trajs ):
@@ -75,7 +76,6 @@ def compute_velocity_and_dir( trajs ):
     # average direction
     return sum( vels ) / len(vels), sum( dirs ) / len(dirs)
 
-
 def main( ):
     global user_interrupt_
     q = Queue.Queue( )
@@ -86,7 +86,9 @@ def main( ):
     f = io.open( path, "rb" ) 
     while 1:
         getMouseEvent(f, q)
-        printMouse( q )
+        now = datetime.datetime.now().isoformat()
+        r = getMousePos( q )
+        print( now + ',' + r )
 
 if __name__ == '__main__':
     main()

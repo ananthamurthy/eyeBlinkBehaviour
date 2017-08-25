@@ -53,7 +53,6 @@ camera_store_end_ = 0
 
 title_ = 'Animal Window'
 
-
 def onmouse(event, x, y, flags, params):
     global bbox_
     global default_bbox_ 
