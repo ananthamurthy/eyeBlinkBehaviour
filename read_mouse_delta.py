@@ -94,9 +94,9 @@ def main( path ):
     now = datetime.datetime.now().isoformat()
     r = getMousePos( q_)
     txt = now + ',' + r
-    # debug only.
-    with open( '__mouse.txt' , 'a' ) as mouseFile_:
-        mouseFile_.write( txt )
+    ## debug only.
+    #with open( '__mouse.txt' , 'a' ) as mouseFile_:
+    #    mouseFile_.write( txt + '\n' )
     return txt
 
 if __name__ == '__main__':
