@@ -34,13 +34,12 @@ def getMouseEvent( mouseF, q ):
     global user_interrupt_
     global sock_
     if user_interrupt_:
-        sock_.close( )
         return 
 
-    fd = mouseF.fileno()
-    flag = fcntl.fcntl(fd, fcntl.F_GETFL)
-    fcntl.fcntl(fd, fcntl.F_SETFL, flag | os.O_NONBLOCK)
-    flag = fcntl.fcntl(fd, fcntl.F_GETFL)
+    #fd = mouseF.fileno()
+    #flag = fcntl.fcntl(fd, fcntl.F_GETFL)
+    #fcntl.fcntl(fd, fcntl.F_SETFL, flag | os.O_NONBLOCK)
+    #flag = fcntl.fcntl(fd, fcntl.F_GETFL)
     buf = mouseF.read(3);
     t = time.time( )
     if buf:
