@@ -29,6 +29,7 @@ lastT_ = 0.0
 f_ = None
 q_ = Queue.Queue( )
 
+
 def getMouseEvent( mouseF, q ):
     global user_interrupt_
     global sock_
@@ -85,13 +86,18 @@ def main( path ):
     global user_interrupt_
     global sock_
     global f_, q_
+    global mouseFile_
     if f_ is None:
         f_ = io.open( path, "rb" ) 
 
     getMouseEvent(f_, q_)
     now = datetime.datetime.now().isoformat()
     r = getMousePos( q_)
-    return now + ',' + r
+    txt = now + ',' + r
+    # debug only.
+    with open( '__mouse.txt' , 'a' ) as mouseFile_:
+        mouseFile_.write( txt )
+    return txt
 
 if __name__ == '__main__':
     path = sys.argv[1]
