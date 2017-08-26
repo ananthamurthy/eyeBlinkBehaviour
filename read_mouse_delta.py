@@ -27,7 +27,7 @@ trajs = [ (0,0,0) ] * 10
 lastT_ = 0.0
 
 f_ = None
-q_ = Queue.Queue( )
+q_ = [ (0,0,0) ]
 
 
 def getMouseEvent( mouseF, q ):
@@ -36,17 +36,20 @@ def getMouseEvent( mouseF, q ):
     if user_interrupt_:
         return 
 
-    #fd = mouseF.fileno()
-    #flag = fcntl.fcntl(fd, fcntl.F_GETFL)
-    #fcntl.fcntl(fd, fcntl.F_SETFL, flag | os.O_NONBLOCK)
-    #flag = fcntl.fcntl(fd, fcntl.F_GETFL)
+    # This is too fast. Probably not a good idea. Use os.read( ).
+    fd = mouseF.fileno()
+    flag = fcntl.fcntl(fd, fcntl.F_GETFL)
+    fcntl.fcntl(fd, fcntl.F_SETFL, flag | os.O_NONBLOCK)
+    flag = fcntl.fcntl(fd, fcntl.F_GETFL)
     buf = mouseF.read(3);
     t = time.time( )
     if buf:
         x,y = struct.unpack( "bb", buf[1:] );
-        q.put( (t, x, y) )
+        q.append( (t, x, y) )
     else:
-        q.put( (t,0,0) )
+        q.append( (t,0,0) )
+    # Essential to sleep for some time.
+    time.sleep( 1e-3 )
 
 def getMousePos( q ):
     global user_interrupt_
@@ -54,16 +57,15 @@ def getMousePos( q ):
     if user_interrupt_:
         sock_.close( )
         return
-    if not q.empty( ):
-        val = q.get( block = False )
-        t1, dx, dy = val
-        t0, x0, y0 = trajs[-1]
-        trajs.append( (t1, x0 + dx, y0 + dy) )
-        trajs.pop( 0 )
-        res = compute_velocity_and_dir( trajs )
-        if t1 > lastT_ + 5e-3 :
-            return '%.6f,%.3f,%.3f' % (t1, res[0], res[1] )
-            lastT_ = t1
+    val = q.pop( )
+    t1, dx, dy = val
+    t0, x0, y0 = trajs[-1]
+    trajs.append( (t1, x0 + dx, y0 + dy) )
+    trajs.pop( 0 )
+    res = compute_velocity_and_dir( trajs )
+    if t1 > lastT_ + 5e-3 :
+        return '%.6f,%.3f,%.3f' % (t1, res[0], res[1] )
+        lastT_ = t1
 
 def compute_velocity_and_dir( trajs ):
     vels, dirs = [ ], [ ]
