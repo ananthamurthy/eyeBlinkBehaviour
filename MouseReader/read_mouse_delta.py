@@ -20,6 +20,7 @@ import io
 import Queue
 import fcntl 
 import datetime
+import socket
 
 user_ = os.environ.get( 'USER', ' ' )
 
@@ -27,9 +28,15 @@ user_interrupt_ = False
 trajs = [ (0,0,0) ] * 10
 lastT_ = 0.0
 
+path = sys.argv[1]
+f_ = io.open( path, "rb" ) 
+q_ = Queue.Queue( )
+
 def getMouseEvent( mouseF, q ):
     global user_interrupt_
+    global sock_
     if user_interrupt_:
+        sock_.close( )
         return 
 
     fd = mouseF.fileno()
@@ -48,6 +55,7 @@ def getMousePos( q ):
     global user_interrupt_
     global lastT_
     if user_interrupt_:
+        sock_.close( )
         return
     if not q.empty( ):
         val = q.get( block = False )
@@ -78,18 +86,14 @@ def compute_velocity_and_dir( trajs ):
 
 def main( ):
     global user_interrupt_
-    q = Queue.Queue( )
-    if len( sys.argv ) < 2:
-        path = '/dev/input/mice'
-    else:
-        path = sys.argv[1]
-    f = io.open( path, "rb" ) 
-    while 1:
-        getMouseEvent(f, q)
-        now = datetime.datetime.now().isoformat()
-        r = getMousePos( q )
-        print( now + ',' + r )
+    global sock_
+    global f_, q_
+    getMouseEvent(f_, q_)
+    now = datetime.datetime.now().isoformat()
+    r = getMousePos( q_)
+    return now + ',' + r
 
 if __name__ == '__main__':
-    main()
+    while 1:
+        print( main() )
 
