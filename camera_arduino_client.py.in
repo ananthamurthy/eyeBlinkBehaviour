@@ -32,6 +32,7 @@ import tifffile
 import subprocess
 import blinky
 import gnuplotlib
+import read_mouse_delta
 
 gnuplot_ = gnuplotlib.gnuplotlib( title = 'Blink readout'
         , terminal = 'x11 noraise' 
@@ -293,7 +294,7 @@ def show_frame(frame, outfile=None):
         cv2.imsave(outfile, frame)
 
 
-def camera_client(readP, trialIndex, cameraPinValue):
+def camera_client(readP, readMouse, trialIndex, cameraPinValue):
     global finished_all_
     global img_, buf_
     global image_stack_
@@ -341,6 +342,8 @@ def camera_client(readP, trialIndex, cameraPinValue):
                 # Read from PIPE but it should not be blocking.
                 if readP.poll(1e-4):
                     txt += ',' + readP.recv()
+                if readMouse.poll( 1e-4 ):
+                    txt += ',' + readMouse.recv()
 
                 # Fill txt to have its length equal to frame width
                 txt += ' ' * (img_shape_[1] - len(txt))
@@ -427,7 +430,10 @@ def camera_client(readP, trialIndex, cameraPinValue):
             save_img_stack(image_stack_, -1 )
             init_stack( )
 
-
+def mouse_client( writeMouse, trialIndex ):
+    global args_
+    val = read_mouse_delta.main( args_.mouse )
+    writeMouse.send( val )
 
 def main():
     # Lock so that only one process prints to console at a time.
@@ -444,14 +450,19 @@ def main():
     cameraPinValue = Value( 'd', 0 )
 
     readP, writeP = Pipe(duplex=False)
+    readMouse, writeMouse = Pipe( duplex = False )
 
-    cam = Process(
-            target=camera_client
-            , args=(readP, trialIndex, cameraPinValue )
+    cam = Process( target=camera_client
+            , args=(readP, readMouse, trialIndex, cameraPinValue )
             )
     cam.daemon = True
     cam.start()
     print('Camera client launched')
+
+    mouse = Process( target=mouse_client, args=(writeMouse, trialIndex ) )
+    mouse.daemon = True
+    mouse.start( )
+    print( 'Mouse client launched' )
 
     arduinoP = Process(
             target=arduino_client,
@@ -500,11 +511,17 @@ if __name__ == '__main__':
         required=False,
         default=None,
         help='Serial port [full path]')
+
+    parser.add_argument('--mouse', '-m'
+        , required = False
+        , default = '/dev/input/mouse1'
+        , help = 'Path to mouse.'
+        )
     parser.parse_args(namespace=config.args_)
     init_serial()
     # Intialize logger after intializing serial port.
     try:
-        main()
+        main( )
     except KeyboardInterrupt as e:
         logging.warn("Interrupt from keyboard.... Quitting after cleanup.")
         cleanup()
