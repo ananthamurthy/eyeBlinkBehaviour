@@ -12,6 +12,7 @@ __email__      = ""
 __status__     = "Development"
 
 import sys
+import math
 import os
 import socket
 import io
@@ -325,6 +326,7 @@ def camera_client(readP, readMouse, trialIndex, cameraPinValue):
     framesInStack = 0
     trial_count = 0
     blinks_ = []
+    speed_ = [ ]
     writeTrial_ = False
     recording_ = False
     cameraPinState = [False, False]
@@ -343,7 +345,11 @@ def camera_client(readP, readMouse, trialIndex, cameraPinValue):
                 if readP.poll(1e-4):
                     txt += ',' + readP.recv()
                 if readMouse.poll( 1e-4 ):
-                    txt += ',' + readMouse.recv()
+                    mr = readMouse.recv( )
+                    ss = map( float, mr.split( ',' )[-2:] )
+                    res = math.copysign( ss[1], ss[0] ) 
+                    speed_.append( res )
+                    txt += ',' + mr
 
                 # Fill txt to have its length equal to frame width
                 txt += ' ' * (img_shape_[1] - len(txt))
@@ -407,7 +413,11 @@ def camera_client(readP, readMouse, trialIndex, cameraPinValue):
 
                     if len(bbox_) == 2:
                         if len( blinks_ ) > 10:
-                            gnuplot_.plot( np.array( blinks_[-2000:] ))
+                            y1 = blinks_[-2000: ]
+                            y2 = speed_[ -2000: ]
+                            gnuplot_.plot( ( np.arange( len(y1) ), np.array(y1) )
+                                #  , ( np.arange( len(y2) ), np.array(y2) )
+                                )
 
                 buf = buf[frame_size_:]
         except Exception as e:
@@ -469,7 +479,7 @@ def main():
 
     arduinoP = Process(
             target=arduino_client,
-            args=( writeP, trialIndex, cameraPinValue)
+            args=(writeP, trialIndex, cameraPinValue)
             )
     arduinoP.daemon = True
     arduinoP.start()
