@@ -347,7 +347,8 @@ def camera_client(readP, readMouse, trialIndex, cameraPinValue):
                 if readMouse.poll( 1e-4 ):
                     mr = readMouse.recv( )
                     ss = map( float, mr.split( ',' )[-2:] )
-                    r1 = math.copysign( ss[1], ss[0] ) 
+                    # velocity is followed by direction.
+                    r1 = math.copysign( ss[0], ss[1] ) 
                     speed_.append( r1 )
                     txt += ',' + mr
 
