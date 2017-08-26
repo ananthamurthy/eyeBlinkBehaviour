@@ -353,7 +353,7 @@ def camera_client(readP, readMouse, trialIndex, cameraPinValue):
                 img = np.vstack((metadata, img))
                 if write_data_:
                     cv2.putText(img, txt.strip(), (0, h_ - 10),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.4, 128, 1
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.2, 128, 1
                                 )
 
                 # Only save the frame if camera pin says so.
@@ -431,9 +431,12 @@ def camera_client(readP, readMouse, trialIndex, cameraPinValue):
             init_stack( )
 
 def mouse_client( writeMouse, trialIndex ):
-    global args_
-    val = read_mouse_delta.main( args_.mouse )
-    writeMouse.send( val )
+    global finished_all_
+    while 1:
+        val = read_mouse_delta.main( config.args_.mouse )
+        writeMouse.send( val )
+        if finished_all_:
+            return 1
 
 def main():
     # Lock so that only one process prints to console at a time.

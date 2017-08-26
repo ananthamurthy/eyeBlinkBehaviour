@@ -40,6 +40,9 @@ set(BOARD_TAG   uno)
 set(BAUD_RATE   38400)
 find_program(ARDUINO_BIN arduino )
 
+# Set mouse path.
+set( MOUSE_PATH "/dev/input/mouse1" )
+
 set(ARDUINO_BOARD_FILE hardware/arduino/boards.txt)
 find_path( ARDUINO_DIR 
     NAMES boards.txt
@@ -140,11 +143,14 @@ configure_file( ${CMAKE_SOURCE_DIR}/camera_arduino_client.py.in
 
 # Pass animal options to run.sh which will will passed to python script.
 SET(RUN_ARGS 
-    "-p ${PORT} -n ${ANIMAL_NAME} -sn ${SESSION_NUM} -st ${SESSION_TYPE}"
+    -p ${PORT} -n ${ANIMAL_NAME} -sn ${SESSION_NUM} -st ${SESSION_TYPE} 
+    -m ${MOUSE_PATH}
      )
 
+# Copy python files into current working directory.
 file(COPY ${CMAKE_SOURCE_DIR}/eyeblinkdetector/extract.py 
-        ${CMAKE_SOURCE_DIR}/blinky.py
+        ${CMAKE_SOURCE_DIR}/blinky.py 
+        ${CMAKE_SOURCE_DIR}/read_mouse_delta.py
         DESTINATION ${CMAKE_BINARY_DIR}
      )
 
