@@ -415,7 +415,7 @@ def camera_client(readP, readMouse, trialIndex, cameraPinValue):
                         if len( blinks_ ) > 10:
                             gnuplot_.plot( 
                                     np.array( blinks_[-2000:] )
-                                    , legend = "Speed : " + speed_[-1] 
+                                    , legend = "Speed : %f" % speed_[-1] 
                                     )
 
                 buf = buf[frame_size_:]
