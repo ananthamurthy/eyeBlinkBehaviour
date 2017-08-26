@@ -15,12 +15,10 @@ import struct
 import os
 import time
 import math
-import threading
 import io
 import Queue
 import fcntl 
 import datetime
-import socket
 
 user_ = os.environ.get( 'USER', ' ' )
 
