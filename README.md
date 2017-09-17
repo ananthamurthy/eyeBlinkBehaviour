@@ -34,3 +34,8 @@ To build and upload to arduino
             , timestamp, trial_count_, puff, tone, led
             , motion1, motion2, camera, microscope, trial_state_
             );
+
+# How to disable mouse pointer 
+
+- https://unix.stackexchange.com/questions/388053/disable-mouse-pointer-but-read-the-mouse-events
+- http://www.nico.schottelius.org/blog/xorg-disable-touchpad-with-xinput/
