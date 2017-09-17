@@ -13,6 +13,7 @@
  */
 
 #include <avr/wdt.h>
+#include "config.h"
 
 // Pins etc.
 #define         TONE_PIN                    2

@@ -353,6 +353,7 @@ def camera_client(readP, readMouse, trialIndex, cameraPinValue):
                     txt += ',' + mr
 
                 # Fill txt to have its length equal to frame width
+                assert img_shape_[1] > len( txt ), "Text is too big to write in one line"
                 txt += ' ' * (img_shape_[1] - len(txt))
                 # Convert txt to binary and prefix to the img we got from camera
                 # server.
