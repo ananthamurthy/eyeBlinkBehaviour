@@ -14,6 +14,7 @@
 
 #include <avr/wdt.h>
 #include "config.h"
+#include "random_trial.h"
 
 // Pins etc.
 #define         TONE_PIN                    2
@@ -316,6 +317,7 @@ void setup()
     configure_experiment( );
     Serial.println( ">>> Waiting for 's' to be pressed" );
 
+
     wait_for_start( );
 }
 
@@ -453,23 +455,17 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
 void loop()
 {
     reset_watchdog( );
-    // The probe trial occurs every 7th trial with +/- of 2 trials.
-    unsigned numProbeTrials = 0;
-    unsigned nextProbbeTrialIndex = random(4, 8);
+
+    // Initialize probe trials index. Mean 6 +/- 2 trials. 
+    proble_trial_index_init( 6, 2 );
 
     for (size_t i = 1; i <= 62; i++) 
     {
         reset_watchdog( );
 
         // Probe trial.
-        if( i == nextProbbeTrialIndex )
-        {
+        if( 1 == probe_trials_[i] )
             do_trial( i, true );
-            numProbeTrials +=1 ;
-            nextProbbeTrialIndex = random( 
-                    (numProbeTrials+1)*10-2, (numProbeTrials+1)*10+3
-                    );
-        }
         else
             do_trial( i, false );
 

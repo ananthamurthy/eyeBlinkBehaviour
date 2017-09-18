@@ -41,7 +41,26 @@ set(BAUD_RATE   38400)
 find_program(ARDUINO_BIN arduino )
 
 # Set mouse path.
-set( MOUSE_PATH "/dev/input/mouse1" )
+if( NOT MOUSE_PATH )
+    message( STATUS "Searching for Logitech mouse" )
+    execute_process( 
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/scripts/find_Logitech_mouse.sh
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        TIMEOUT 5
+        OUTPUT_VARIABLE MOUSE_PATH 
+        OUTPUT_STRIP_TRAILING_WHITESPACE )
+endif( )
+
+if(MOUSE_PATH)
+    message( STATUS "Found Logitech mouse: ${MOUSE_PATH}" )
+else(MOUSE_PATH)
+    message( FATAL_ERROR "CMake could not find Logitech mouse. " 
+        "Make sure it is connected to laptop. You can also specify mouse by "
+        " setting the MOUSE_PATH variable "
+        "     $ cmake -DMOUSE_PATH=/dev/input/mouse2 "
+        " etc. "
+        )
+endif( )
 
 set(ARDUINO_BOARD_FILE hardware/arduino/boards.txt)
 find_path( ARDUINO_DIR 
