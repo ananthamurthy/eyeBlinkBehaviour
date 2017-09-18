@@ -459,6 +459,12 @@ void loop()
     // Initialize probe trials index. Mean 6 +/- 2 trials. 
     proble_trial_index_init( 6, 2 );
 
+    //for (size_t i = 0; i < NUM_MAX_TRIALS; i++) 
+    //{
+    //    Serial.print( probe_trials_[i] );
+    //    Serial.print( " " );
+    //}
+
     for (size_t i = 1; i <= 62; i++) 
     {
         reset_watchdog( );

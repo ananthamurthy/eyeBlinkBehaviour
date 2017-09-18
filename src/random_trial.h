@@ -7,7 +7,7 @@ int probe_trials_[ NUM_MAX_TRIALS ] = {0};
 
 void proble_trial_index_init( int mean, int std )
 {
-    for (unsigned int i = 0; i < (NUM_MAX_TRIALS/mean); i++) 
+    for (unsigned int i = 1; i <= (NUM_MAX_TRIALS/mean); i++) 
     {
         int x = i* mean + random( - std, std + 1 );
         probe_trials_[x] = 1;
