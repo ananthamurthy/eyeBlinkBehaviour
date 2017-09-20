@@ -365,7 +365,7 @@ void do_trial( unsigned int trial_num, int cs_type, bool isprobe = false )
     trial_start_time_ = millis( );
 
     // PRE
-    unsigned duration = 10000;
+    unsigned duration = 5000;
     stamp_ = millis( );
 
     sprintf( trial_state_, "PRE_" );
@@ -442,10 +442,10 @@ void do_trial( unsigned int trial_num, int cs_type, bool isprobe = false )
     stamp_ = millis( );
     
     /*-----------------------------------------------------------------------------
-     *  POST, flexible duration till trial is over. It is 10 second long.
+     *  POST, flexible duration till trial is over. It is 5 second long.
      *-----------------------------------------------------------------------------*/
     // Last phase is post. If we are here just spend rest of time here.
-    duration = 10000;
+    duration = 5000;
     sprintf( trial_state_, "POST" );
     while( (millis( ) - stamp_) <= duration )
     {
