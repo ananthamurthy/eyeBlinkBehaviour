@@ -17,10 +17,59 @@ __status__           = "Development"
 
 import sys
 import os
+import math
 import numpy as np
 from libtiff import TIFF
+import datetime
 
-def process( tifffile ):
+fmt_ = "%Y-%m-%dT%H:%M:%S.%f"
+
+def toTime( string ):
+    return datetime.datetime.strptime( string, fmt_)
+
+def plotFile( filename ):
+    import matplotlib as mpl
+    import matplotlib.pyplot as plt
+    try:
+        mpl.style.use( 'seaborn-talk' )
+    except Exception as e:
+        pass
+    mpl.rcParams['axes.linewidth'] = 0.1
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif')
+    
+    with open( filename, 'r' ) as f:
+        text = f.read( )
+    lines = text.split( '\n' )
+    datalines = [ ]
+    for l in lines:
+        fs = l.split( ',' )
+        if len(fs) < 8:
+            continue
+        datalines.append( fs )
+
+    x1, x2, x3, y1, y2, y3 = [],[],[],[],[],[]
+    for l in datalines:
+        if len(l) < 12:
+            continue
+        t1, t2, t3 = list( map( toTime, [l[0], l[1], l[12]] ) )
+        x1.append( t1 )
+        x2.append( t2 )
+        x3.append( t3 )
+        y1.append( float(l[2]) )
+        y2.append( math.copysign( float(l[-2]), float(l[-1])) )
+
+    print( 'Plotting' )
+    plt.figure()
+    plt.subplot( 211 )
+    plt.plot( x1, y1, label = 'Blink' )
+    plt.subplot( 212 )
+    plt.plot( x2, y2, label = 'Speed'  )
+    outfile = '%s_raw.png' % sys.argv[1]
+    plt.savefig( outfile )
+    print( '[INFO] Written to %s' % outfile )
+
+def process( tifffile, plot = True ):
     print( '[INFO] Processing %s' % tifffile )
     tf = TIFF.open( tifffile )
     frames = tf.iter_images( )
@@ -40,6 +89,8 @@ def process( tifffile ):
         f.write( "\n".join( datalines ) )
         print( "[INFO] Wrote all data to %s" % datafile )
 
+    if plot:
+        plotFile( datafile )
 
 def main( ):
     tiff = sys.argv[1]
