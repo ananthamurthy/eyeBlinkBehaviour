@@ -16,12 +16,6 @@
 #include "config.h"
 #include "random_trial.h"
 
-//#define USE_MOUSE 
-#ifdef USE_MOUSE
-#include "arduino-ps2-mouse/PS2Mouse.h"
-#endif
->>>>>>> bhallalab/master
-
 // Pins etc.
 #define         TONE_PIN                    2
 #define         LED_PIN                     3
@@ -324,11 +318,7 @@ void setup()
     pinMode( MOTION1_PIN, INPUT );
     pinMode( MOTION2_PIN, INPUT );
 #endif
-
-    configure_experiment( );
     Serial.println( ">>> Waiting for 's' to be pressed" );
-
-
     wait_for_start( );
 }
 
@@ -362,7 +352,7 @@ void do_empty_trial( size_t trial_num, int duration = 10 )
  * @param trial_num. Index of the trial.
  * @param ttype. Type of the trial.
  */
-void do_trial( unsigned int trial_num, int cs_type, bool isprobe = false )
+void do_trial( unsigned int trial_num, bool isprobe = false )
 {
     reset_watchdog( );
     check_for_reset( );
@@ -440,7 +430,7 @@ void do_trial( unsigned int trial_num, int cs_type, bool isprobe = false )
     else
     {
         duration = PUFF_DURATION;
-        if( isporobe )
+        if( isprobe )
         {
             sprintf( trial_state_, "PROB" );
             while( (millis( ) - stamp_) <= duration )
