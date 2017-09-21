@@ -49,9 +49,10 @@ ARDUINO_LIBS      = LiquidCrystal
 
 # INO file and other cpp files
 LOCAL_INO_SRCS     = $(PROJECT_DIR)/src/main.ino 
+LOCAL_CPP_SRCS     = $(PROJECT_DIR)/src/arduino-ps2-mouse/PS2Mouse.cpp
 
 ### Do not touch - the path to Arduino.mk, inside the ARDMK_DIR
 include $(ARDMK_DIR)/Arduino.mk
 
-run :
+run : upload
 	miniterm.py /dev/ttyACM0 38400

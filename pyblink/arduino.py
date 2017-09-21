@@ -19,21 +19,25 @@ import serial
 import serial.tools.list_ports 
 import config
 import logging
-_logger = logging.getLogger('')
+#logging = logging.getLogger('')
 
 # Create a class to handle serial port.
 class ArduinoPort( ):
 
     def __init__(self, path, baud_rate = 38400, **kwargs):
         self.path = path
-        self.baudRate = kwargs.get('baud_rate', 38400)
+        config.args_.port = path
+        self.baudRate = baud_rate
         self.port = None
 
     def open(self, wait = True):
         # ATTN: timeout is essential else realine will block.
         try:
-            self.port = serial.serial_for_url( config.args_.port
-                    , self.baudRate , timeout = 0.5
+            print( "Trying %s with %d baudrate" % ( config.args_.port,
+                self.baudRate ) )
+            self.port = serial.serial_for_url( config.args_.port 
+                    , baudrate = self.baudRate 
+                    , timeout = 0.5
                     )
         except OSError as e:
             # Most like to be a busy resourse. Wait till it opens.
@@ -60,12 +64,12 @@ class ArduinoPort( ):
 
     def read_line(self, **kwargs):
         line = self.port.readline()
-        _logger.debug('RX< %s' % line)
+        logging.debug('RX< %s' % line)
         # mysql.insert_line( line , auto_commit = True)
         return line.strip()
 
     def write_msg(self, msg):
-        _logger.info('Writing %s to serial port' % msg)
+        logging.info('Writing %s to serial port' % msg)
         self.port.write( bytes(msg) )
 
 def get_default_serial_port( ):

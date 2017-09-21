@@ -17,7 +17,9 @@
 #ifndef  config_h_INC
 #define  config_h_INC
 
-#define SESSION_TYPE           @SESSION_TYPE@
-#define ANIMAL_NAME            @ANINAL_NAME@             
+#define         SESSION_TYPE        '@SESSION_TYPE@'
+#define         SESSION_NUM         @SESSION_NUM@
+#define         ANIMAL_NAME         "@ANIMAL_NAME@"
 
-#endif   /* ----- #ifndef config_h_INC  ----- */
+
+#endif /* end of include guard: CONFIG.H_H */

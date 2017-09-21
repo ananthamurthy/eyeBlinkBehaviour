@@ -21,7 +21,7 @@ if (NOT PORT )
         "\n and run the arduino target. If you are sure that arduino board is "
         "\n connected and functional, you should provide port path from "
         "\n command line: e.g. \n"
-        "\t -DPORT=/dev/ttyACM0 etc."
+        "\t cmake -DPORT=/dev/ttyACM0 .."
         "\n\n Or you may not be part of 'dailout' group?"
         )
 else (NOT PORT)
@@ -96,7 +96,7 @@ message(STATUS "List of arduino boards ${ARDUINO_DIR}")
 if( (NOT ANIMAL_NAME) OR (NOT SESSION_TYPE) OR (NOT SESSION_NUM) )
     message( FATAL_ERROR 
         "Please pass ANIMAL_NAME, SESSION_NUM and SESSION_TYPE to cmake \n"
-        "\te.g cmake -DANIMAL_NAME=k3 -DSESSION_NUM=1 -DSESSION_TYPE=1 \n"
+        "\te.g cmake -DANIMAL_NAME=k3 -DSESSION_NUM=1 -DSESSION_TYPE=S .. \n"
         )
 endif ( )
 
@@ -111,6 +111,9 @@ configure_file( ${CMAKE_SOURCE_DIR}/Makefile.arduino.in
     ${CMAKE_SOURCE_DIR}/Makefile.arduino
     )
 
+configure_file( ${CMAKE_SOURCE_DIR}/src/config.h.in
+    ${CMAKE_SOURCE_DIR}/src/config.h
+    )
 
 set(ARDUINO_TARGET_NAME eyeBlinkBehaviour)
 set(ARDUINO_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
@@ -159,6 +162,7 @@ configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/copy_file.sh.in
 configure_file( ${CMAKE_SOURCE_DIR}/camera_arduino_client.py.in 
     ${CMAKE_BINARY_DIR}/camera_arduino_client.py 
     )
+configure_file( ${CMAKE_SOURCE_DIR}/pyblink/config.py ${CMAKE_BINARY_DIR}/config.py )
 
 # Pass animal options to run.sh which will will passed to python script.
 SET(RUN_ARGS 
@@ -182,6 +186,16 @@ add_custom_target( run
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     VERBATIM
     )
+
+set( THREADMILL_TEST_SCRIPT test_threadmill.py )
+add_custom_target( threadmill
+    DEPENDS upload
+    COMMAND python ${THREADMILL_TEST_SCRIPT} ${PORT}
+    COMMENT "Testing threadmill"
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    VERBATIM
+    )
+
 
 # Now  add the client and server 
 add_subdirectory( ${CMAKE_SOURCE_DIR}/PointGreyCamera )

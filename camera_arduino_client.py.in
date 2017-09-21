@@ -13,6 +13,7 @@ __status__     = "Development"
 
 import sys
 import math
+sys.path.append( '../pyblink' )
 import os
 import socket
 import io
@@ -295,6 +296,19 @@ def show_frame(frame, outfile=None):
         cv2.imsave(outfile, frame)
 
 
+def writeTextToFrame( txt, img ):
+    global image_stack_, h_
+    # Fill txt to have its length equal to frame width
+    txt += ' ' * (img_shape_[1] - len(txt))
+    # Convert txt to binary and prefix to the img we got from camera
+    # server.
+    metadata = np.array(map(ord, txt), dtype=np.uint8)
+    img = np.vstack((metadata, img))
+    cv2.putText(img, txt.strip()
+            , (0, h_ - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.4, 128, 1
+            )
+    return img
+
 def camera_client(readP, readMouse, trialIndex, cameraPinValue):
     global finished_all_
     global img_, buf_
@@ -404,6 +418,27 @@ def camera_client(readP, readMouse, trialIndex, cameraPinValue):
                 else:
                     blinks_.append( random.random( ) )
 
+                # Append blink value to data.
+                txt += ',%4.3f' % blinks_[-1]
+
+                # Fill txt to have its length equal to frame width
+                txt += ' ' * (img_shape_[1] - len(txt))
+
+                # Convert txt to binary and prefix to the img we got from camera
+                # server.
+                metadata = np.array(map(ord, txt), dtype=np.uint8)
+                img = np.vstack((metadata, img))
+                if write_data_:
+                    cv2.putText(img, txt.strip(), (0, h_ - 10),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.4, 128, 1
+                                )
+
+                # Only save the frame if camera pin says so.
+                if recording_:
+                    image_stack_[framesInStack] = img
+                    framesInStack += 1
+
+
                 # Show every 10th frame.
                 if totalFrames % 10 == 0:
                     show_frame( img )
@@ -511,8 +546,8 @@ if __name__ == '__main__':
         '--session-type',
         '-st',
         required=True,
-        type=int,
-        help='Seession Type [0 to 11]')
+        type=str,
+        help='Seession Type [S, L, M]')
     parser.add_argument(
         '--session-num',
         '-sn',

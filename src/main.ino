@@ -16,11 +16,15 @@
 #include "config.h"
 #include "random_trial.h"
 
+//#define USE_MOUSE 
+#ifdef USE_MOUSE
+#include "arduino-ps2-mouse/PS2Mouse.h"
+#endif
+>>>>>>> bhallalab/master
+
 // Pins etc.
 #define         TONE_PIN                    2
 #define         LED_PIN                     3
-#define         MOTION1_PIN                 4
-#define         MOTION2_PIN                 7
 
 // These pins are more than 7.
 #define         CAMERA_TTL_PIN              10
@@ -32,8 +36,26 @@
 #define         TONE_FREQ                   4500
 
 #define         PUFF_DURATION               50
-#define         TONE_DURATION               50
-#define         LED_DURATION               50
+#define         TONE_DURATION               350
+#define         LED_DURATION                50
+
+#ifdef USE_MOUSE
+// Motion detection related.
+#define         CLOCK_PIN                 6
+#define         DATA_PIN                  7
+#else
+#define         MOTION1_PIN                 6
+#define         MOTION2_PIN                 7
+#endif 
+
+
+// Motion detection based on motor
+#define         MOTOR_OUT              A1
+
+// What kind of stimulus is given.
+#define         SOUND                   0
+#define         LIGHT                   1
+#define         MIXED                   2
 
 
 unsigned long stamp_            = 0;
@@ -54,6 +76,12 @@ char trial_state_[5]            = "PRE_";
 int incoming_byte_              = 0;
 bool reboot_                    = false;
 
+/*
+ * MOUSE
+ */
+#ifdef USE_MOUSE
+PS2Mouse mouse( CLOCK_PIN, DATA_PIN );
+#endif
 
 /*-----------------------------------------------------------------------------
  *  WATCH DOG
@@ -74,6 +102,7 @@ void reset_watchdog( )
     if( not reboot_ )
         wdt_reset( );
 }
+
 
 
 /**
@@ -121,17 +150,28 @@ void write_data_line( )
 
     unsigned long timestamp = millis() - trial_start_time_;
 
-    int motion1 = analogRead( MOTION1_PIN );
-    int motion2 = analogRead( MOTION2_PIN );
+    int motion1;
+    int motion2;
+
+#ifdef USE_MOUSE
+    // Read mouse data.
+    MouseData data = mouse.readData( );
+    motion1 = data.position.x;
+    motion2 = data.position.y;
+#else
+    motion1 = digitalRead( MOTION1_PIN );
+    motion2 = digitalRead( MOTION2_PIN );
+#endif
     
     sprintf(msg_  
-            , "%lu,%d,%d,%d,%d,%d,%d,%d,%d,%s"
+            , "%lu,%d,%d,%d,%d,%3d,%3d,%d,%d,%s"
             , timestamp, trial_count_, puff, tone, led
             , motion1, motion2, camera, microscope, trial_state_
             );
     Serial.println(msg_);
     //delay( 3 );
     Serial.flush( );
+    //delay( 3 );
 }
 
 void check_for_reset( void )
@@ -199,52 +239,6 @@ void led_on( unsigned int duration )
 
 
 /**
- * @brief Configure the experiment here. All parameters needs to be set must be
- * done here.
- */
-void configure_experiment( )
-{
-    // While this is not answered, keep looping 
-    Serial.println( "?? Please configure your experiment" );
-    Serial.println( "NOTE: This has been disabled" );
-    while( true )
-    {
-        break;
-#if 0
-        incoming_byte_ = Serial.read( ) - '0';
-        if( incoming_byte_ < 0 )
-        {
-            Serial.println( ">>> ... Waiting for response" );
-            delay( 1000 );
-        }
-        else if( incoming_byte_ == 0 )
-        {
-            Serial.print( ">>> Valid response. Got " );
-            Serial.println( incoming_byte_  );
-            Serial.flush( );
-            tsubtype_ = first;
-            return;
-        }
-        else if( incoming_byte_ == 1 )
-        {
-            Serial.print( ">>> Valid response. Got " );
-            Serial.println( incoming_byte_ );
-            Serial.flush( );
-            tsubtype_ = second;
-            return;
-        }
-        else
-        {
-            Serial.print( ">>> Unexpected response, recieved : " );
-            Serial.println( incoming_byte_ - '0' );
-            delay( 100 );
-        }
-#endif
-    }
-}
-
-
-/**
  * @brief Wait for trial to start.
  */
 void wait_for_start( )
@@ -290,6 +284,15 @@ void wait_for_start( )
     }
 }
 
+void print_trial_info( )
+{
+    Serial.print( ">> ANIMAL NAME: " );
+    Serial.print( ANIMAL_NAME );
+    Serial.print( " SESSION NUM: " );
+    Serial.print( SESSION_NUM );
+    Serial.print( " SESSION TYPE: " );
+    Serial.println( SESSION_TYPE );
+}
 
 void setup()
 {
@@ -310,9 +313,17 @@ void setup()
     pinMode( CAMERA_TTL_PIN, OUTPUT );
     pinMode( IMAGING_TRIGGER_PIN, OUTPUT );
 
-    /*  Pins set by sensors */
+
+
+#ifdef USE_MOUSE
+    // Configure mouse here
+    mouse.initialize( );
+    Serial.println( "Stuck in setup() ... mostly due to MOUSE" );
+#else
+    Serial.println( "Using LED/DIODE pair" );
     pinMode( MOTION1_PIN, INPUT );
     pinMode( MOTION2_PIN, INPUT );
+#endif
 
     configure_experiment( );
     Serial.println( ">>> Waiting for 's' to be pressed" );
@@ -332,16 +343,31 @@ void do_first_trial( )
 }
 
 /**
+ * @brief Just for testing.
+ *
+ * @param duration
+ */
+void do_empty_trial( size_t trial_num, int duration = 10 )
+{
+    Serial.print( ">> TRIAL NUM: " );
+    Serial.println( trial_num );
+    //print_trial_info( );
+    delay( duration );
+    Serial.println( ">>     TRIAL OVER." );
+}
+
+/**
  * @brief Do a single trial.
  *
  * @param trial_num. Index of the trial.
  * @param ttype. Type of the trial.
  */
-void do_trial( unsigned int trial_num, bool isporobe = false )
+void do_trial( unsigned int trial_num, int cs_type, bool isprobe = false )
 {
     reset_watchdog( );
     check_for_reset( );
 
+    print_trial_info( );
     trial_start_time_ = millis( );
 
     /*-----------------------------------------------------------------------------
@@ -402,7 +428,7 @@ void do_trial( unsigned int trial_num, bool isporobe = false )
     stamp_ = millis( );
 
     /*-----------------------------------------------------------------------------
-     *  PUFF for 50 ms.
+     *  PUFF for 50 ms if trial is not a probe type.
      *-----------------------------------------------------------------------------*/
     if( 4 == SESSION_TYPE || 5 == SESSION_TYPE )
     {
@@ -467,14 +493,17 @@ void loop()
 
     for (size_t i = 1; i <= 62; i++) 
     {
+
         reset_watchdog( );
 
         // Probe trial.
         if( 1 == probe_trials_[i] )
             do_trial( i, true );
         else
-            do_trial( i, false );
-
+        {
+            Serial.println( ">> Horror horror. What type of session is that?" );
+            Serial.println( ">> We only allow type 0 (SOUND), 1 (LIGHT) or 2 (MIXED)" );
+        }
         
         /*-----------------------------------------------------------------------------
          *  ITI.
@@ -491,7 +520,7 @@ void loop()
         trial_count_ += 1;
     }
 
-    // Do do anything once trails are over.
+    // Don't do anything once trails are over.
     while( true )
     {
         reset_watchdog( );

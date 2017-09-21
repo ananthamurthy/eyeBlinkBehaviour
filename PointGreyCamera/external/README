@@ -1,0 +1,69 @@
+//=============================================================================
+// Copyright © 2016 Point Grey Research, Inc. All Rights Reserved.
+//
+// README
+//
+//=============================================================================
+
+To install Spinnaker on linux you will need to configure the library path.
+There are two ways this can be done.  You can temporarily 1) set the library
+path using the export command in your current term window or 2) set it permanently
+in your ".bashrc" script.  The last step is to set up the Read/Write permissions
+on the device.  This can be done using our spin-conf script to configure
+the udev rules on your system as seen in step 3. If you don't already have the
+necessary dependencies for ffmpeg and libusb, please follow the instructions
+in step 4.
+
+1) Set LD_LIBRARY_PATH in term
+
+command:
+	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:<Path to unpacked spinnaker tarball>/lib
+
+ex:
+	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:~/spinnaker_1_0_0_262_x86_64/lib
+
+Or...
+
+
+2) set the LD_LIBRARY_PATH every time a term is opened in the .bashrc file
+
+a) Open ~/.bashrc file in text editor
+
+b) at the bottom of the file add this line:
+
+	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:<Path to unpacked spinnaker tarball>/lib
+
+	
+3) Configure udev rules on your system
+
+a) execute the spin-conf script bundled in the tarball and follow the instructions.  The
+script will create a 40-pgr.rules file in /etc/udev/rules.d and also create a pgrimaging
+group on your system.  You will be asked to add your user to the pgrimaging group.
+
+command:
+	sudo ./spin-conf
+
+	
+4) Install Dependencies
+
+a) Install ffmpeg
+
+command:
+	sudo apt-get install libavcodec-ffmpeg56 libavformat-ffmpeg56 libswscale-ffmpeg3 libswresample-ffmpeg1 libavutil-ffmpeg54
+
+b) Install libusb
+
+command:
+
+	sudo apt-get install libusb-1.0-0
+
+
+================================================================================
+USB RELATED NOTES:
+================================================================================
+
+On Linux systems, image size is restricted to 2MiB or less by default. To
+increase this limit so that you can make use of your imaging hardware's full
+capabilities, you will need to make a minor change to your system. Full
+instructions on making this change can be found at
+<https://www.ptgrey.com/tan/10685>.
