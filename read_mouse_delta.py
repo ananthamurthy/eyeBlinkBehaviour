@@ -64,7 +64,7 @@ def getMousePos( q ):
     trajs.pop( 0 )
     res = compute_velocity_and_dir( trajs )
     if t1 > lastT_ + 5e-3 :
-        return '%.6f,%.6f,%.6f' % (t1, res[0], res[1] )
+        return '%.4f,%.4f,%.4f' % (t1, res[0], res[1] )
         lastT_ = t1
 
 def compute_velocity_and_dir( trajs ):

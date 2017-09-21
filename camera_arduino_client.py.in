@@ -12,6 +12,7 @@ __email__      = ""
 __status__     = "Development"
 
 import sys
+import linecache
 import math
 sys.path.append( '../pyblink' )
 import os
@@ -55,6 +56,16 @@ camera_store_begin_ = 0
 camera_store_end_ = 0
 
 title_ = 'Animal Window'
+
+def printException( ):
+    exc_type, exc_obj, tb = sys.exc_info()
+    f = tb.tb_frame
+    lineno = tb.tb_lineno
+    filename = f.f_code.co_filename
+    linecache.checkcache(filename)
+    line = linecache.getline(filename, lineno, f.f_globals)
+    print( 'EXCEPTION IN ({}, LINE {} "{}"): {}'.format(filename, lineno,
+        line.strip(), exc_obj) )
 
 def onmouse(event, x, y, flags, params):
     global bbox_
@@ -295,20 +306,6 @@ def show_frame(frame, outfile=None):
     if outfile:
         cv2.imsave(outfile, frame)
 
-
-def writeTextToFrame( txt, img ):
-    global image_stack_, h_
-    # Fill txt to have its length equal to frame width
-    txt += ' ' * (img_shape_[1] - len(txt))
-    # Convert txt to binary and prefix to the img we got from camera
-    # server.
-    metadata = np.array(map(ord, txt), dtype=np.uint8)
-    img = np.vstack((metadata, img))
-    cv2.putText(img, txt.strip()
-            , (0, h_ - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.4, 128, 1
-            )
-    return img
-
 def camera_client(readP, readMouse, trialIndex, cameraPinValue):
     global finished_all_
     global img_, buf_
@@ -327,7 +324,7 @@ def camera_client(readP, readMouse, trialIndex, cameraPinValue):
                 s.connect(sock_name_)
                 break
             except Exception as e:
-                print('Error connecting %s' % e)
+                printException( )
                 time.sleep(1)
         else:
             print('Could not find %s' % sock_name_)
@@ -358,6 +355,7 @@ def camera_client(readP, readMouse, trialIndex, cameraPinValue):
                 # Read from PIPE but it should not be blocking.
                 if readP.poll(1e-4):
                     txt += ',' + readP.recv()
+
                 if readMouse.poll( 1e-4 ):
                     mr = readMouse.recv( )
                     ss = map( float, mr.split( ',' )[-2:] )
@@ -365,18 +363,6 @@ def camera_client(readP, readMouse, trialIndex, cameraPinValue):
                     r1 = math.copysign( ss[0], ss[1] ) 
                     speed_.append( r1 )
                     txt += ',' + mr
-
-                # Fill txt to have its length equal to frame width
-                assert img_shape_[1] > len( txt ), "Text is too big to write in one line"
-                txt += ' ' * (img_shape_[1] - len(txt))
-                # Convert txt to binary and prefix to the img we got from camera
-                # server.
-                metadata = np.array(map(ord, txt), dtype=np.uint8)
-                img = np.vstack((metadata, img))
-                if write_data_:
-                    cv2.putText(img, txt.strip(), (0, h_ - 10),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.2, 128, 1
-                                )
 
                 # Only save the frame if camera pin says so.
                 if recording_:
@@ -410,10 +396,6 @@ def camera_client(readP, readMouse, trialIndex, cameraPinValue):
                     else:
                         writeTrial_ = False
 
-                    cv2.putText( 
-                            img, msg, (0, 10 )
-                             , cv2.FONT_HERSHEY_SIMPLEX, 0.4, 128, 2
-                             )
                     blinks_.append( res )
                 else:
                     blinks_.append( random.random( ) )
@@ -422,15 +404,16 @@ def camera_client(readP, readMouse, trialIndex, cameraPinValue):
                 txt += ',%4.3f' % blinks_[-1]
 
                 # Fill txt to have its length equal to frame width
-                txt += ' ' * (img_shape_[1] - len(txt))
+                txt += ' ' * (img.shape[1] - len(txt))
 
                 # Convert txt to binary and prefix to the img we got from camera
                 # server.
                 metadata = np.array(map(ord, txt), dtype=np.uint8)
                 img = np.vstack((metadata, img))
+
                 if write_data_:
                     cv2.putText(img, txt.strip(), (0, h_ - 10),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.4, 128, 1
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.25, 128, 1
                                 )
 
                 # Only save the frame if camera pin says so.
@@ -458,7 +441,7 @@ def camera_client(readP, readMouse, trialIndex, cameraPinValue):
                 buf = buf[frame_size_:]
         except Exception as e:
             # Keep reading.
-            print(e)
+            printException( )
             continue
 
         totalFrames += 1

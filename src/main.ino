@@ -307,17 +307,6 @@ void setup()
     pinMode( CAMERA_TTL_PIN, OUTPUT );
     pinMode( IMAGING_TRIGGER_PIN, OUTPUT );
 
-
-
-#ifdef USE_MOUSE
-    // Configure mouse here
-    mouse.initialize( );
-    Serial.println( "Stuck in setup() ... mostly due to MOUSE" );
-#else
-    Serial.println( "Using LED/DIODE pair" );
-    pinMode( MOTION1_PIN, INPUT );
-    pinMode( MOTION2_PIN, INPUT );
-#endif
     Serial.println( ">>> Waiting for 's' to be pressed" );
     wait_for_start( );
 }
@@ -490,10 +479,7 @@ void loop()
         if( 1 == probe_trials_[i] )
             do_trial( i, true );
         else
-        {
-            Serial.println( ">> Horror horror. What type of session is that?" );
-            Serial.println( ">> We only allow type 0 (SOUND), 1 (LIGHT) or 2 (MIXED)" );
-        }
+            do_trial( i, false );
         
         /*-----------------------------------------------------------------------------
          *  ITI.
