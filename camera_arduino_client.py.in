@@ -117,7 +117,7 @@ frame_size_ = img_shape_[0] * img_shape_[1]
 
 # Maximum allowed frame in each trial. This is guard against RAM overflow in
 # case arduino failes to update trial count. 
-max_frames_in_trial = 500
+max_frames_in_trial = 1000
 image_stack_ = None
 
 write_data_ = True
@@ -291,7 +291,7 @@ def init_stack():
     global h_, w_
     global max_frames_in_trial
     image_stack_ = np.zeros(
-        shape=(max_frames_in_trial, h_ + 1, w_), dtype=np.uint8
+        shape=(max_frames_in_trial, h_+1, w_), dtype=np.uint8
     )
 
 
@@ -363,11 +363,6 @@ def camera_client(readP, readMouse, trialIndex, cameraPinValue):
                     r1 = math.copysign( ss[0], ss[1] ) 
                     speed_.append( r1 )
                     txt += ',' + mr
-
-                # Only save the frame if camera pin says so.
-                if recording_:
-                    image_stack_[framesInStack] = img
-                    framesInStack += 1
 
                 if len(bbox_) == 2:
                     # print( 'Bounding box has been drawn : %s' % str(bbox_) )
