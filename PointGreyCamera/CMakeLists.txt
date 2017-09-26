@@ -10,7 +10,7 @@ set( BLOCK_SIZE 4096 )
 # NOTICE: Following values are optimized to achive FPS of 100. If you are changing them,
 # do it at your own risk. These values replaces macros in config.h.in file in
 # PointGrey submodule.
-set( FRAME_HEIGHT  512 )
+set( FRAME_HEIGHT  256 )
 set( FRAME_WIDTH  640)
 # Exposure time in micro-seconds")
 set( EXPOSURE_TIME_IN_US  2000)
