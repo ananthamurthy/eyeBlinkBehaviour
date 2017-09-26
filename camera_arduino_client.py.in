@@ -390,10 +390,10 @@ def camera_client(readP, readMouse, trialIndex, cameraPinValue):
                         recording_ = False
                     else:
                         writeTrial_ = False
-
-                    blinks_.append( res )
                 else:
-                    blinks_.append( random.random( ) )
+                    res = random.random( )
+
+                blinks_.append( res )
 
                 # Append blink value to data.
                 txt += ',%4.3f' % blinks_[-1]
