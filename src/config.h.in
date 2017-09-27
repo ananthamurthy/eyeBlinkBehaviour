@@ -17,7 +17,7 @@
 #ifndef  config_h_INC
 #define  config_h_INC
 
-#define         SESSION_TYPE        '@SESSION_TYPE@'
+#define         SESSION_TYPE        @SESSION_TYPE@
 #define         SESSION_NUM         @SESSION_NUM@
 #define         ANIMAL_NAME         "@ANIMAL_NAME@"
 
