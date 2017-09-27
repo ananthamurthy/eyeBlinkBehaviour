@@ -66,6 +66,7 @@ def plotFile( filename ):
     plt.ylabel( 'Blink readout' )
     plt.subplot( 212 )
     plt.plot( x2, y2 )
+    plt.plot( x2, np.abs( y2 ) )
     plt.ylabel( 'Pixel per sec' )
     outfile = '%s_raw.png' % sys.argv[1]
     plt.savefig( outfile )
