@@ -31,20 +31,24 @@ def close( ):
         conn_.close( )
 
 user_ = os.environ.get( 'USER', ' ' )
-sock_ = socket.socket( socket.AF_UNIX, socket.SOCK_STREAM )
-conn_ = None
-sockName = '__MY_MOUSE_SOCKET__' 
-if os.path.exists( sockName ):
-    os.remove( sockName )
-try:
-    sock_.bind( sockName )
-    print( '[INFO] Waiting for connection ..' )
-    sock_.listen( 1 )
-    conn_, addr = sock_.accept( )
-except Exception as e:
-    print( 'Error: %s' % e)
-    close( )
-    quit( 0 )
+sock_, conn_ = None, None
+sockName_ = '__MY_MOUSE_SOCKET__' 
+
+def create_socket( ):
+    global sock_, conn_
+    sock_ = socket.socket( socket.AF_UNIX, socket.SOCK_STREAM )
+    conn_ = None
+    if os.path.exists( sockName_ ):
+        os.remove( sockName_ )
+    try:
+        sock_.bind( sockName_ )
+        print( '[INFO] Waiting for connection ..' )
+        sock_.listen( 1 )
+        conn_, addr = sock_.accept( )
+    except Exception as e:
+        print( 'Error: %s' % e)
+        close( )
+        quit( 0 )
 
 user_interrupt_ = False
 trajs = [ (0,0,0) ] * 10
@@ -123,7 +127,7 @@ def process( path ):
     if r is not None:
         txt = now + ',' + r
         if conn_:
-            conn_.sendall( txt )
+            conn_.sendall( txt + '\n' )
         print( txt )
 
 
@@ -134,6 +138,7 @@ def main( path ):
 
 if __name__ == '__main__':
     path = sys.argv[1]
+    create_socket( )
     try:
         main( path )
         close( )
