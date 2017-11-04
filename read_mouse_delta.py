@@ -56,7 +56,7 @@ q_ = [ (0,0,0) ]
 
 def getMouseEvent( mouseF, q ):
     global user_interrupt_
-    global sock_
+
     if user_interrupt_:
         return 
 
@@ -119,11 +119,12 @@ def process( path ):
 
     getMouseEvent(f_, q_)
     now = datetime.datetime.now().isoformat()
-    r = getMousePos( q_)
-    txt = now + ',' + r
-    if conn_:
-        conn_.sendall( txt )
-    return txt
+    r = getMousePos( q_ )
+    if r is not None:
+        txt = now + ',' + r
+        if conn_:
+            conn_.sendall( txt )
+        print( txt )
 
 
 def main( path ):
