@@ -1,4 +1,7 @@
-"""read_mouse_delta.py: 
+#!/usr/bin/env python
+
+"""
+read_mouse_delta.py: 
 
 """
 from __future__ import print_function
@@ -19,8 +22,29 @@ import io
 import Queue
 import fcntl 
 import datetime
+import socket
+
+def close( ):
+    global conn_, sock_
+    if conn_:
+        sock_.close( )
+        conn_.close( )
 
 user_ = os.environ.get( 'USER', ' ' )
+sock_ = socket.socket( socket.AF_UNIX, socket.SOCK_STREAM )
+conn_ = None
+sockName = '__MY_MOUSE_SOCKET__' 
+if os.path.exists( sockName ):
+    os.remove( sockName )
+try:
+    sock_.bind( sockName )
+    print( '[INFO] Waiting for connection ..' )
+    sock_.listen( 1 )
+    conn_, addr = sock_.accept( )
+except Exception as e:
+    print( 'Error: %s' % e)
+    close( )
+    quit( 0 )
 
 user_interrupt_ = False
 trajs = [ (0,0,0) ] * 10
@@ -54,6 +78,7 @@ def getMouseEvent( mouseF, q ):
 def getMousePos( q ):
     global user_interrupt_
     global lastT_
+
     if user_interrupt_:
         sock_.close( )
         return
@@ -64,8 +89,8 @@ def getMousePos( q ):
     trajs.pop( 0 )
     res = compute_velocity_and_dir( trajs )
     if t1 > lastT_ + 5e-3 :
-        return '%.4f,%.4f,%.4f' % (t1, res[0], res[1] )
         lastT_ = t1
+        return '%.4f,%.4f,%.4f' % (t1, res[0], res[1] )
 
 def compute_velocity_and_dir( trajs ):
     vels, dirs = [ ], [ ]
@@ -83,11 +108,12 @@ def compute_velocity_and_dir( trajs ):
     # average direction
     return sum( vels ) / len(vels), sum( dirs ) / len(dirs)
 
-def main( path ):
+def process( path ):
     global user_interrupt_
-    global sock_
+    global conn_
     global f_, q_
     global mouseFile_
+
     if f_ is None:
         f_ = io.open( path, "rb" ) 
 
@@ -95,13 +121,21 @@ def main( path ):
     now = datetime.datetime.now().isoformat()
     r = getMousePos( q_)
     txt = now + ',' + r
-    ## debug only.
-    #with open( '__mouse.txt' , 'a' ) as mouseFile_:
-    #    mouseFile_.write( txt + '\n' )
+    if conn_:
+        conn_.sendall( txt )
     return txt
+
+
+def main( path ):
+    while 1:
+        x = process( path )
+        print( x )
 
 if __name__ == '__main__':
     path = sys.argv[1]
-    while 1:
-        print( main( path ) )
-
+    try:
+        main( path )
+        close( )
+    except KeyboardInterrupt as e:
+        print( 'User pressed Ctrl+C' )
+        close( )
