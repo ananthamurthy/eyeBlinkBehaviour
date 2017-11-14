@@ -111,6 +111,11 @@ with open(config_file, "r") as cf:
     assert sock, "Can't read socket path from configuration file"
 
 sock_name_ = sock
+mouse_sock_ = '../__MY_MOUSE_SOCKET__'
+if( not os.path.exists( mouse_sock_ ) ):
+    mouse_sock_ = '__MY_MOUSE_SOCKET__'
+
+assert mouse_sock_, 'Mouse socket is not found'
 
 img_shape_ = (h_, w_)
 frame_size_ = img_shape_[0] * img_shape_[1]
@@ -296,7 +301,7 @@ def init_stack():
 
 
 def poll_socket():
-    return os.path.exists(sock_name_)
+    return os.path.exists(sock_name_) && os.path.exists( mouse_sock_ )
 
 
 def show_frame(frame, outfile=None):
@@ -306,11 +311,20 @@ def show_frame(frame, outfile=None):
     if outfile:
         cv2.imsave(outfile, frame)
 
-def camera_client(readP, readMouse, trialIndex, cameraPinValue):
+def camera_client(readP, trialIndex, cameraPinValue):
     global finished_all_
     global img_, buf_
     global image_stack_
+
     s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+
+    # Mouse socket.
+    ms = socket.socket( socket.AF_UNIX, socket.SOCK_STREAM )
+    try:
+        ms.connect( mouse_sock_ )
+    except Exception as e:
+        print( 'Could not connect to MOUSE socket %s' % mouse_sock_ )
+        raise RuntimeError( "Could not connect to mouse" )
 
     # Connect to socket. Try only for 5 seconds.
     now = time.time()
@@ -332,7 +346,7 @@ def camera_client(readP, readMouse, trialIndex, cameraPinValue):
 
     totalBytesRead = 0
     totalFrames = 0
-    buf = ''
+    buf, mousebuf = '', ''
     init_stack()
     framesInStack = 0
     trial_count = 0
@@ -356,13 +370,18 @@ def camera_client(readP, readMouse, trialIndex, cameraPinValue):
                 if readP.poll(1e-4):
                     txt += ',' + readP.recv()
 
-                if readMouse.poll( 1e-4 ):
-                    mr = readMouse.recv( )
-                    ss = map( float, mr.split( ',' )[-2:] )
+                # Read mouse line for socket.
+                if ms.poll( 1e-4 ):
+                    # Fetch all the data and read the last line. This one is the
+                    # lastest line sent by mouse.
+                    mr = readMouse.recv( 1024, socket.MSG_DONTWAIT )
+                    mousebuf += mr
+                    lastLine = mousebuf.split( '\n' )[-2]
+                    ss = [float(x) for x in lastLine.split( ',' )[-2:]]
                     # velocity is followed by direction.
                     r1 = math.copysign( ss[0], ss[1] ) 
                     speed_.append( r1 )
-                    txt += ',' + mr
+                    txt += ',MOUSE:' + lastLine[-1:-20]
 
                 if len(bbox_) == 2:
                     # print( 'Bounding box has been drawn : %s' % str(bbox_) )
@@ -454,13 +473,14 @@ def camera_client(readP, readMouse, trialIndex, cameraPinValue):
             save_img_stack(image_stack_, -1 )
             init_stack( )
 
-def mouse_client( writeMouse, trialIndex ):
+def mouse_client( trialIndex ):
+    """Mouse client.
+    """
     global finished_all_
-    while 1:
-        val = read_mouse_delta.main( config.args_.mouse )
-        writeMouse.send( val )
-        if finished_all_:
-            return 1
+    val = read_mouse_delta.main( config.args_.mouse )
+    if finished_all_:
+        read_mouse_delta.user_interrupt_ = True
+        return 1
 
 def main():
     # Lock so that only one process prints to console at a time.
@@ -477,16 +497,15 @@ def main():
     cameraPinValue = Value( 'd', 0 )
 
     readP, writeP = Pipe(duplex=False)
-    readMouse, writeMouse = Pipe( duplex = False )
 
     cam = Process( target=camera_client
-            , args=(readP, readMouse, trialIndex, cameraPinValue )
+            , args=(readP,trialIndex, cameraPinValue )
             )
     cam.daemon = True
     cam.start()
     print('Camera client launched')
 
-    mouse = Process( target=mouse_client, args=(writeMouse, trialIndex ) )
+    mouse = Process( target=mouse_client, args=( trialIndex ) )
     mouse.daemon = True
     mouse.start( )
     print( 'Mouse client launched' )

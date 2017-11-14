@@ -118,6 +118,9 @@ def process( path ):
     global f_, q_
     global mouseFile_
 
+    if user_interrupt_:
+        return False
+
     if f_ is None:
         f_ = io.open( path, "rb" ) 
 
@@ -128,13 +131,10 @@ def process( path ):
         txt = now + ',' + r
         if conn_:
             conn_.sendall( txt + '\n' )
-        print( txt )
-
 
 def main( path ):
     while 1:
         x = process( path )
-        print( x )
 
 if __name__ == '__main__':
     path = sys.argv[1]
