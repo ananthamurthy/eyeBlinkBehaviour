@@ -133,12 +133,12 @@ def process( path ):
             conn_.sendall( txt + '\n' )
 
 def main( path ):
+    create_socket( )
     while 1:
         x = process( path )
 
 if __name__ == '__main__':
     path = sys.argv[1]
-    create_socket( )
     try:
         main( path )
         close( )

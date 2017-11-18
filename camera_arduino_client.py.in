@@ -111,10 +111,7 @@ with open(config_file, "r") as cf:
     assert sock, "Can't read socket path from configuration file"
 
 sock_name_ = sock
-mouse_sock_ = '../__MY_MOUSE_SOCKET__'
-if( not os.path.exists( mouse_sock_ ) ):
-    mouse_sock_ = '__MY_MOUSE_SOCKET__'
-
+mouse_sock_ = '/tmp/__MY_MOUSE_SOCKET__'
 assert mouse_sock_, 'Mouse socket is not found'
 
 img_shape_ = (h_, w_)
@@ -301,7 +298,7 @@ def init_stack():
 
 
 def poll_socket():
-    return os.path.exists(sock_name_) && os.path.exists( mouse_sock_ )
+    return os.path.exists(sock_name_) and os.path.exists( mouse_sock_ )
 
 
 def show_frame(frame, outfile=None):
@@ -505,7 +502,7 @@ def main():
     cam.start()
     print('Camera client launched')
 
-    mouse = Process( target=mouse_client, args=( trialIndex ) )
+    mouse = Process( target=mouse_client, args=( trialIndex, ) )
     mouse.daemon = True
     mouse.start( )
     print( 'Mouse client launched' )
