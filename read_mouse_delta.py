@@ -32,7 +32,7 @@ def close( ):
 
 user_ = os.environ.get( 'USER', ' ' )
 sock_, conn_ = None, None
-sockName_ = '__MY_MOUSE_SOCKET__' 
+sockName_ = '/tmp/__MY_MOUSE_SOCKET__' 
 
 def create_socket( ):
     global sock_, conn_

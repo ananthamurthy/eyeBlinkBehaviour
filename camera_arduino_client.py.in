@@ -112,7 +112,6 @@ with open(config_file, "r") as cf:
 
 sock_name_ = sock
 mouse_sock_ = '/tmp/__MY_MOUSE_SOCKET__'
-assert mouse_sock_, 'Mouse socket is not found'
 
 img_shape_ = (h_, w_)
 frame_size_ = img_shape_[0] * img_shape_[1]
@@ -317,11 +316,12 @@ def camera_client(readP, trialIndex, cameraPinValue):
 
     # Mouse socket.
     ms = socket.socket( socket.AF_UNIX, socket.SOCK_STREAM )
+    mouseConnected = False
     try:
         ms.connect( mouse_sock_ )
+	mouseConnected = True
     except Exception as e:
         print( 'Could not connect to MOUSE socket %s' % mouse_sock_ )
-        raise RuntimeError( "Could not connect to mouse" )
 
     # Connect to socket. Try only for 5 seconds.
     now = time.time()
@@ -337,8 +337,15 @@ def camera_client(readP, trialIndex, cameraPinValue):
             except Exception as e:
                 printException( )
                 time.sleep(1)
+        if os.path.exists( mouse_sock_ ):
+            try:
+                s.connect( mouse_sock_ )
+                break
+            except Exception as e:
+                printException( )
+                time.sleep( 1 )
         else:
-            print('Could not find %s' % sock_name_)
+            print('Could not find %s or %s' % (sock_name_, mouse_sock_) )
             time.sleep(1)
 
     totalBytesRead = 0
@@ -368,17 +375,16 @@ def camera_client(readP, trialIndex, cameraPinValue):
                     txt += ',' + readP.recv()
 
                 # Read mouse line for socket.
-                if ms.poll( 1e-4 ):
-                    # Fetch all the data and read the last line. This one is the
-                    # lastest line sent by mouse.
-                    mr = readMouse.recv( 1024, socket.MSG_DONTWAIT )
-                    mousebuf += mr
-                    lastLine = mousebuf.split( '\n' )[-2]
-                    ss = [float(x) for x in lastLine.split( ',' )[-2:]]
-                    # velocity is followed by direction.
-                    r1 = math.copysign( ss[0], ss[1] ) 
-                    speed_.append( r1 )
-                    txt += ',MOUSE:' + lastLine[-1:-20]
+                # Fetch all the data and read the last line. This one is the
+                # lastest line sent by mouse.
+                mr = readMouse.recv( 1024, socket.MSG_DONTWAIT )
+                mousebuf += mr
+                lastLine = mousebuf.split( '\n' )[-2]
+                ss = [float(x) for x in lastLine.split( ',' )[-2:]]
+                # velocity is followed by direction.
+                r1 = math.copysign( ss[0], ss[1] ) 
+                speed_.append( r1 )
+                txt += ',MOUSE:' + lastLine[-1:-20]
 
                 if len(bbox_) == 2:
                     # print( 'Bounding box has been drawn : %s' % str(bbox_) )
