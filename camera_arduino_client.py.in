@@ -505,10 +505,9 @@ def main():
     init_arduino_client()
     print('Initialized arduino board')
 
-    # Call mouse process in background.
-    mouse_server_pid_ = subprocess.Popen( [  "./read_mouse_delta.py", config.args_.mouse ]).pid
-
-    print( 'Called MOUSE server: PID %d' % mouse_server_pid_ )
+    ## Call mouse process in background.
+    #mouse_server_pid_ = subprocess.Popen( [  "./read_mouse_delta.py", config.args_.mouse ]).pid
+    #print( 'Called MOUSE server: PID %d' % mouse_server_pid_ )
 
     # Variables to share between processes.
     trialIndex = Value('d', 0)
