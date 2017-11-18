@@ -36,19 +36,25 @@ sockName_ = '/tmp/__MY_MOUSE_SOCKET__'
 
 def create_socket( ):
     global sock_, conn_
-    sock_ = socket.socket( socket.AF_UNIX, socket.SOCK_STREAM )
     conn_ = None
     if os.path.exists( sockName_ ):
         os.remove( sockName_ )
-    try:
-        sock_.bind( sockName_ )
-        print( '[INFO] Waiting for connection ..' )
-        sock_.listen( 1 )
-        conn_, addr = sock_.accept( )
-    except Exception as e:
-        print( 'Error: %s' % e)
-        close( )
-        quit( 0 )
+
+    sock_ = socket.socket( socket.AF_UNIX, socket.SOCK_STREAM )
+    sock_.settimeout( 1.0 )     # wait for a second.
+    sock_.bind( sockName_ )
+
+    connected = False
+    while not connected:
+        try:
+            print( '[INFO] Waiting for MOUSE socket client. timeout %s' %
+                    sock_.gettimeout() 
+                    )
+            sock_.listen( 2 )
+            conn_, addr = sock_.accept( )
+            connected = True
+        except Exception as e:
+            pass
 
 user_interrupt_ = False
 trajs = [ (0,0,0) ] * 10

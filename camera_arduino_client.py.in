@@ -35,9 +35,9 @@ import tifffile
 import subprocess
 import blinky
 import gnuplotlib
-import read_mouse_delta
 
-gnuplot_ = gnuplotlib.gnuplotlib( title = 'Blink readout'
+gnuplot_ = gnuplotlib.gnuplotlib(
+        title = 'Blink readout'
         , terminal = 'x11 noraise' 
         )
 
@@ -47,6 +47,7 @@ start_ = time.time()
 total_trials_ = 0
 cs_type_ = None
 prev_trial_ = 0
+mouse_server_pid_ = -1
 
 # Frame and main window.
 bbox_ = [ (255,131), (521, 288) ]
@@ -307,6 +308,14 @@ def show_frame(frame, outfile=None):
     if outfile:
         cv2.imsave(outfile, frame)
 
+def tryConnectToMouse( sock ):
+    try:
+        sock.connect( mouse_sock_ )
+    except Exception as e:
+        print( 'Failed to connect to mouse socket %s' % e )
+
+    return sock
+
 def camera_client(readP, trialIndex, cameraPinValue):
     global finished_all_
     global img_, buf_
@@ -322,6 +331,8 @@ def camera_client(readP, trialIndex, cameraPinValue):
 	mouseConnected = True
     except Exception as e:
         print( 'Could not connect to MOUSE socket %s' % mouse_sock_ )
+        finished_all_ = True
+        return -1
 
     # Connect to socket. Try only for 5 seconds.
     now = time.time()
@@ -348,6 +359,7 @@ def camera_client(readP, trialIndex, cameraPinValue):
             print('Could not find %s or %s' % (sock_name_, mouse_sock_) )
             time.sleep(1)
 
+    print( '[INFO] Connected with both arduino board and Mouse' )
     totalBytesRead = 0
     totalFrames = 0
     buf, mousebuf = '', ''
@@ -355,7 +367,7 @@ def camera_client(readP, trialIndex, cameraPinValue):
     framesInStack = 0
     trial_count = 0
     blinks_ = []
-    speed_ = [ ]
+    speed_ = [ -1.0 ]
     writeTrial_ = False
     recording_ = False
     cameraPinState = [False, False]
@@ -377,14 +389,20 @@ def camera_client(readP, trialIndex, cameraPinValue):
                 # Read mouse line for socket.
                 # Fetch all the data and read the last line. This one is the
                 # lastest line sent by mouse.
-                mr = mouse_sock_.recv( 1024, socket.MSG_DONTWAIT )
+                mr = ms.recv( 1024, socket.MSG_DONTWAIT )
+                print( mr )
                 mousebuf += mr
                 lastLine = mousebuf.split( '\n' )[-2]
                 ss = [float(x) for x in lastLine.split( ',' )[-2:]]
-                # velocity is followed by direction.
-                r1 = math.copysign( ss[0], ss[1] ) 
-                speed_.append( r1 )
-                txt += ',MOUSE:' + lastLine[-1:-20]
+                if len(ss) > 2:
+                    # velocity is followed by direction.
+                    r1 = math.copysign( ss[0], ss[1] ) 
+                    speed_.append( r1 )
+                    txt += ',MOUSE:' + lastLine[-1:-20]
+                else:
+                    speed_.append( -1 )
+                    txt += 'ERR'
+
 
                 if len(bbox_) == 2:
                     # print( 'Bounding box has been drawn : %s' % str(bbox_) )
@@ -476,24 +494,21 @@ def camera_client(readP, trialIndex, cameraPinValue):
             save_img_stack(image_stack_, -1 )
             init_stack( )
 
-def mouse_client( trialIndex ):
-    """Mouse client.
-    """
-    global finished_all_
-    val = read_mouse_delta.main( config.args_.mouse )
-    if finished_all_:
-        read_mouse_delta.user_interrupt_ = True
-        return 1
-
 def main():
     # Lock so that only one process prints to console at a time.
     # When daemon is set to True, all threads will exit (ungracefully) when main
     # terminates.
     global finished_all_
+    global mouse_server_pid_
 
     config.init_logger(config.args_.port.replace('/', '_'))
     init_arduino_client()
     print('Initialized arduino board')
+
+    # Call mouse process in background.
+    mouse_server_pid_ = subprocess.Popen( [  "./read_mouse_delta.py", config.args_.mouse ]).pid
+
+    print( 'Called MOUSE server: PID %d' % mouse_server_pid_ )
 
     # Variables to share between processes.
     trialIndex = Value('d', 0)
@@ -501,17 +516,6 @@ def main():
 
     readP, writeP = Pipe(duplex=False)
 
-    cam = Process( target=camera_client
-            , args=(readP,trialIndex, cameraPinValue )
-            )
-    cam.daemon = True
-    cam.start()
-    print('Camera client launched')
-
-    mouse = Process( target=mouse_client, args=( trialIndex, ) )
-    mouse.daemon = True
-    mouse.start( )
-    print( 'Mouse client launched' )
 
     arduinoP = Process(
             target=arduino_client,
@@ -527,6 +531,13 @@ def main():
         print('Got %s in send_comamnd' % e)
         finished_all_ = True
         raise KeyboardInterrupt
+
+    cam = Process( target=camera_client
+            , args=(readP,trialIndex, cameraPinValue )
+            )
+    cam.daemon = True
+    cam.start()
+    print('Camera client launched')
 
     arduinoP.join()
     cam.join()
