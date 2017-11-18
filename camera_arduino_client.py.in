@@ -377,7 +377,7 @@ def camera_client(readP, trialIndex, cameraPinValue):
                 # Read mouse line for socket.
                 # Fetch all the data and read the last line. This one is the
                 # lastest line sent by mouse.
-                mr = readMouse.recv( 1024, socket.MSG_DONTWAIT )
+                mr = mouse_sock_.recv( 1024, socket.MSG_DONTWAIT )
                 mousebuf += mr
                 lastLine = mousebuf.split( '\n' )[-2]
                 ss = [float(x) for x in lastLine.split( ',' )[-2:]]
