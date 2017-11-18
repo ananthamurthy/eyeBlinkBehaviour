@@ -171,7 +171,7 @@ SET(RUN_ARGS
 # Copy python files into current working directory.
 file(COPY ${CMAKE_SOURCE_DIR}/eyeblinkdetector/extract.py 
         ${CMAKE_SOURCE_DIR}/blinky.py 
-        ${CMAKE_SOURCE_DIR}/read_mouse_delta.py
+        ${CMAKE_SOURCE_DIR}/mouse_server.py
         DESTINATION ${CMAKE_BINARY_DIR}
      )
 

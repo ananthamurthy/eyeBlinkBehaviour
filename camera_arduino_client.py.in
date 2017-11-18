@@ -337,14 +337,14 @@ def camera_client(readP, trialIndex, cameraPinValue):
             s.connect(sock_name_)
             break
         except Exception as e:
-            printException( )
+            print( e )
             time.sleep(1)
         try:
             print( 'Trying to connect to %s' % mouse_sock_ )
-            s.connect( mouse_sock_ )
+            ms.connect( mouse_sock_ )
             break
         except Exception as e:
-            printException( )
+            print( e )
             time.sleep( 1 )
         else:
             print('Could not find %s or %s' % (sock_name_, mouse_sock_) )
@@ -353,7 +353,7 @@ def camera_client(readP, trialIndex, cameraPinValue):
     print( '[INFO] Connected with both arduino board and Mouse' )
     totalBytesRead = 0
     totalFrames = 0
-    buf, mousebuf = '', ''
+    buf, mousebuf = '', '\n'.join( [ 'BABA JI KA THULLU' ] * 2 )
     init_stack()
     framesInStack = 0
     trial_count = 0
@@ -380,12 +380,19 @@ def camera_client(readP, trialIndex, cameraPinValue):
                 # Read mouse line for socket.
                 # Fetch all the data and read the last line. This one is the
                 # lastest line sent by mouse.
-                print( 'x' )
-                mr = ms.recv( 1024, socket.MSG_DONTWAIT )
-                print( mr )
+                mr = 'BABA JI KA THULLU\b'
+                try:
+                    mr = ms.recv( 1024 ) 
+                except Exception as e:
+                    print( e )
+                    pass
                 mousebuf += mr
                 lastLine = mousebuf.split( '\n' )[-2]
-                ss = [float(x) for x in lastLine.split( ',' )[-2:]]
+                ss = [ 0.0, 0.0 ]
+                try:
+                    ss = [float(x) for x in lastLine.split( ',' )[-2:]]
+                except Exception as e:
+                    pass
                 if len(ss) > 2:
                     # velocity is followed by direction.
                     r1 = math.copysign( ss[0], ss[1] ) 
@@ -502,6 +509,12 @@ def main():
 
     readP, writeP = Pipe(duplex=False)
 
+    cam = Process( target=camera_client
+            , args=(readP,trialIndex, cameraPinValue )
+            )
+    cam.daemon = True
+    cam.start()
+    print('Camera client launched')
 
     arduinoP = Process(
             target=arduino_client,
@@ -518,12 +531,6 @@ def main():
         finished_all_ = True
         raise KeyboardInterrupt
 
-    cam = Process( target=camera_client
-            , args=(readP,trialIndex, cameraPinValue )
-            )
-    cam.daemon = True
-    cam.start()
-    print('Camera client launched')
 
     arduinoP.join()
     cam.join()
