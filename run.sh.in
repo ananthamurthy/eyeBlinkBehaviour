@@ -102,9 +102,10 @@ else
 fi
 
 # lauch the mouse server.
-./read_mouse_delta.py ${MOUSE_PATH} &
-MOUSE_PID=$!
-trap 'kill_acquition_from_mouse ${MOUSE_PID}' INT
+python ./read_mouse_delta.py ${MOUSE_PATH} & 
+export MOUSE_PID=$!
+trap 'kill_acquition_from_mouse $MOUSE_PID' INT
+echo "Lauched MOUSE server with PID=$MOUSE_PID"
 
 # Now check if camera server is still running. If not don't continue
 # Now run python script to acquire data. If user press Ctrl+c to stop it, we

@@ -166,7 +166,6 @@ file(WRITE $ENV{HOME}/.gnuplot "set fit quiet; " )
 # Pass animal options to run.sh which will will passed to python script.
 SET(RUN_ARGS 
     -p ${PORT} -n ${ANIMAL_NAME} -sn ${SESSION_NUM} -st ${SESSION_TYPE} 
-    -m ${MOUSE_PATH}
      )
 
 # Copy python files into current working directory.
