@@ -401,6 +401,11 @@ void do_trial( unsigned int trial_num, bool isprobe = false )
      *  TRACE. The duration of trace varies from trial to trial.
      *-----------------------------------------------------------------------------*/
     duration = 250;
+    if( 3 == SESSION_TYPE )
+        duration = 500;
+    else if( 2 == SESSION_TYPE )
+        duration = 350;
+
     sprintf( trial_state_, "TRAC" );
     while( (millis( ) - stamp_) <= duration )
         write_data_line( );
