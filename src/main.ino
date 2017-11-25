@@ -97,6 +97,22 @@ void reset_watchdog( )
         wdt_reset( );
 }
 
+unsigned int trace_duration( int st, const char* option = "" )
+{
+    if( st == 3 )
+        return 350;
+    else if( st == 4 )
+        return 500;
+    else if( 5 == st )
+        return 650;
+    else if( 6 == st )
+        return 800;
+    else if( 7 == st )
+        return 1000;
+
+    return 250;
+}
+
 
 
 /**
@@ -400,12 +416,7 @@ void do_trial( unsigned int trial_num, bool isprobe = false )
     /*-----------------------------------------------------------------------------
      *  TRACE. The duration of trace varies from trial to trial.
      *-----------------------------------------------------------------------------*/
-    duration = 250;
-    if( 3 == SESSION_TYPE )
-        duration = 500;
-    else if( 2 == SESSION_TYPE )
-        duration = 350;
-
+    duration = trace_duration( SESSION_TYPE );
     sprintf( trial_state_, "TRAC" );
     while( (millis( ) - stamp_) <= duration )
         write_data_line( );
@@ -414,7 +425,7 @@ void do_trial( unsigned int trial_num, bool isprobe = false )
     /*-----------------------------------------------------------------------------
      *  PUFF for 50 ms if trial is not a probe type.
      *-----------------------------------------------------------------------------*/
-    if( 4 == SESSION_TYPE || 5 == SESSION_TYPE )
+    if( 1 == SESSION_TYPE || 2 == SESSION_TYPE )
     {
         sprintf( trial_state_, "NOPF" );
         duration =  PUFF_DURATION;
