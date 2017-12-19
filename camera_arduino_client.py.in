@@ -62,7 +62,6 @@ def to_float( x ):
         x = eval( x )
         return x
     except Exception as e:
-        print( 'WARN: %s' % x )
         return float( 'nan' )
 
 def printException( msg = None ):
