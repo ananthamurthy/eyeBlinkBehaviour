@@ -335,10 +335,10 @@ def camera_client(readP, trialIndex, cameraPinValue):
         try:
             print( 'Trying to connect to %s' % sock_name_ )
             s.connect(sock_name_)
-            break
         except Exception as e:
             print( e )
             time.sleep(1)
+
         try:
             print( 'Trying to connect to %s' % mouse_sock_ )
             ms.connect( mouse_sock_ )
@@ -347,7 +347,6 @@ def camera_client(readP, trialIndex, cameraPinValue):
             print( e )
             time.sleep( 1 )
         else:
-            print('Could not find %s or %s' % (sock_name_, mouse_sock_) )
             time.sleep(1)
 
     print( '[INFO] Connected with both arduino board and Mouse' )
@@ -363,121 +362,120 @@ def camera_client(readP, trialIndex, cameraPinValue):
     recording_ = False
     cameraPinState = [False, False]
     while not finished_all_:
-        try:
-            data = s.recv(frame_size_)
-            buf += data
-            if len(buf) >= frame_size_:
-                now = datetime.datetime.now().isoformat()
-                img = np.frombuffer(buf[:frame_size_], dtype=np.uint8)
-                img = np.reshape(img, img_shape_)
-                txt = now
+        data = s.recv(frame_size_)
+        buf += data
+        if len(buf) >= frame_size_:
+            now = datetime.datetime.now().isoformat()
+            img = np.frombuffer(buf[:frame_size_], dtype=np.uint8)
+            img = np.reshape(img, img_shape_)
+            txt = now
 
-                # This is critical.
-                # Read from PIPE but it should not be blocking.
-                if readP.poll(1e-4):
-                    txt += ',' + readP.recv()
+            # This is critical.
+            # Read from PIPE but it should not be blocking.
+            if readP.poll(1e-4):
+                txt += ',' + readP.recv()
 
-                # Read mouse line for socket.
-                # Fetch all the data and read the last line. This one is the
-                # lastest line sent by mouse.
-                mr = 'BABA JI KA THULLU\n'
-                try:
-                    mr = ms.recv( 256 ) 
-                except Exception as e:
-                    tryConnectToMouse( ms )
+            # Read mouse line for socket.
+            # Fetch all the data and read the last line. This one is the
+            # lastest line sent by mouse.
+            mr = 'BABA JI KA THULLU\n'
+            try:
+                mr = ms.recv( 256 ) 
+            except Exception as e:
+                print( 'Could not connect to MOUSE. %s' % e )
+                finished_all_ = True
 
-                mousebuf += mr
-                lastLine = mousebuf.split( '\n' )[-2]
-                ss = [ 0.0, 0.0 ]
-                try:
-                    ss = [float(x) for x in lastLine.split( ',' )[-2:]]
-                except Exception as e:
-                    pass
+            mousebuf += mr
+            print( 'mousebuf', mousebuf )
+            lastLine = mousebuf.split( '\n' )[-2:-1]
+            ss = [ 0.0, 0.0 ]
+            try:
+                ss = [float(x) for x in lastLine.split( ',' )[-2:]]
+            except Exception as e:
+                ss = [ -1.0, -1.0 ]
+                pass
 
-                if len(ss) > 2:
-                    # velocity is followed by direction.
-                    r1 = math.copysign( ss[0], ss[1] ) 
-                    speed_.append( r1 )
-                    txt += ',MOUSE:' + lastLine[-1:-20]
+            if len(ss) > 2:
+                # velocity is followed by direction.
+                r1 = math.copysign( ss[0], ss[1] ) 
+                speed_.append( r1 )
+                txt += ',MOUSE:' + lastLine[-1:-20]
+            else:
+                speed_.append( -1 )
+                txt += 'MOUSE_ERR'
+
+
+            if len(bbox_) == 2:
+                # print( 'Bounding box has been drawn : %s' % str(bbox_) )
+                cv2.rectangle( img, bbox_[0], bbox_[1], 128 )
+                (x0, y0), (x1, y1) = bbox_
+                roi = img[y0:y1,x0:x1]
+                # Equalize histogram
+                roi = cv2.equalizeHist( roi )
+                infile, outfile, res, sss = blinky.process_frame(roi, 0)
+                #cv2.imshow( 'algo', outfile )
+
+                # When camera pin goes HIGH, start writing trial.
+                if cameraPinValue.value == 1:
+                    msg = '%.2f (ON)'  % res
+                    recording_ = True
+                    cameraPinState.append( True )
+                    cameraPinState.pop( 0 )
                 else:
-                    speed_.append( -1 )
-                    txt += 'ERR'
+                    msg = '%.2f'  % res
+                    cameraPinState.append( False )
+                    cameraPinState.pop( 0 )
 
+                if (not cameraPinState[1]) and cameraPinState[0]:
+                    writeTrial_ = True
+                    recording_ = False
+                else:
+                    writeTrial_ = False
+            else:
+                res = random.random( )
+
+            blinks_.append( res )
+
+            # Append blink value to data.
+            txt += ',%4.3f' % blinks_[-1]
+
+            # Fill txt to have its length equal to frame width
+            assert len(txt) < img.shape[1], "Too much text to write"
+            txt += ' ' * (img.shape[1] - len(txt))
+
+            # Convert txt to binary and prefix to the img we got from camera
+            # server.
+            metadata = np.array(map(ord, txt), dtype=np.uint8)
+            img = np.vstack((metadata, img))
+
+            if write_data_:
+                cv2.putText(img, txt.strip(), (0, h_ - 10),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.25, 128, 1
+                            )
+
+            # Only save the frame if camera pin says so.
+            if recording_:
+                image_stack_[framesInStack] = img
+                framesInStack += 1
+
+
+            # Show every 10th frame.
+            if totalFrames % 10 == 0:
+                show_frame( img )
+                # show_frame( np.vstack( (infile, outfile )) )
+
+                # Enable the following if you want to see the blink data on
+                # separate plot window. Slows down frame rate a bit ~ 10 to
+                # 20 FPS.
 
                 if len(bbox_) == 2:
-                    # print( 'Bounding box has been drawn : %s' % str(bbox_) )
-                    cv2.rectangle( img, bbox_[0], bbox_[1], 128 )
-                    (x0, y0), (x1, y1) = bbox_
-                    roi = img[y0:y1,x0:x1]
-                    # Equalize histogram
-                    roi = cv2.equalizeHist( roi )
-                    infile, outfile, res, sss = blinky.process_frame(roi, 0)
-                    #cv2.imshow( 'algo', outfile )
-
-                    # When camera pin goes HIGH, start writing trial.
-                    if cameraPinValue.value == 1:
-                        msg = '%.2f (ON)'  % res
-                        recording_ = True
-                        cameraPinState.append( True )
-                        cameraPinState.pop( 0 )
-                    else:
-                        msg = '%.2f'  % res
-                        cameraPinState.append( False )
-                        cameraPinState.pop( 0 )
-
-                    if (not cameraPinState[1]) and cameraPinState[0]:
-                        writeTrial_ = True
-                        recording_ = False
-                    else:
-                        writeTrial_ = False
-                else:
-                    res = random.random( )
-
-                blinks_.append( res )
-
-                # Append blink value to data.
-                txt += ',%4.3f' % blinks_[-1]
-
-                # Fill txt to have its length equal to frame width
-                txt += ' ' * (img.shape[1] - len(txt))
-
-                # Convert txt to binary and prefix to the img we got from camera
-                # server.
-                metadata = np.array(map(ord, txt), dtype=np.uint8)
-                img = np.vstack((metadata, img))
-
-                if write_data_:
-                    cv2.putText(img, txt.strip(), (0, h_ - 10),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.25, 128, 1
+                    if len( blinks_ ) > 10:
+                        gnuplot_.plot( 
+                                np.array( blinks_[-2000:] )
+                                , legend = "Speed : %f" % speed_[-1] 
                                 )
 
-                # Only save the frame if camera pin says so.
-                if recording_:
-                    image_stack_[framesInStack] = img
-                    framesInStack += 1
-
-
-                # Show every 10th frame.
-                if totalFrames % 10 == 0:
-                    show_frame( img )
-                    # show_frame( np.vstack( (infile, outfile )) )
-
-                    # Enable the following if you want to see the blink data on
-                    # separate plot window. Slows down frame rate a bit ~ 10 to
-                    # 20 FPS.
-
-                    if len(bbox_) == 2:
-                        if len( blinks_ ) > 10:
-                            gnuplot_.plot( 
-                                    np.array( blinks_[-2000:] )
-                                    , legend = "Speed : %f" % speed_[-1] 
-                                    )
-
-                buf = buf[frame_size_:]
-        except Exception as e:
-            # Keep reading.
-            printException( )
-            continue
+            buf = buf[frame_size_:]
 
         totalFrames += 1
         
@@ -493,6 +491,7 @@ def camera_client(readP, trialIndex, cameraPinValue):
             print( '[INFO] Too many frames in buffer.. flusing ' )
             save_img_stack(image_stack_, -1 )
             init_stack( )
+
 
 def main():
     # Lock so that only one process prints to console at a time.
@@ -532,10 +531,10 @@ def main():
         finished_all_ = True
         raise KeyboardInterrupt
 
-
     arduinoP.join()
     cam.join()
-    print('All done')
+    print('All done. Raising Ctrl+C to cleanup.')
+    raise KeyboardInterrupt
 
 if __name__ == '__main__':
     import argparse
