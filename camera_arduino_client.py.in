@@ -332,7 +332,7 @@ def get_mouse_val( ms, speed ):
     mr = None
     err = '(:)'
     try:
-        mr = ms.recv( 256 ) 
+        mr = ms.recv( 4096 ) 
     except Exception as e:
         print( 'Could not connect to MOUSE. %s' % e )
         finished_all_ = True
@@ -354,6 +354,7 @@ def get_mouse_val( ms, speed ):
     try:
         r1 = math.copysign( ss[-2], ss[-1] ) 
         speed.append( r1 )
+        speed.pop(0)
         return ',(%s:%s)' % (mouseData[0], r1 )
     except Exception as e:
         printException( ss )
