@@ -57,7 +57,15 @@ camera_store_end_ = 0
 
 title_ = 'Animal Window'
 
-def printException( ):
+def to_float( x ):
+    try:
+        x = eval( x )
+        return x
+    except Exception as e:
+        print( 'WARN: %s' % x )
+        return float( 'nan' )
+
+def printException( msg = None ):
     exc_type, exc_obj, tb = sys.exc_info()
     f = tb.tb_frame
     lineno = tb.tb_lineno
@@ -66,6 +74,8 @@ def printException( ):
     line = linecache.getline(filename, lineno, f.f_globals)
     print( 'EXCEPTION IN ({}, LINE {} "{}"): {}'.format(filename, lineno,
         line.strip(), exc_obj) )
+    if msg:
+        print( '\t%s' % msg )
 
 def onmouse(event, x, y, flags, params):
     global bbox_
@@ -316,6 +326,40 @@ def tryConnectToMouse( sock ):
 
     return sock
 
+def get_mouse_val( ms, speed ):
+    # Read mouse line for socket.
+    # Fetch all the data and read the last line. This one is the
+    # lastest line sent by mouse.
+    mr = None
+    err = '(:)'
+    try:
+        mr = ms.recv( 256 ) 
+    except Exception as e:
+        print( 'Could not connect to MOUSE. %s' % e )
+        finished_all_ = True
+        return err
+
+    # The last line may not be complete, second last line is a good
+    # idea.
+    lastLine = mr.split( '\n' )[-2]
+    if not lastLine:
+        return err
+
+    mouseData = lastLine.split( ',' )
+    # The first entry is usually timestamp.
+    ss = [ to_float(x) for x in mouseData ]
+    if len(ss) < 1:
+        return err 
+
+    # velocity is followed by direction.
+    try:
+        r1 = math.copysign( ss[-2], ss[-1] ) 
+        speed.append( r1 )
+        return ',(%s:%s)' % (mouseData[0], r1 )
+    except Exception as e:
+        printException( ss )
+        return err
+
 def camera_client(readP, trialIndex, cameraPinValue):
     global finished_all_
     global img_, buf_
@@ -375,35 +419,8 @@ def camera_client(readP, trialIndex, cameraPinValue):
             if readP.poll(1e-4):
                 txt += ',' + readP.recv()
 
-            # Read mouse line for socket.
-            # Fetch all the data and read the last line. This one is the
-            # lastest line sent by mouse.
-            mr = 'BABA JI KA THULLU\n'
-            try:
-                mr = ms.recv( 256 ) 
-            except Exception as e:
-                print( 'Could not connect to MOUSE. %s' % e )
-                finished_all_ = True
-
-            mousebuf += mr
-            print( 'mousebuf', mousebuf )
-            lastLine = mousebuf.split( '\n' )[-2:-1]
-            ss = [ 0.0, 0.0 ]
-            try:
-                ss = [float(x) for x in lastLine.split( ',' )[-2:]]
-            except Exception as e:
-                ss = [ -1.0, -1.0 ]
-                pass
-
-            if len(ss) > 2:
-                # velocity is followed by direction.
-                r1 = math.copysign( ss[0], ss[1] ) 
-                speed_.append( r1 )
-                txt += ',MOUSE:' + lastLine[-1:-20]
-            else:
-                speed_.append( -1 )
-                txt += 'MOUSE_ERR'
-
+            mr = get_mouse_val( ms, speed_ )
+            txt += ',%s' % mr
 
             if len(bbox_) == 2:
                 # print( 'Bounding box has been drawn : %s' % str(bbox_) )
