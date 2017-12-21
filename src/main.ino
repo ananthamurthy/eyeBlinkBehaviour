@@ -100,17 +100,23 @@ void reset_watchdog( )
 unsigned int trace_duration( int st, const char* option = "" )
 {
     if( st == 3 )
-        return 350;
+        return 250;
     else if( st == 4 )
-        return 500;
+        return 350;
     else if( 5 == st )
-        return 650;
+        return 450;
     else if( 6 == st )
-        return 800;
+        return 550;
     else if( 7 == st )
-        return 1000;
+        return 650;
+    else if( 8 == st)
+        return 750;
+    else if( 9 == st)
+        return 850;
+    else if(10 == st)
+        return 950;
 
-    return 250;
+    return 450;
 }
 
 
