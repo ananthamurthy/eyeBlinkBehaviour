@@ -337,7 +337,7 @@ def camera_client(readP, readMouse, trialIndex, cameraPinValue):
     framesInStack = 0
     trial_count = 0
     blinks_ = []
-    speed_ = [ ]
+    speed_ = [ -1.0 ]
     writeTrial_ = False
     recording_ = False
     cameraPinState = [False, False]
