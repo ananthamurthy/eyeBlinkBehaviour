@@ -396,7 +396,7 @@ void do_trial( unsigned int trial_num, bool isprobe = false )
      *  CS: 50 ms duration. No tone is played here. Write LED pin to HIGH.
      *  Play CS only when SESSION_TYPE is not 5.
      *-----------------------------------------------------------------------------*/
-    if( 5 == SESSION_TYPE )
+    if( 1 == SESSION_TYPE )
     {
         sprintf( trial_state_, "NOCS" );
         duration =  LED_DURATION;
