@@ -461,13 +461,15 @@ void do_trial( unsigned int trial_num, bool isprobe = false )
         // Switch camera OFF after 500 ms into POST.
         if( (millis() - stamp_) >= 500 )
             digitalWrite( CAMERA_TTL_PIN, LOW );
-
     }
+
 
     /*-----------------------------------------------------------------------------
      *  End trial.
      *-----------------------------------------------------------------------------*/
     digitalWrite( IMAGING_TRIGGER_PIN, LOW ); /* Shut down the imaging. */
+    sprintf( trial_state_, "ITI_" );
+
     Serial.print( ">>END Trial " );
     Serial.print( trial_count_ );
     Serial.println( " is over. Starting new");
@@ -508,7 +510,6 @@ void loop()
             reset_watchdog( );
             delay( 10 );
         }
-
         trial_count_ += 1;
     }
 
