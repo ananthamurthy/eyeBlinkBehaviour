@@ -483,8 +483,8 @@ void loop()
 {
     reset_watchdog( );
 
-    // Initialize probe trials index. Mean 6 +/- 2 trials. 
-    proble_trial_index_init( 6, 2 );
+    // Initialize probe trials index. Mean 7 +/- 2 trials. 
+    proble_trial_index_init( 7, 2 );
 
     //for (size_t i = 0; i < NUM_MAX_TRIALS; i++) 
     //{
