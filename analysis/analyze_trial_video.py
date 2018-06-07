@@ -39,7 +39,7 @@ def parse_timestamp( tstamp ):
     return date
 
 def get_status_timeslice( data, status ):
-    status = filter( lambda x: x[-6] == status, data )
+    status = filter( lambda x: status in x, data )
     if not status:
         return None, None
 
@@ -87,16 +87,17 @@ def process( tifffile, plot = True ):
             pass
             #print( 'x Frame %d has no arduino data' % fi )
 
-    tvec, blinkVec = [ ], [ ] 
+    tvec, blinkVec, velocityVec = [], [], []
     for l in datalines:
         try:
-            tvec.append( parse_timestamp( l[0] ) )
-            blinkVec.append( float( l[-1] ) )
+            tvec.append( parse_timestamp(l[0]))
+            blinkVec.append(float(l[-1]))
+            velocityVec.append(float(l[-2]))
         except Exception as e:
             print( '[WARN] Failed to parse data line %s. Ignoring' % l )
             print( '\t Error was %s' % e )
-    mean_,min_,max_ = sum(blinkVec)/len(blinkVec), min( blinkVec ), max(blinkVec)
 
+    mean_,min_,max_ = sum(blinkVec)/len(blinkVec), min( blinkVec ), max(blinkVec)
     cspST, cspET = get_status_timeslice( arduinoData, 'CS+' )
     usST, usET = get_status_timeslice( arduinoData, 'PUFF' )
     probeTs = get_status_timeslice( arduinoData, 'PROB' )
@@ -117,8 +118,7 @@ def process( tifffile, plot = True ):
         os.makedirs( datadir )
 
     if plot:
-        ax = plt.subplot( 111 )
-
+        ax = plt.subplot( 211 )
         if cspET > cspST:
             ax.plot( [cspST, cspET] , [mean_, mean_] )
 
@@ -127,8 +127,12 @@ def process( tifffile, plot = True ):
 
         ax.plot( tvec, blinkVec, label = 'Learning?=%s' % learnt  )
         plt.legend( framealpha = 0.4 )
-        plt.xticks( rotation = 'vertical' )
         plt.title( os.path.basename( sys.argv[1] ), fontsize = 8)
+
+        ax2 = plt.subplot( 212, sharex=ax )
+        ax2.plot( tvec, velocityVec, label = 'Speed' )
+        plt.xlabel( 'Time' )
+        plt.ylabel( 'cm/sec (really?)' )
 
         outfile = os.path.join( datadir, '%s.png' % os.path.basename(tifffile))
         plt.tight_layout( pad = 3 )
@@ -139,6 +143,7 @@ def process( tifffile, plot = True ):
 
     # Write processed data to pickle.
     res = dict( time = tvec, blinks = blinkVec
+            , velocity = velocityVec
             , cs = [cspST, cspET], us = [usST, usET]
             , did_learn = learnt, is_probe = isProbe
             )

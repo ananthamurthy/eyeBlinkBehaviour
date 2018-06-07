@@ -166,7 +166,6 @@ def append_trial_data(outfile, line ):
     with open(outfile, 'a') as f:
         f.write('%s\n' %  line )
 
-
 def read_line():
     """Append timestamp at which this line was read 
     """
