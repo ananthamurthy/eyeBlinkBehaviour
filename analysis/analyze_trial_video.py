@@ -20,6 +20,7 @@ import numpy as np
 import cPickle as pickle 
 from libtiff import TIFF
 import matplotlib as mpl
+mpl.use( 'Agg')
 import matplotlib.pyplot as plt
 import config
 
@@ -38,21 +39,22 @@ def parse_timestamp( tstamp ):
     return date
 
 def get_status_timeslice( data, status ):
-    status = filter( lambda x: x[-2] == status, data )
+    status = filter( lambda x: x[-6] == status, data )
     if not status:
-        return 0.0, 0.0
+        return None, None
+
     if len( status ) > 2:
         startTime = parse_timestamp( status[0][1] )
         endTime = parse_timestamp( status[-1][1] ) 
         if startTime is None or endTime is None:
             return None, None
     else:
-        startTime, endTime = 0.0, 0.0
+        startTime, endTime = 0, 0
     return startTime, endTime
 
 def compute_learning_yesno( time, blink, cs_start_time, thres = 20 ):
-    baseline, signal = [ ], [ ]
-    for t, v in zip( time, blink):
+    baseline, signal = [], []
+    for t, v in zip(time, blink):
         t1 = (t - cs_start_time).total_seconds( )
         if t1 > -0.200 and t1 <= 0:
             baseline.append( v )
@@ -136,12 +138,9 @@ def process( tifffile, plot = True ):
 
 
     # Write processed data to pickle.
-    res = dict( time = tvec
-            , blinks = blinkVec
-            , cs = [ cspST, cspET ]
-            , us = [ usST, usET ]
-            , did_learn = learnt
-            , is_probe = isProbe
+    res = dict( time = tvec, blinks = blinkVec
+            , cs = [cspST, cspET], us = [usST, usET]
+            , did_learn = learnt, is_probe = isProbe
             )
 
     pickleFile = os.path.join( 
