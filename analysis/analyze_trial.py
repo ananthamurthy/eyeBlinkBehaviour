@@ -166,6 +166,7 @@ def process( trialdir ):
         ax4.plot( idx, ymean, label = label )
         ax4.fill_between( idx, ymean + yerr, ymean - yerr, alpha = 0.3 )
         ax4.legend( framealpha = 0.1 )
+    ax4.set_title( 'Velocity (px/sec)' )
 
     outfile = os.path.join( resdir, 'summary.png' )
     plt.tight_layout( pad = 2 )

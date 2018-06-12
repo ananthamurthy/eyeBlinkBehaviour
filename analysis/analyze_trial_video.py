@@ -128,9 +128,9 @@ def process( tifffile, plot = True ):
         plt.title( os.path.basename( sys.argv[1] ), fontsize = 8)
 
         ax2 = plt.subplot( 212, sharex=ax )
-        ax2.plot( tvec, velocityVec, label = 'Speed' )
+        ax2.plot( tvec, velocityVec, label = 'Speed (px/sec)' )
         plt.xlabel( 'Time' )
-        plt.ylabel( 'Velocity (cm/sec)' )
+        plt.ylabel( 'px/sec' )
 
         outfile = os.path.join( datadir, '%s.png' % os.path.basename(tifffile))
         plt.tight_layout( pad = 3 )

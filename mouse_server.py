@@ -100,9 +100,10 @@ def compute_velocity_and_dir( trajs ):
     vels, dirs, dt = [ ], [ ], []
     for i, (t, x, y) in enumerate(trajs[1:]):
         t0, x0, y0 = trajs[i]
+        print( x0, y0 )
         if t > t0:
             # per second.
-            v = ((x-x0)**2.0+(y-y0)**2.0)**0.5/(t-t0).microseconds
+            v = 1e6*((x-x0)**2.0+(y-y0)**2.0)**0.5/(t-t0).microseconds
             dt.append(t-t0)
             theta = (y-y0)/max(1e-12, (x - x0))
             d = math.atan( theta )
