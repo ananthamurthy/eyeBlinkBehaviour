@@ -40,16 +40,14 @@ def parse_timestamp( tstamp ):
 
 def get_status_timeslice( data, status ):
     status = filter( lambda x: status in x, data )
+    startTime, endTime = None, None
     if not status:
-        return None, None
+        return startTime, endTime
 
     if len( status ) > 2:
         startTime = parse_timestamp( status[0][1] )
         endTime = parse_timestamp( status[-1][1] ) 
-        if startTime is None or endTime is None:
-            return None, None
-    else:
-        startTime, endTime = 0, 0
+
     return startTime, endTime
 
 def compute_learning_yesno( time, blink, cs_start_time, thres = 20 ):
@@ -102,7 +100,7 @@ def process( tifffile, plot = True ):
     usST, usET = get_status_timeslice( arduinoData, 'PUFF' )
     probeTs = get_status_timeslice( arduinoData, 'PROB' )
 
-    if probeTs[0] == 0.0 and probeTs[1] == 0.0:
+    if probeTs[0] is None and probeTs[1] is None:
         # Nowhere we found PROB in trial.
         isProbe = False
     else:
