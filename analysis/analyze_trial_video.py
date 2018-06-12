@@ -130,7 +130,7 @@ def process( tifffile, plot = True ):
         ax2 = plt.subplot( 212, sharex=ax )
         ax2.plot( tvec, velocityVec, label = 'Speed' )
         plt.xlabel( 'Time' )
-        plt.ylabel( 'cm/sec (really?)' )
+        plt.ylabel( 'Velocity (cm/sec)' )
 
         outfile = os.path.join( datadir, '%s.png' % os.path.basename(tifffile))
         plt.tight_layout( pad = 3 )

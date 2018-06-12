@@ -54,6 +54,7 @@ def process( trialdir ):
                 trial_data_.append( (f, res) )
 
     times, allBlinks, probeTrial = [ ], [ ], [ ]
+    allVelocity = []
     for i, (f, d) in enumerate(trial_data_):
         blinks = d[ 'blinks' ]
         tvec = d['time']
@@ -66,6 +67,7 @@ def process( trialdir ):
                 )
         times.append( tvec )
         allBlinks.append( d['blinks'] )
+        allVelocity.append( d['velocity'] )
         if d['is_probe'] == True:
             probeTrial.append( i )
 
@@ -83,12 +85,18 @@ def process( trialdir ):
 
     img, probeImg = [ ], [ ]
     alignedData, alignedProbeData = [ ], [ ]
-    for i, (tvec, yvec) in enumerate(zip(times, allBlinks)):
+    alignedVelocityData = []
+    probeVelocity, velocity = [], []
+    for i, (tvec, yvec, vvec) in enumerate(zip(times, allBlinks, allVelocity)):
         row = np.interp( newTVec, tvec, yvec )
+        vrow = np.interp( newTVec, tvec, vvec )
         if i in probeTrial:
             probeImg.append( row )
+            probeVelocity.append(vrow)
         else:
             img.append( row )
+            velocity.append(vrow)
+
         alignedData.append( zip(newTVec,row) )
 
     # Separate probe trials.
@@ -106,7 +114,7 @@ def process( trialdir ):
     print( 'No of other trials: %s' % len(img) )
 
     plt.figure( figsize=(8,10) )
-    ax1 = plt.subplot( 311 )
+    ax1 = plt.subplot( 411 )
     if img:
         plt.imshow( img, interpolation = 'none', aspect = 'auto' )
         plt.title( 'CS+' )
@@ -116,7 +124,7 @@ def process( trialdir ):
         meanOfTrials = np.mean( img, axis = 0 )
         stdOfTrials = np.std( img, axis = 0 )
 
-        ax3 = plt.subplot( 313, sharex = ax1 )
+        ax3 = plt.subplot( 413, sharex = ax1 )
         idx = range( len( meanOfTrials ) )
         plt.plot( idx, meanOfTrials, color = 'blue', label = 'CS+' ) 
         plt.fill_between( idx, meanOfTrials - stdOfTrials, meanOfTrials + stdOfTrials
@@ -125,18 +133,17 @@ def process( trialdir ):
                 ) 
 
     if probeImg:
-        ax2 = plt.subplot( 312, sharex = ax1 )
+        ax2 = plt.subplot( 412, sharex = ax1 )
         plt.imshow( probeImg, interpolation = 'none', aspect = 'auto' )
         plt.title( 'Probe' )
         plt.xticks( range(0, len(newTVec), stepSize), xlabels, fontsize=10)
         plt.colorbar( )
 
-
     # Compute performance index.
     perfs = compute_performance( alignedData )
     pI, piList = compute_performance_index( perfs )
 
-    ax3 = plt.subplot( 313, sharex = ax1 )
+    ax3 = plt.subplot( 413, sharex = ax1 )
     meanOfProbeTrials = np.mean( probeImg, axis = 0 )
     stdOfProbeTrials = np.std( probeImg, axis = 0 )
     idx = range( len( meanOfProbeTrials ) )
@@ -148,6 +155,17 @@ def process( trialdir ):
             ) 
     ax3.legend( framealpha = 0.1 )
     plt.xlabel( 'Time (ms)' )
+
+    # velocity.
+    ax4 = plt.subplot( 414, sharex=ax1 )
+    for v, label in zip([velocity, probeVelocity], [ 'CS+', 'PROB']):
+        ymean = np.mean( v, axis = 0 )
+        idx = range( len(ymean) )
+        yerr = np.std( v, axis = 0 )
+        print( len(idx), len(ymean))
+        ax4.plot( idx, ymean, label = label )
+        ax4.fill_between( idx, ymean + yerr, ymean - yerr, alpha = 0.3 )
+        ax4.legend( framealpha = 0.1 )
 
     outfile = os.path.join( resdir, 'summary.png' )
     plt.tight_layout( pad = 2 )
