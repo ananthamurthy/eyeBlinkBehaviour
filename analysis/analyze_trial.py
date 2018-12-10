@@ -1,10 +1,5 @@
 #!/usr/bin/env python2
-
-"""analyze_trial.py: 
-
-Analyze each trial.
-
-"""
+from __future__ import print_function
     
 __author__           = "Dilawar Singh"
 __copyright__        = "Copyright 2016, Dilawar Singh "
@@ -73,7 +68,6 @@ def process( trialdir ):
         allBlinks.append( d['blinks'] )
         if d['is_probe'] == True:
             probeTrial.append( i )
-        
 
     tmins, tmaxs = [ ], [ ]
     for t in times:
@@ -108,30 +102,34 @@ def process( trialdir ):
     numTicks = 10
     stepSize = (len(newTVec) / numTicks)
     xlabels = [ '%d' % int(1000 * x) for x in newTVec[::stepSize] ]
+    print( 'No of probe trials : %d' % len(probeImg) )
+    print( 'No of other trials: %s' % len(img) )
 
     plt.figure( figsize=(8,10) )
     ax1 = plt.subplot( 311 )
-    plt.imshow( img, interpolation = 'none', aspect = 'auto' )
-    plt.title( 'CS+' )
-    plt.xticks( range(0, len(newTVec), stepSize), xlabels, fontsize=10)
-    plt.colorbar( )
+    if img:
+        plt.imshow( img, interpolation = 'none', aspect = 'auto' )
+        plt.title( 'CS+' )
+        plt.xticks( range(0, len(newTVec), stepSize), xlabels, fontsize=10)
+        plt.colorbar( )
 
-    meanOfTrials = np.mean( img, axis = 0 )
-    stdOfTrials = np.std( img, axis = 0 )
+        meanOfTrials = np.mean( img, axis = 0 )
+        stdOfTrials = np.std( img, axis = 0 )
 
-    ax3 = plt.subplot( 313, sharex = ax1 )
-    idx = range( len( meanOfTrials ) )
-    plt.plot( idx, meanOfTrials, color = 'blue', label = 'CS+' ) 
-    plt.fill_between( idx, meanOfTrials - stdOfTrials, meanOfTrials + stdOfTrials
-            , color = 'blue'
-            , alpha = 0.2
-            ) 
+        ax3 = plt.subplot( 313, sharex = ax1 )
+        idx = range( len( meanOfTrials ) )
+        plt.plot( idx, meanOfTrials, color = 'blue', label = 'CS+' ) 
+        plt.fill_between( idx, meanOfTrials - stdOfTrials, meanOfTrials + stdOfTrials
+                , color = 'blue'
+                , alpha = 0.2
+                ) 
 
-    ax2 = plt.subplot( 312, sharex = ax1 )
-    plt.imshow( probeImg, interpolation = 'none', aspect = 'auto' )
-    plt.title( 'Probe' )
-    plt.xticks( range(0, len(newTVec), stepSize), xlabels, fontsize=10)
-    plt.colorbar( )
+    if probeImg:
+        ax2 = plt.subplot( 312, sharex = ax1 )
+        plt.imshow( probeImg, interpolation = 'none', aspect = 'auto' )
+        plt.title( 'Probe' )
+        plt.xticks( range(0, len(newTVec), stepSize), xlabels, fontsize=10)
+        plt.colorbar( )
 
 
     # Compute performance index.

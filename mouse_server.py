@@ -1,9 +1,5 @@
 #!/usr/bin/python
 
-"""
-read_mouse_delta.py: 
-
-"""
 from __future__ import print_function
     
 __author__           = "Dilawar Singh"
@@ -29,7 +25,6 @@ def close( ):
         sock_.close( )
         conn_.close( )
 
-user_ = os.environ.get( 'USER', ' ' )
 sock_, conn_ = None, None
 sockName_ = '/tmp/__MY_MOUSE_SOCKET__' 
 
@@ -46,18 +41,17 @@ def create_socket( ):
     connected = False
     while not connected:
         try:
-            print( '[INFO] Waiting for MOUSE socket client. timeout %s' %
-                    sock_.gettimeout() 
-                    )
-            sock_.listen( 2 )
+            print( '.', end = '' )
+            sys.stdout.flush()
+            sock_.listen( 1 )
             conn_, addr = sock_.accept( )
             connected = True
         except Exception as e:
             pass
 
 user_interrupt_ = False
-trajs = [ (0,0,0) ] * 10
-lastT_ = 0.0
+trajs = [ (datetime.datetime.now(),0,0)  for i in range(20) ] 
+lastT_ = datetime.datetime.now()
 
 f_ = None
 q_ = [ (0,0,0) ]
@@ -91,31 +85,35 @@ def getMousePos( q ):
     if user_interrupt_:
         sock_.close( )
         return
-    val = q.pop( )
-    t1, dx, dy = val
-    t0, x0, y0 = trajs[-1]
+
+    t1 = datetime.datetime.now()
+    tignore, dx, dy = q.pop( )
+    t0, x0, y0= trajs[-1]
     trajs.append( (t1, x0 + dx, y0 + dy) )
     trajs.pop( 0 )
     res = compute_velocity_and_dir( trajs )
-    if t1 > lastT_ + 5e-3 :
+    if (t1 - lastT_).microseconds > 1000:
         lastT_ = t1
-        return '%.4f,%.4f,%.4f' % (t1, res[0], res[1] )
+        return '%s,%.4f,%.4f' % (t1,res[0],res[1])
 
 def compute_velocity_and_dir( trajs ):
-    vels, dirs = [ ], [ ]
+    vels, dirs, dt = [ ], [ ], []
     for i, (t, x, y) in enumerate(trajs[1:]):
         t0, x0, y0 = trajs[i]
         if t > t0:
-            v = ((x - x0 ) ** 2.0 + (y-y0)**2.0) ** 0.5 / (t-t0)
-            theta = (y - y0) / max(1e-12, (x - x0))
+            # per second.
+            v = ((x-x0)**2.0+(y-y0)**2.0)**0.5/(t-t0).microseconds
+            dt.append(t-t0)
+            theta = (y-y0)/max(1e-12, (x - x0))
             d = math.atan( theta )
             vels.append( v )
             dirs.append( d )
         else:
             vels.append( 0 )
             dirs.append( 0 )
+            dt.append( 0 )
     # average direction
-    return sum( vels ) / len(vels), sum( dirs ) / len(dirs)
+    return sum(vels)/len(vels), sum(dirs)/len(dirs)
 
 def process( path ):
     global user_interrupt_
@@ -139,6 +137,7 @@ def process( path ):
 
 def main( path ):
     create_socket( )
+    print( 'CONNECTED' )
     while 1:
         x = process( path )
 

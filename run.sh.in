@@ -19,6 +19,7 @@ set -o nounset                              # Treat unset variables as an error
 set -e 
 
 COMMAND=`pwd`/cam_server
+MOUSE_PATH="@MOUSE_PATH@"
 
 # Check if user is member of dialout group.
 if id -nG $USER | grep -qw "dialout"; then
@@ -59,6 +60,13 @@ function kill_acquition_from_point_grey( )
     find /mnt/ramdisk -user $USER -print0 | xargs -0 rm
 }
 
+function kill_acquition_from_mouse( )
+{
+    echo "Ctrl+c pressed. Terminating processes  $1"
+    kill_process $1
+}
+
+
 
 # First, we execute the binary file acquition_from_point_grey  in background and
 # save its PID. We can use the PID to kill this process.
@@ -93,11 +101,19 @@ else
     exit;
 fi
 
+# lauch the mouse server.
+python ./mouse_server.py ${MOUSE_PATH} & 
+export MOUSE_PID=$!
+trap 'kill_acquition_from_mouse $MOUSE_PID' INT
+echo "Lauched MOUSE server with PID=$MOUSE_PID"
+
 # Now check if camera server is still running. If not don't continue
 # Now run python script to acquire data. If user press Ctrl+c to stop it, we
 # must send ctrl+c to PID acquition_from_point_grey app as well.
 echo "Launching ardunio+camera client with options: $@"
+set +e
 python ./camera_arduino_client.py $@
+set -e
 
 # If we have come here successfully, cleanup.
 killall $(basename $COMMAND) || echo "Nothing to kill"

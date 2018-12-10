@@ -35,9 +35,9 @@ import tifffile
 import subprocess
 import blinky
 import gnuplotlib
-import read_mouse_delta
 
-gnuplot_ = gnuplotlib.gnuplotlib( title = 'Blink readout'
+gnuplot_ = gnuplotlib.gnuplotlib(
+        title = 'Blink readout'
         , terminal = 'x11 noraise' 
         )
 
@@ -57,7 +57,14 @@ camera_store_end_ = 0
 
 title_ = 'Animal Window'
 
-def printException( ):
+def to_float( x ):
+    try:
+        x = eval( x )
+        return x
+    except Exception as e:
+        return float( 'nan' )
+
+def printException( msg = None ):
     exc_type, exc_obj, tb = sys.exc_info()
     f = tb.tb_frame
     lineno = tb.tb_lineno
@@ -66,6 +73,8 @@ def printException( ):
     line = linecache.getline(filename, lineno, f.f_globals)
     print( 'EXCEPTION IN ({}, LINE {} "{}"): {}'.format(filename, lineno,
         line.strip(), exc_obj) )
+    if msg:
+        print( '\t%s' % msg )
 
 def onmouse(event, x, y, flags, params):
     global bbox_
@@ -111,6 +120,8 @@ with open(config_file, "r") as cf:
     assert sock, "Can't read socket path from configuration file"
 
 sock_name_ = sock
+mouse_sock_ = '/tmp/__MY_MOUSE_SOCKET__'
+assert os.path.exists( mouse_sock_ )
 
 img_shape_ = (h_, w_)
 frame_size_ = img_shape_[0] * img_shape_[1]
@@ -154,7 +165,6 @@ def cleanup():
 def append_trial_data(outfile, line ):
     with open(outfile, 'a') as f:
         f.write('%s\n' %  line )
-
 
 def read_line():
     """Append timestamp at which this line was read 
@@ -296,7 +306,7 @@ def init_stack():
 
 
 def poll_socket():
-    return os.path.exists(sock_name_)
+    return os.path.exists(sock_name_) and os.path.exists( mouse_sock_ )
 
 
 def show_frame(frame, outfile=None):
@@ -306,11 +316,57 @@ def show_frame(frame, outfile=None):
     if outfile:
         cv2.imsave(outfile, frame)
 
-def camera_client(readP, readMouse, trialIndex, cameraPinValue):
+def tryConnectToMouse( sock ):
+    try:
+        sock.connect( mouse_sock_ )
+    except Exception as e:
+        print( 'Failed to connect to mouse socket %s' % e )
+
+    return sock
+
+def get_mouse_val( ms, speed ):
+    # Read mouse line for socket.
+    # Fetch all the data and read the last line. This one is the
+    # lastest line sent by mouse.
+    mr = None
+    err = '(:)'
+    try:
+        mr = ms.recv( 4096 ) 
+    except Exception as e:
+        print( 'Could not connect to MOUSE. %s' % e )
+        finished_all_ = True
+        return err
+
+    # The last line may not be complete, second last line is a good
+    # idea.
+    lastLine = mr.split( '\n' )[-2]
+    if not lastLine:
+        return err
+
+    mouseData = lastLine.split( ',' )
+    # The first entry is usually timestamp.
+    ss = [ to_float(x) for x in mouseData ]
+    if len(ss) < 1:
+        return err 
+
+    # velocity is followed by direction.
+    try:
+        r1 = math.copysign( ss[-2], ss[-1] ) 
+        speed.append( r1 )
+        speed.pop(0)
+        return ',(%s:%s)' % (mouseData[0], r1 )
+    except Exception as e:
+        printException( ss )
+        return err
+
+def camera_client(readP, trialIndex, cameraPinValue):
     global finished_all_
     global img_, buf_
     global image_stack_
+
+    # Camera socket and Mouse socket.
     s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    ms = socket.socket( socket.AF_UNIX, socket.SOCK_STREAM )
 
     # Connect to socket. Try only for 5 seconds.
     now = time.time()
@@ -319,20 +375,27 @@ def camera_client(readP, readMouse, trialIndex, cameraPinValue):
             print('[INFO] Timeout in connecting socket. Quitting')
             finished_all_ = True
             break
-        if os.path.exists(sock_name_):
-            try:
-                s.connect(sock_name_)
-                break
-            except Exception as e:
-                printException( )
-                time.sleep(1)
-        else:
-            print('Could not find %s' % sock_name_)
+        try:
+            print( 'Trying to connect to %s' % sock_name_ )
+            s.connect(sock_name_)
+        except Exception as e:
+            print( e )
             time.sleep(1)
 
+        try:
+            print( 'Trying to connect to %s' % mouse_sock_ )
+            ms.connect( mouse_sock_ )
+            break
+        except Exception as e:
+            print( e )
+            time.sleep( 1 )
+        else:
+            time.sleep(1)
+
+    print( '[INFO] Connected with both arduino board and Mouse' )
     totalBytesRead = 0
     totalFrames = 0
-    buf = ''
+    buf, mousebuf = '', '\n'.join( [ 'BABA JI KA THULLU' ] * 2 )
     init_stack()
     framesInStack = 0
     trial_count = 0
@@ -342,102 +405,93 @@ def camera_client(readP, readMouse, trialIndex, cameraPinValue):
     recording_ = False
     cameraPinState = [False, False]
     while not finished_all_:
-        try:
-            data = s.recv(frame_size_)
-            buf += data
-            if len(buf) >= frame_size_:
-                now = datetime.datetime.now().isoformat()
-                img = np.frombuffer(buf[:frame_size_], dtype=np.uint8)
-                img = np.reshape(img, img_shape_)
-                txt = now
+        data = s.recv(frame_size_)
+        buf += data
+        if len(buf) >= frame_size_:
+            now = datetime.datetime.now().isoformat()
+            img = np.frombuffer(buf[:frame_size_], dtype=np.uint8)
+            img = np.reshape(img, img_shape_)
+            txt = now
 
-                # This is critical.
-                # Read from PIPE but it should not be blocking.
-                if readP.poll(1e-4):
-                    txt += ',' + readP.recv()
+            # This is critical.
+            # Read from PIPE but it should not be blocking.
+            if readP.poll(1e-4):
+                txt += ',' + readP.recv()
 
-                if readMouse.poll( 1e-4 ):
-                    mr = readMouse.recv( )
-                    ss = map( float, mr.split( ',' )[-2:] )
-                    # velocity is followed by direction.
-                    r1 = math.copysign( ss[0], ss[1] ) 
-                    speed_.append( r1 )
-                    txt += ',' + mr
+            mr = get_mouse_val( ms, speed_ )
+            txt += ',%s' % mr
+
+            if len(bbox_) == 2:
+                # print( 'Bounding box has been drawn : %s' % str(bbox_) )
+                cv2.rectangle( img, bbox_[0], bbox_[1], 128 )
+                (x0, y0), (x1, y1) = bbox_
+                roi = img[y0:y1,x0:x1]
+                # Equalize histogram
+                roi = cv2.equalizeHist( roi )
+                infile, outfile, res, sss = blinky.process_frame(roi, 0)
+                #cv2.imshow( 'algo', outfile )
+
+                # When camera pin goes HIGH, start writing trial.
+                if cameraPinValue.value == 1:
+                    msg = '%.2f (ON)'  % res
+                    recording_ = True
+                    cameraPinState.append( True )
+                    cameraPinState.pop( 0 )
+                else:
+                    msg = '%.2f'  % res
+                    cameraPinState.append( False )
+                    cameraPinState.pop( 0 )
+
+                if (not cameraPinState[1]) and cameraPinState[0]:
+                    writeTrial_ = True
+                    recording_ = False
+                else:
+                    writeTrial_ = False
+            else:
+                res = random.random( )
+
+            blinks_.append( res )
+
+            # Append blink value to data.
+            txt += ',%4.3f' % blinks_[-1]
+
+            # Fill txt to have its length equal to frame width
+            assert len(txt) < img.shape[1], "Too much text to write"
+            txt += ' ' * (img.shape[1] - len(txt))
+
+            # Convert txt to binary and prefix to the img we got from camera
+            # server.
+            metadata = np.array(map(ord, txt), dtype=np.uint8)
+            img = np.vstack((metadata, img))
+
+            if write_data_:
+                cv2.putText(img, txt.strip(), (0, h_ - 10),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.25, 128, 1
+                            )
+
+            # Only save the frame if camera pin says so.
+            if recording_:
+                image_stack_[framesInStack] = img
+                framesInStack += 1
+
+
+            # Show every 10th frame.
+            if totalFrames % 10 == 0:
+                show_frame( img )
+                # show_frame( np.vstack( (infile, outfile )) )
+
+                # Enable the following if you want to see the blink data on
+                # separate plot window. Slows down frame rate a bit ~ 10 to
+                # 20 FPS.
 
                 if len(bbox_) == 2:
-                    # print( 'Bounding box has been drawn : %s' % str(bbox_) )
-                    cv2.rectangle( img, bbox_[0], bbox_[1], 128 )
-                    (x0, y0), (x1, y1) = bbox_
-                    roi = img[y0:y1,x0:x1]
-                    # Equalize histogram
-                    roi = cv2.equalizeHist( roi )
-                    infile, outfile, res, sss = blinky.process_frame(roi, 0)
-                    #cv2.imshow( 'algo', outfile )
-
-                    # When camera pin goes HIGH, start writing trial.
-                    if cameraPinValue.value == 1:
-                        msg = '%.2f (ON)'  % res
-                        recording_ = True
-                        cameraPinState.append( True )
-                        cameraPinState.pop( 0 )
-                    else:
-                        msg = '%.2f'  % res
-                        cameraPinState.append( False )
-                        cameraPinState.pop( 0 )
-
-                    if (not cameraPinState[1]) and cameraPinState[0]:
-                        writeTrial_ = True
-                        recording_ = False
-                    else:
-                        writeTrial_ = False
-                else:
-                    res = random.random( )
-
-                blinks_.append( res )
-
-                # Append blink value to data.
-                txt += ',%4.3f' % blinks_[-1]
-
-                # Fill txt to have its length equal to frame width
-                txt += ' ' * (img.shape[1] - len(txt))
-
-                # Convert txt to binary and prefix to the img we got from camera
-                # server.
-                metadata = np.array(map(ord, txt), dtype=np.uint8)
-                img = np.vstack((metadata, img))
-
-                if write_data_:
-                    cv2.putText(img, txt.strip(), (0, h_ - 10),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.25, 128, 1
+                    if len( blinks_ ) > 10:
+                        gnuplot_.plot( 
+                                np.array( blinks_[-2000:] )
+                                , legend = "Speed : %f" % speed_[-1] 
                                 )
 
-                # Only save the frame if camera pin says so.
-                if recording_:
-                    image_stack_[framesInStack] = img
-                    framesInStack += 1
-
-
-                # Show every 10th frame.
-                if totalFrames % 10 == 0:
-                    show_frame( img )
-                    # show_frame( np.vstack( (infile, outfile )) )
-
-                    # Enable the following if you want to see the blink data on
-                    # separate plot window. Slows down frame rate a bit ~ 10 to
-                    # 20 FPS.
-
-                    if len(bbox_) == 2:
-                        if len( blinks_ ) > 10:
-                            gnuplot_.plot( 
-                                    np.array( blinks_[-2000:] )
-                                    , legend = "Speed : %f" % speed_[-1] 
-                                    )
-
-                buf = buf[frame_size_:]
-        except Exception as e:
-            # Keep reading.
-            printException( )
-            continue
+            buf = buf[frame_size_:]
 
         totalFrames += 1
         
@@ -454,13 +508,6 @@ def camera_client(readP, readMouse, trialIndex, cameraPinValue):
             save_img_stack(image_stack_, -1 )
             init_stack( )
 
-def mouse_client( writeMouse, trialIndex ):
-    global finished_all_
-    while 1:
-        val = read_mouse_delta.main( config.args_.mouse )
-        writeMouse.send( val )
-        if finished_all_:
-            return 1
 
 def main():
     # Lock so that only one process prints to console at a time.
@@ -477,19 +524,13 @@ def main():
     cameraPinValue = Value( 'd', 0 )
 
     readP, writeP = Pipe(duplex=False)
-    readMouse, writeMouse = Pipe( duplex = False )
 
     cam = Process( target=camera_client
-            , args=(readP, readMouse, trialIndex, cameraPinValue )
+            , args=(readP,trialIndex, cameraPinValue )
             )
     cam.daemon = True
     cam.start()
     print('Camera client launched')
-
-    mouse = Process( target=mouse_client, args=(writeMouse, trialIndex ) )
-    mouse.daemon = True
-    mouse.start( )
-    print( 'Mouse client launched' )
 
     arduinoP = Process(
             target=arduino_client,
@@ -508,7 +549,8 @@ def main():
 
     arduinoP.join()
     cam.join()
-    print('All done')
+    print('All done. Raising Ctrl+C to cleanup.')
+    raise KeyboardInterrupt
 
 if __name__ == '__main__':
     import argparse
@@ -539,11 +581,6 @@ if __name__ == '__main__':
         default=None,
         help='Serial port [full path]')
 
-    parser.add_argument('--mouse', '-m'
-        , required = False
-        , default = '/dev/input/mouse1'
-        , help = 'Path to mouse.'
-        )
     parser.parse_args(namespace=config.args_)
     init_serial()
     # Intialize logger after intializing serial port.

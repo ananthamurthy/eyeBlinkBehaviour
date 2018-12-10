@@ -160,16 +160,18 @@ configure_file( ${CMAKE_SOURCE_DIR}/camera_arduino_client.py.in
     ${CMAKE_BINARY_DIR}/camera_arduino_client.py 
     )
 
+# write .gnuplot
+file(WRITE $ENV{HOME}/.gnuplot "set fit quiet; " )
+
 # Pass animal options to run.sh which will will passed to python script.
 SET(RUN_ARGS 
     -p ${PORT} -n ${ANIMAL_NAME} -sn ${SESSION_NUM} -st ${SESSION_TYPE} 
-    -m ${MOUSE_PATH}
      )
 
 # Copy python files into current working directory.
 file(COPY ${CMAKE_SOURCE_DIR}/eyeblinkdetector/extract.py 
         ${CMAKE_SOURCE_DIR}/blinky.py 
-        ${CMAKE_SOURCE_DIR}/read_mouse_delta.py
+        ${CMAKE_SOURCE_DIR}/mouse_server.py
         DESTINATION ${CMAKE_BINARY_DIR}
      )
 
