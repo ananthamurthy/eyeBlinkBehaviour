@@ -9,7 +9,6 @@ CFLAGS += -std=c++11
 CC = g++ ${CFLAGS}
 OUTPUTNAME = Acquisition${D}
 OUTDIR = ../../bin
-OUTDIR = bin
 
 ################################################################################
 # Dependencies

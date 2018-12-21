@@ -46,11 +46,13 @@
 #include "SpinGenApi/SpinnakerGenApi.h"
 #include <iostream>
 #include <sstream>
+#include <chrono>
 
 using namespace Spinnaker;
 using namespace Spinnaker::GenApi;
 using namespace Spinnaker::GenICam;
 using namespace std;
+using namespace std::chrono;
 
 // This function prepares the sequencer to accept custom configurations by 
 // ensuring sequencer mode is off (this is a requirement to the enabling of 
@@ -687,14 +689,18 @@ int AcquireImages(CameraPtr pCam, INodeMap & nodeMap, INodeMap & nodeMapGenTL)
 		cout << endl;
 
 		// Retrieve, convert, and save images
-		const unsigned int k_numImages = 10;
+		const unsigned int k_numImages = 200;
+
+                // Retrieve next received image and ensure image completion
+                auto startT = system_clock::now( );
 
 		for (unsigned int imageCnt = 0; imageCnt < k_numImages; imageCnt++)
 		{
 			try
 			{
-				// Retrieve next received image and ensure image completion
+
 				ImagePtr pResultImage = pCam->GetNextImage();
+
 
 				if (pResultImage->IsIncomplete())
 				{
@@ -719,10 +725,11 @@ int AcquireImages(CameraPtr pCam, INodeMap & nodeMap, INodeMap & nodeMapGenTL)
 					filename << imageCnt << ".jpg";
 
 					// Save image
-					convertedImage->Save(filename.str().c_str());
+					//convertedImage->Save(filename.str().c_str());
 
-					cout << "Image saved at " << filename.str() << endl;
+					//cout << "Image saved at " << filename.str() << endl;
 				}
+
 
 				// Release image
 				pResultImage->Release();
@@ -735,6 +742,9 @@ int AcquireImages(CameraPtr pCam, INodeMap & nodeMap, INodeMap & nodeMapGenTL)
 				result = -1;
 			}
 		}
+
+                duration<double> diff = system_clock::now() - startT;
+                cout << "FPS : " << 200.0 / diff.count( ) << endl;
 
 		// End acquisition
 		pCam->EndAcquisition();

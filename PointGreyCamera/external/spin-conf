@@ -35,7 +35,7 @@ do
     echo -n "$MY_YESNO_PROMPT"
     read confirm
 
-    if [ $confirm == "y" ] || [ $confirm == "Y" ] || [ $confirm == "yes" ] || [ $confirm == "Yes" ]
+    if [ $confirm = "y" ] || [ $confirm = "Y" ] || [ $confirm = "yes" ] || [ $confirm = "Yes" ]
     then
         break
     fi
@@ -47,7 +47,7 @@ echo "Is this ok?:";
 echo -n "$MY_YESNO_PROMPT"
 read confirm
 
-if [ $confirm == "y" ] || [ $confirm == "Y" ] || [ $confirm == "yes" ] || [ $confirm == "Yes" ]
+if [ $confirm = "y" ] || [ $confirm = "Y" ] || [ $confirm = "yes" ] || [ $confirm = "Yes" ]
 then
     groupadd -f $grpname
     usermod -a -G $grpname $usrname

@@ -10,7 +10,7 @@ CC = g++ ${CFLAGS}
 
 OUTPUTNAME = SaveToAvi${D}
 
-OUTDIR = save2Avi
+OUTDIR = ../../bin
 
 ################################################################################
 # Dependencies
