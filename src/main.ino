@@ -375,7 +375,7 @@ void do_trial( unsigned int trial_num, bool isprobe = false )
      *  PRE. Start imaging;  for 8 seconds.
      *-----------------------------------------------------------------------------*/
     unsigned duration = 8000;
-    if (trial_num == 1)
+//    if (trial_num == 1)
 	delay(60); // Shutter delay; Only for the first trial
 
     stamp_ = millis( );
